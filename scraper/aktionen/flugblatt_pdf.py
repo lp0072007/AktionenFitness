@@ -221,11 +221,14 @@ def _naechster(quelle: Box, ziele: list, max_abstand: float, nur_darunter: bool 
     return beste
 
 
-def _beschreibung(titel: Box, boxen: list[Box], s: Schriften) -> str:
+def _beschreibung(titel: Box, boxen: list[Box], s: Schriften, alle_titel: list[Box] = ()) -> str:
+    # bis zum nächsten Produktnamen in derselben Spalte, höchstens 130 pt
+    darunter = [t.top for t in alle_titel if t.top > titel.bottom and abs(t.x0 - titel.x0) < 60]
+    grenze = min([titel.bottom + 130] + [t - 2 for t in darunter])
     teile = [
         b.text for b in boxen
         if b.font == s.beschreibung and b.text.strip() != "oder"
-        and titel.bottom - 3 <= b.top <= titel.bottom + 60
+        and titel.bottom - 3 <= b.top <= grenze
         and (titel.x0 - 5 <= b.x0 <= titel.x0 + 40 or abs(b.x1 - titel.x1) < 8)  # links- oder rechtsbündig
     ]
     return " ".join(teile)
@@ -255,7 +258,7 @@ def analysiere_seite(woerter: list[dict], seite: int, s: Schriften = SPAR_SCHRIF
     haupt = [p for p in preise if not p.zusatz]
 
     # 2. Hauptpreise → Titel (greedy über alle Paare, bester Abstand zuerst)
-    erwartet = {id(t): erwartete_preise(_beschreibung(t, boxen, s) or t.text) for t in titel}
+    erwartet = {id(t): erwartete_preise(_beschreibung(t, boxen, s, titel) or t.text) for t in titel}
     paare = []
     for p in haupt:
         for t in titel:
@@ -277,8 +280,8 @@ def analysiere_seite(woerter: list[dict], seite: int, s: Schriften = SPAR_SCHRIF
         t = zuordnung.get(id(p))
         if t is None:
             continue
-        beschr = _beschreibung(t, boxen, s)
-        menge, einheit = _menge_aus_text(beschr) or _menge_aus_text(t.text) or (None, None)
+        beschr = _beschreibung(t, boxen, s, titel)
+        menge, einheit = _menge_aus_text(beschr) or _menge_aus_text(t.text) or _stueck_aus_text(beschr) or (None, None)
         angebote[id(p)] = FlugblattAngebot(
             seite=seite, name=t.text, preis=p.wert, beschreibung=beschr,
             menge=menge, einheit=einheit, pro_kg=bool(re.search(r"\bper kg\b", beschr)) and menge is None,
@@ -373,7 +376,18 @@ def _alle_mengen(text: str) -> list[float]:
     return [_zahl(z) * faktor * anzahl for z in zahlen]
 
 
+_STUECK_RE = re.compile(r"(\d+)(?:er|-Stück)-(?:Packung|Pack|Tray|Box)")
+
+
+def _stueck_aus_text(text: str) -> tuple[float, str] | None:
+    """'10er-Packung' -> (10, 'stk')."""
+    m = _STUECK_RE.search(text)
+    return (float(m.group(1)), "stk") if m else None
+
+
 def _menge_aus_text(text: str) -> tuple[float, str] | None:
+    if re.search(r"\bper 100\s?g\b", text) and not re.search(r"\d-g-", text):
+        return 100.0, "g"   # Thekenware "In Bedienung per 100 g": Preis gilt für 100 g
     m = _MENGE_RE.search(text)
     if not m:
         return None

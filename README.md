@@ -28,10 +28,16 @@ cd scraper
 python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -e ".[dev,pdf]"
 pytest
-python -m aktionen spar --query skyr
-python -m aktionen.flugblatt_pdf flugblatt.pdf 14     # Angebote aus einem Flugblatt-PDF
+python -m aktionen.fitness --region niederoesterreich              # Fitness-Rangliste der Woche
+python -m aktionen.fitness --region wien --ziel diaet               # eiweißreich zuerst
+python -m aktionen.fitness --pdf flugblatt.pdf --gruppe Kohlenhydrate
+python -m aktionen.flugblatt_pdf flugblatt.pdf 14                   # alle Angebote einer Seite
 ```
+
+`aktionen.fitness` sucht das aktuelle Spar-Flugblatt der Region auf flugblatt.interspar.at, lädt das PDF nach `data/`
+(ca. 20 MB, wird zwischengespeichert), liest die Angebote aus und bewertet die fitnessrelevanten Produkte
+(Protein pro €, kcal pro €, Protein pro 100 kcal). Der Spar-Onlineshop wird **nicht** verwendet (Cloudflare-Sperre).
 
 ## Status
 
-Phase 1: Datenquellen. **Spar** fast fertig: Flugblatt-Liste, Flugblatt-PDF-Auswertung ohne KI, Produktdetails mit Nährwerten. Siehe [docs/DATENQUELLEN.md](docs/DATENQUELLEN.md).
+**Spar funktioniert durchgehend:** Flugblatt finden → PDF laden → Angebote auslesen (ohne KI) → Fitness-Rangliste. Nährwerte kommen aus einer eigenen Tabelle typischer Werte (`aktionen/fitness.py`). Siehe [docs/DATENQUELLEN.md](docs/DATENQUELLEN.md).

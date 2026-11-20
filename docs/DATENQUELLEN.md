@@ -133,6 +133,20 @@ Sonstige Endpunkte:
 `search-spar.spar-ics.com/fact-finder/rest/v4/search/products_lmos_at` (von heissepreise genutzt) antwortet
 seit 11/2026 mit `"Channel 'products_lmos_at' does not exist."`.
 
+### Ergebnis: So läuft Spar jetzt (ohne Shop und ohne KI)
+
+Getestet 20.11.2026 von einer Heim-IP: `www.interspar.at/api/*` ist **gesperrt** (Cloudflare 403), auch für die
+Flugblatt-Liste. `flugblatt.interspar.at` und `cdn.ipaper.io` sind **offen**.
+
+1. Viewer-URL aus Region + ISO-KW bauen: `https://flugblatt.interspar.at/{gruppe}/{region}_kw{KW}/`
+   (`aktionen/spar_flugblatt.py`). Gruppe ist meist gleich der Region, Burgenland hat Nord/Süd.
+   Die aktuelle KW und bis zu 3 Wochen zurück probieren, Gültigkeit aus `pageTitle` prüfen.
+2. PDF: `POST {viewer}GetPDF.ashx` mit `pageNumbers=` → 302 → Location per **GET** laden (POST-Redirect ergibt 405)
+3. Angebote: `aktionen/flugblatt_pdf.py`
+4. Fitness: `aktionen/fitness.py`. Kategorie über Stichwörter, Nährwerte aus einer Tabelle typischer Werte.
+   Open Food Facts liefert für Flugblatt-Produkte keine EAN, und die Suche war beim Test überlastet (503),
+   deshalb wird es für den Normalbetrieb nicht verwendet.
+
 ## Weitere Ketten (für später, laut heissepreise)
 
 | Kette | Endpunkt (intern, ungeprüft) |
