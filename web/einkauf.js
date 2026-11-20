@@ -10,7 +10,7 @@ const euro = (x) => x.toLocaleString("de-AT", { style: "currency", currency: "EU
 const datum = (iso) => new Date(iso + "T00:00:00").toLocaleDateString("de-AT", { weekday: "short", day: "2-digit", month: "2-digit" });
 const heuteIso = () => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
 
-const zustand = { ausgeschlossen: new Set() };
+const zustand = { ausgeschlossen: new Set(), erledigt: new Set() };
 
 function laden() {
   try { return JSON.parse(localStorage.getItem(SPEICHER)) || {}; } catch { return {}; }
@@ -19,6 +19,7 @@ function speichern() {
   try {
     localStorage.setItem(SPEICHER, JSON.stringify({
       liste: $("#liste").value, region: $("#region").value, ausgeschlossen: [...zustand.ausgeschlossen],
+      erledigt: [...zustand.erledigt],
     }));
   } catch { /* privater Modus */ }
 }
@@ -55,19 +56,41 @@ function verstanden(e) {
   return teile.join(" ");
 }
 
-// Vorschau unter der Eingabe: jede erkannte Zeile mit Status und bestem Angebot
+// Abhak-Liste unter der Eingabe: jede erkannte Zeile mit Kreis zum Abhaken (wird durchgestrichen),
+// dazu das beste Angebot. Abgehakt wird pro Zeilentext gemerkt, auch nach dem Neuladen.
+const erledigtSchluessel = (e) => A.norm(e.text);
+
 function vorschauZeichnen(r) {
   const ul = $("#vorschau");
   $("#vorschauBox").hidden = r.eintraege.length === 0;
   const wahl = new Map();
   for (const xs of Object.values(r.aufteilung)) for (const x of xs) wahl.set(x.eintrag, x.treffer);
+  // Häkchen von Zeilen, die es nicht mehr gibt, vergessen
+  const vorhanden = new Set(r.eintraege.map(({ eintrag }) => erledigtSchluessel(eintrag)));
+  for (const k of zustand.erledigt) if (!vorhanden.has(k)) zustand.erledigt.delete(k);
+  const anzahlErledigt = r.eintraege.filter(({ eintrag }) => zustand.erledigt.has(erledigtSchluessel(eintrag))).length;
+  $("#erledigtZaehler").textContent = anzahlErledigt ? `${anzahlErledigt} / ${r.eintraege.length} erledigt` : "";
+  $("#hakenWeg").hidden = anzahlErledigt === 0;
+
   ul.replaceChildren(...r.eintraege.map(({ eintrag: e }) => {
     const li = document.createElement("li");
     const t = wahl.get(e);
-    li.className = t ? "ok" : "fehlt";
-    const icon = document.createElement("span");
-    icon.className = "ek-vorschau__icon";
-    icon.textContent = t ? "✓" : "–";
+    const schluessel = erledigtSchluessel(e);
+    const erledigt = zustand.erledigt.has(schluessel);
+    li.className = (t ? "ok" : "fehlt") + (erledigt ? " erledigt" : "");
+    const icon = document.createElement("input");
+    icon.type = "checkbox";
+    icon.className = "ek-vorschau__haken";
+    icon.checked = erledigt;
+    icon.setAttribute("aria-label", `${e.name} abhaken`);
+    icon.addEventListener("change", () => {
+      if (icon.checked) zustand.erledigt.add(schluessel); else zustand.erledigt.delete(schluessel);
+      li.classList.toggle("erledigt", icon.checked);
+      speichern();
+      const n = r.eintraege.filter(({ eintrag }) => zustand.erledigt.has(erledigtSchluessel(eintrag))).length;
+      $("#erledigtZaehler").textContent = n ? `${n} / ${r.eintraege.length} erledigt` : "";
+      $("#hakenWeg").hidden = n === 0;
+    });
     const name = document.createElement("span");
     name.className = "ek-vorschau__name";
     name.textContent = e.name;
@@ -81,7 +104,9 @@ function vorschauZeichnen(r) {
     rechts.className = "ek-vorschau__wo";
     if (t) rechts.append(badge(t.angebot.kette), " ", euro(t.kosten.preis));
     else rechts.textContent = "keine Aktion";
-    li.append(icon, name, rechts);
+    const label = document.createElement("label");
+    label.append(icon, name, rechts);
+    li.append(label);
     return li;
   }));
 }
@@ -265,6 +290,7 @@ function start() {
   $("#tag").value = heuteIso();
   $("#liste").value = gespeichert.liste ?? "";
   zustand.ausgeschlossen = new Set(gespeichert.ausgeschlossen ?? []);
+  zustand.erledigt = new Set(gespeichert.erledigt ?? []);
 
   const anzahl = Object.values(DATEN.regionen).reduce((s, r) => s + r.angebote.length, 0) +
     Object.values(DATEN.ketten).reduce((s, l) => s + l.length, 0);
@@ -278,6 +304,7 @@ function start() {
     timer = setTimeout(() => { speichern(); berechnen(); }, 250);
   });
   sel.addEventListener("change", () => { speichern(); berechnen(); });
+  $("#hakenWeg").addEventListener("click", () => { zustand.erledigt.clear(); speichern(); berechnen(); });
   $("#tag").addEventListener("change", berechnen);
   berechnen();
 }

@@ -48,7 +48,12 @@ Obst:
       <p class="ek-hinweis">Tipp: eine Zeile pro Produkt oder mit Komma trennen. Mengen wie „2x“, „500g“, „1,5 kg“ oder „10er“
         werden erkannt, Klammern sind Notizen, Zeilen mit „:“ am Ende sind Überschriften. Die Liste wird im Browser gespeichert.</p>
       <div class="ek-vorschau" id="vorschauBox" hidden>
-        <h2 class="ek-titel">So verstanden</h2>
+        <div class="ek-vorschau__kopf">
+          <h2 class="ek-titel">Deine Liste</h2>
+          <span id="erledigtZaehler"></span>
+          <button type="button" class="knopf knopf--leise" id="hakenWeg" hidden>Häkchen entfernen</button>
+        </div>
+        <p class="ek-hinweis">Abhaken, was schon im Wagen ist – es wird durchgestrichen.</p>
         <ul id="vorschau"></ul>
       </div>
     </section>

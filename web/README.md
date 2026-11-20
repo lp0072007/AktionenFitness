@@ -42,7 +42,7 @@ Einkaufsliste als Stichpunkte eingeben („- 2x Milch“, „500g Hendlfilet“)
 günstigste Aufteilung auf Geschäfte, falsche Treffer abwählbar.
 Eingabe: eine Zeile pro Produkt oder mit Komma getrennt, Aufzählungszeichen und Kästchen („- [ ]“, „☐“) egal, Mengen
 („2x“, „500g“, „1,5 kg“, „½ kg“, „10er“), Klammern = Notiz, Zeilen mit „:“ am Ende = Überschrift. Eigenschaften wie
-„light“, „mager“, „griechisch“ sind optional. Unter der Eingabe zeigt „So verstanden“, wie jede Zeile erkannt wurde. Logik: `abgleich.js`, Tests: `node --test` im Ordner `web`.
+„light“, „mager“, „griechisch“ sind optional. Unter der Eingabe zeigt „Deine Liste“, wie jede Zeile erkannt wurde; dort lässt sich jedes Produkt abhaken (wird durchgestrichen, bleibt gespeichert). Logik: `abgleich.js`, Tests: `node --test` im Ordner `web`.
 
 ## Funktionen
 
