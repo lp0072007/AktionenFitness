@@ -19,10 +19,10 @@ import httpx
 from PIL import Image
 
 from .ausschnitte import ausschnitte_speichern
-from .stores import hofer, lidl, penny
+from .stores import billa, hofer, lidl, penny
 
 # Österreichweite Ketten mit strukturierten Daten: Name -> Modul mit aktuelle_angebote() und UA
-WEITERE_KETTEN = {"lidl": lidl, "hofer": hofer, "penny": penny}
+WEITERE_KETTEN = {"lidl": lidl, "hofer": hofer, "penny": penny, "billa": billa}
 from .fitness import DATEN_ORDNER, FitnessTreffer, fitness_angebote
 from .flugblatt_pdf import FlugblattAngebot, analysiere_seite
 from .spar_flugblatt import REGIONEN, aktuelles_flugblatt, pdf_herunterladen
@@ -161,6 +161,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--ohne-lidl", action="store_true")
     p.add_argument("--ohne-hofer", action="store_true")
     p.add_argument("--ohne-penny", action="store_true")
+    p.add_argument("--ohne-billa", action="store_true")
     args = p.parse_args(argv)
 
     regionen = sorted(REGIONEN) if args.alle else (args.region or STANDARD_REGIONEN)
@@ -168,7 +169,7 @@ def main(argv: list[str] | None = None) -> int:
         p.error("--pdf geht nur mit genau einer --region")
 
     # Struktur: regionen[] = Spar pro Bundesland; lidl, hofer = österreichweit (gelten für alle Regionen)
-    daten = {"erstellt": datetime.now().isoformat(timespec="minutes"), "regionen": [], "lidl": None, "hofer": None, "penny": None}
+    daten = {"erstellt": datetime.now().isoformat(timespec="minutes"), "regionen": [], "lidl": None, "hofer": None, "penny": None, "billa": None}
     bilder = None if args.ohne_bilder else args.ziel.parent / BILDER_UNTERORDNER
     for r in regionen:
         try:

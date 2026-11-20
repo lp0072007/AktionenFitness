@@ -78,3 +78,29 @@ def test_thunfisch_in_oel_ueber_beschreibung():
     assert kategorie_fuer("Nixe Thunfischfilets", "Je 4x 185 g · 1 kg = 6.47 · In Sonnenblumenöl").name == "Thunfisch in Öl"
     assert kategorie_fuer("Nixe Thunfischfilets", "Je 4x 185 g · im eigenen Saft").name == "Thunfisch"
     assert kategorie_fuer("Deluxe Frische Lammlachse vom Merino Lamm natur") is None
+
+
+@pytest.mark.parametrize(
+    "name,kategorie",
+    [
+        # Billa-Fehlerkennungen (KW 47)
+        ("Knorr Basis für Pasta Gemüse", None),
+        ("nöm PRO Banane Proteindrink", None),
+        ("Billa immer gut BILLA Peanut Butter Eis", None),
+        ("Billa immer gut BILLA Thunfisch Baguette", None),
+        ("Iglo Backrohr Kartoffelpuffer", None),
+        ("Billa immer gut BILLA Erdäpfeltascherl", None),
+        ("Iglo Mohnnudeln", None),
+        ("Vegavita Bananensplit", None),
+        ("Clever Alaska Seelachs paniert", None),
+        # weiterhin erkannt
+        ("Clever Alaska-Seelachsfilets ohne Haut", "Magerer Fisch"),
+        ("Recheis Familie Spaghetti", "Nudeln"),
+        ("Alpro Skyr Natur Ungesüßt", "Skyr"),
+        ("d'aucy Linsen", "Linsen & Bohnen"),
+        ("Berida Lachsfilet", "Lachs"),
+    ],
+)
+def test_billa_fehlerkennungen(name, kategorie):
+    k = kategorie_fuer(name)
+    assert (k.name if k else None) == kategorie

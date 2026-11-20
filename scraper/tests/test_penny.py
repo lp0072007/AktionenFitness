@@ -66,3 +66,14 @@ def test_kategorien_penny_namen():
     assert kategorie_fuer("Salzburg Milch Premium Käse-Selektion") is None
     assert kategorie_fuer("Iglo Polardorsch Knusperhülle") is None
     assert kategorie_fuer("Bens Original Express Reis") is None
+
+
+def test_kategoriepfad_schliesst_fertiggerichte_aus():
+    from aktionen.fitness import fitness_angebote
+
+    fertig = parse_produkt(produkt(name="Tagliatelle Wildlachs", brand={"name": "Frosta"}, parentCategories=[
+        [{"name": "Tiefkühl"}, {"name": "Tiefkühlgerichte"}, {"name": "Reis & Pasta"}]]))
+    lachs = parse_produkt(produkt(name="Lachsfilet", brand={"name": "Berida"}, parentCategories=[
+        [{"name": "Tiefkühl"}, {"name": "Fleisch & Fisch"}, {"name": "Fisch"}]]))
+    assert fertig.kategorie_pfad == "Tiefkühl > Tiefkühlgerichte > Reis & Pasta"
+    assert [t.angebot.name for t in fitness_angebote([fertig, lachs])] == ["Berida Lachsfilet"]

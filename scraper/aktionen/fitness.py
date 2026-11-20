@@ -55,10 +55,10 @@ KATEGORIEN: tuple[Kategorie, ...] = (
     Kategorie("Thunfisch", "Protein", (r"thunfisch",), 110, 24, 0, 1,
               ausschluss=(r"salat", r"pizza", r"creme", r"aufstrich")),
     Kategorie("Garnelen", "Protein", (r"garnele", r"shrimp", r"crevette"), 80, 18, 0, 1),
-    Kategorie("Lachs", "Protein", (r"lachs(?!forelle)", r"lachsforelle"), 200, 20, 0, 13,
+    Kategorie("Lachs", "Protein", (r"(?<!see)lachs(?!forelle)", r"lachsforelle"), 200, 20, 0, 13,
               ausschluss=(r"geräuchert", r"räucher", r"weißburgunder", r"lammlachs")),
     Kategorie("Magerer Fisch", "Protein", (r"dorsch", r"kabeljau", r"seelachs", r"pangasius", r"zander",
-                                           r"goldbrasse", r"forelle", r"saibling"), 95, 19, 0, 2,
+                                           r"goldbrasse", r"forelle", r"saibling", r"alaska"), 95, 19, 0, 2,
               ausschluss=(r"stäbchen", r"paniert", r"backfisch", r"knusper")),
     Kategorie("Eier", "Protein", (r"\beier\b",), 140, 12.5, 0.7, 9.5, gramm_pro_stueck=60,
               ausschluss=(r"likör", r"nudel", r"teigwaren", r"eiergold", r"schoko")),
@@ -88,7 +88,21 @@ KATEGORIEN: tuple[Kategorie, ...] = (
 
 # Was nie fitnessrelevant ist, auch wenn ein Stichwort passt
 _GLOBAL_AUSSCHLUSS = re.compile(
+    # Getränke mit Alkohol, Süßes, Spielzeug
     r"\b(wein|bier|likör|sekt|prosecco|wodka|whisky|schokolade|pralinen|keks|playmobil|lego|spielset)\b"
+    # Fertiggerichte, Zubereitungen und Snacks: Nährwerte haben nichts mehr mit dem Grundprodukt zu tun
+    r"|\beis\b|eiscreme|speiseeis|vanilleeis|schokoeis|fruchteis|baguette|tascherl|puffer|split|basis für|fix für|pizza|toast|sandwich|wrap\b|burger|nugget"
+    r"|knödel|strudel|kuchen|torte|pudding|mousse|dessert|riegel|chips|cracker|smoothie|drink|shake"
+    r"|gratin|kroketten|wedges|lasagne|auflauf|suppe|eintopf|gulasch|risotto|bowl\b|salat\b|aufstrich"
+    r"|mohnnudeln|germknödel|marillenknödel|palatschinken|schmarrn"
+)
+
+
+# Händler-Kategorien (Billa/Penny), deren Produkte nie als Grundnahrungsmittel zählen
+_PFAD_AUSSCHLUSS = re.compile(
+    r"tiefkühlgerichte|fertiggerichte|pizza|\beis\b|eiscreme|süßes & salziges|knabber|pesto|aromen|glasuren"
+    r"|pommes|kartoffelprodukte|tiefkühl > obst|snack|dessert|aufstrich|frischkäse",
+    re.I,
 )
 
 
@@ -152,6 +166,8 @@ def _gramm(a: FlugblattAngebot, k: Kategorie) -> float | None:
 def fitness_angebote(angebote: list[FlugblattAngebot]) -> list[FitnessTreffer]:
     treffer = []
     for a in angebote:
+        if a.kategorie_pfad and _PFAD_AUSSCHLUSS.search(a.kategorie_pfad):
+            continue
         k = kategorie_fuer(a.name, a.beschreibung)
         if k:
             treffer.append(FitnessTreffer(a, k, _gramm(a, k)))

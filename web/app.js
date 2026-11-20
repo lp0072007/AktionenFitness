@@ -50,8 +50,8 @@ function speichern(schluessel, wert) {
 const $ = (sel) => document.querySelector(sel);
 const euro = (x) => x.toLocaleString("de-AT", { style: "currency", currency: "EUR" });
 const zahl = (x, stellen = 0) => x.toLocaleString("de-AT", { maximumFractionDigits: stellen, minimumFractionDigits: stellen });
-const KETTEN = { spar: "Spar", lidl: "Lidl", hofer: "Hofer", penny: "Penny" };
-const LANDESWEIT = ["lidl", "hofer", "penny"]; // gelten in ganz Österreich
+const KETTEN = { spar: "Spar", lidl: "Lidl", hofer: "Hofer", penny: "Penny", billa: "Billa" };
+const LANDESWEIT = ["lidl", "hofer", "penny", "billa"]; // gelten in ganz Österreich
 const WOCHENTAG = (iso) => new Date(iso + "T00:00:00").toLocaleDateString("de-AT", { weekday: "short" });
 const datum = (iso) => (iso ? new Date(iso + "T00:00:00").toLocaleDateString("de-AT", { day: "2-digit", month: "2-digit" }) : "");
 
@@ -123,7 +123,7 @@ function karteBauen(a, rang) {
     link.href = a.url;
     link.target = "_blank";
     link.rel = "noopener";
-    link.textContent = `${a.kette}.at ↗`;
+    link.textContent = `${new URL(a.url).hostname.replace(/^www\./, "")} ↗`;
     quelle.replaceChildren(link);
   } else quelle.textContent = `Flugblatt S. ${a.seite}`;
   // Gültigkeit: Lidl pro Angebot, Spar = Zeitraum des Flugblatts der Region
@@ -137,6 +137,8 @@ function karteBauen(a, rang) {
     gueltig.textContent = `${zukunft ? "⏳ erst ab" : "📅 gültig"} ${WOCHENTAG(von)} ${datum(von)}` +
       (bis ? ` – ${WOCHENTAG(bis)} ${datum(bis)}` : "");
     gueltig.classList.toggle("karte__gueltig--zukunft", zukunft);
+  } else if (a.kette === "billa") {
+    gueltig.textContent = `📅 aktuell im BILLA-Shop (Stand ${DATEN.erstellt ? new Date(DATEN.erstellt).toLocaleDateString("de-AT") : "–"})`;
   } else gueltig.textContent = "📅 Gültigkeit siehe Flugblatt";
   k.querySelector(".karte__name").textContent = a.name;
   k.querySelector(".karte__menge").textContent = mengeText(a);

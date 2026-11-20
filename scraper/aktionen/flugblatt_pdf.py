@@ -96,6 +96,7 @@ class FlugblattAngebot:
     bild_url: str | None = None
     url: str | None = None
     produkt_id: str | None = None
+    kategorie_pfad: str | None = None  # Kategorie beim Händler, z. B. "Tiefkühl > Tiefkühlgerichte > Reis & Pasta"
 
     def _erweitern(self, b: "Box") -> None:
         if self.bbox is None:

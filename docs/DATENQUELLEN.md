@@ -204,6 +204,30 @@ Rewe-Plattform (wie Billa), von Heim- und Cloud-IP erreichbar (20.11.2026).
 Die Seite /angebote enthält dieselben Daten zusätzlich als `__NUXT_DATA__` (nur die ersten 30).
 Parser: `aktionen/stores/penny.py`. KW 47: 440 Lebensmittel-Aktionen (ohne Haushalt/Non-Food/Pflege/Haustier), 30 fitnessrelevant.
 
+## Billa ✅
+
+Gleiche Rewe-Plattform wie Penny, aber über den Online-Shop (`shop.billa.at`). Von Heim- und Cloud-IP erreichbar.
+
+    GET https://shop.billa.at/api/product-discovery/categories/kuehlwaren-15416/products?inPromotion=true&sortBy=relevance&page=0&pageSize=100
+
+- Kategorien stehen auf `https://shop.billa.at/aktionen` als `product-group-<slug>-{"inPromotion":"true",…}`
+  (Fallback-Liste in `aktionen/stores/billa.py`).
+- Preis: `regular.value` = Aktionspreis, `standard.value` = Normalpreis, `crossed`, `promotionText` („Bei 3 Becher je“).
+- **Keine Gültigkeitsdaten** (aktuelle Shop-Aktionen). Die Website zeigt „aktuell im BILLA-Shop (Stand …)“.
+- KW 47: 1409 Lebensmittel-Aktionen, 83 fitnessrelevant.
+- Billa und Penny liefern einen Kategoriepfad („Tiefkühl > Tiefkühlgerichte > Reis & Pasta“). Damit werden
+  Fertiggerichte, Pizza, Eis, Snacks usw. aus der Fitness-Auswertung ausgeschlossen (`fitness._PFAD_AUSSCHLUSS`).
+- Gemeinsamer Parser für Penny und Billa: `aktionen/stores/rewe.py`.
+
+## ADEG ⚠️ (noch nicht eingebunden)
+
+Das Flugblatt gibt es pro Markt (selbstständige Kaufleute). `adeg.at/flugblatt-aktionen/adeg-flugblatt` lädt es erst nach
+der Marktauswahl per JavaScript. Für die Einbindung braucht es eine DevTools-Erkundung (welche Anfrage liefert das Flugblatt?).
+
+## BIPA ➖ (nicht geplant)
+
+Drogerie, kaum Lebensmittel, deshalb für Fitness-Angebote nicht relevant.
+
 ## Weitere Ketten (für später, laut heissepreise)
 
 | Kette | Endpunkt (intern, ungeprüft) |
