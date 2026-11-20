@@ -104,3 +104,28 @@ test("Aufteilung nach tatsächlich gezahltem Preis", () => {
   const t = { angebot: skyr, kosten: A.kosten(A.parseZeile("Skyr"), skyr) };
   assert.equal(A.effektiv(A.parseZeile("Skyr"), t), 1.99 / 400 * 1000);
 });
+
+test("Stichpunkte: Kommas, Klammern, 10er, Überschriften, Kästchen", () => {
+  const l = A.parseListe("Kühlregal:\n- [ ] Skyr, Magertopfen\n• Eier (10er)\n- Milch 1,5 l\n# Kommentar\n☐ ½ kg Hendlfilet\n- Joghurt (griechisch, 2 Stk)");
+  assert.deepEqual(l.map((e) => e.begriff), ["skyr", "magertopfen", "eier", "milch", "hendlfilet", "joghurt"]);
+  assert.equal(l[2].menge, 10); assert.equal(l[2].einheit, "stk");
+  assert.equal(l[3].menge, 1500); assert.equal(l[3].einheit, "ml");
+  assert.equal(l[4].menge, 500);
+  assert.equal(l[5].anzahl, 2);
+});
+
+test("Eigenschaften sind optional, Modifikator-Komposita, Hüttenkäse = Cottage", () => {
+  const ang = [
+    { id: "1", kette: "spar", name: "Schärdinger Mozzarella Minis", preis: 1 },
+    { id: "2", kette: "lidl", name: "Alpengut Speisetopfen", preis: 1 },
+    { id: "3", kette: "penny", name: "Nöm Cottage Cheese", preis: 1 },
+    { id: "4", kette: "billa", name: "11er Frischkäse Taschen", preis: 3 },
+    { id: "5", kette: "billa", name: "Ölz Weißbrot", preis: 2 },
+  ];
+  const ids = (q) => A.finde(A.parseZeile(q), ang).map((t) => t.angebot.id);
+  assert.deepEqual(ids("Mozzarella light"), ["1"]);
+  assert.deepEqual(ids("Magertopfen"), ["2"]);
+  assert.deepEqual(ids("Hüttenkäse"), ["3"]);
+  assert.deepEqual(ids("Frischkäse"), []);
+  assert.deepEqual(ids("Vollkornbrot"), []);
+});

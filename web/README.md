@@ -39,7 +39,10 @@ Mit `--ohne-bilder` lässt sich das abschalten.
 
 Einkaufsliste als Stichpunkte eingeben („- 2x Milch“, „500g Hendlfilet“) → Abgleich mit **allen** aktuellen Aktionen
 (Spar-Region, Lidl, Hofer, Penny, Billa; Daten: `data/aktionen.js`) → Empfehlung, wo am meisten in Aktion ist,
-günstigste Aufteilung auf Geschäfte, falsche Treffer abwählbar. Logik: `abgleich.js`, Tests: `node --test` im Ordner `web`.
+günstigste Aufteilung auf Geschäfte, falsche Treffer abwählbar.
+Eingabe: eine Zeile pro Produkt oder mit Komma getrennt, Aufzählungszeichen und Kästchen („- [ ]“, „☐“) egal, Mengen
+(„2x“, „500g“, „1,5 kg“, „½ kg“, „10er“), Klammern = Notiz, Zeilen mit „:“ am Ende = Überschrift. Eigenschaften wie
+„light“, „mager“, „griechisch“ sind optional. Unter der Eingabe zeigt „So verstanden“, wie jede Zeile erkannt wurde. Logik: `abgleich.js`, Tests: `node --test` im Ordner `web`.
 
 ## Funktionen
 

@@ -30,10 +30,10 @@
         <textarea id="liste" rows="12" spellcheck="false" placeholder="- 2x Milch
 - Haferflocken 1kg
 - 500g Hendlfilet
-- Skyr
-- Eier
-- Nudeln
-- Butter"></textarea>
+- Skyr, Magertopfen
+- Eier (10er)
+Obst:
+- Bananen"></textarea>
       </label>
       <div class="ek-optionen">
         <label class="feld">
@@ -45,7 +45,12 @@
           <input id="tag" type="date">
         </label>
       </div>
-      <p class="ek-hinweis">Tipp: Mengen wie „2x“, „500g“ oder „1kg“ werden erkannt. Die Liste wird im Browser gespeichert.</p>
+      <p class="ek-hinweis">Tipp: eine Zeile pro Produkt oder mit Komma trennen. Mengen wie „2x“, „500g“, „1,5 kg“ oder „10er“
+        werden erkannt, Klammern sind Notizen, Zeilen mit „:“ am Ende sind Überschriften. Die Liste wird im Browser gespeichert.</p>
+      <div class="ek-vorschau" id="vorschauBox" hidden>
+        <h2 class="ek-titel">So verstanden</h2>
+        <ul id="vorschau"></ul>
+      </div>
     </section>
 
     <section class="ek-ergebnis" aria-live="polite">

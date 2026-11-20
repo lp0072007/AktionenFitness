@@ -2,7 +2,7 @@
 
 const DATEN = window.AKTIONEN || { regionen: {}, ketten: {} };
 const A = window.Abgleich;
-const KETTEN = { spar: "Spar", lidl: "Lidl", hofer: "Hofer", penny: "Penny", billa: "Billa" };
+const KETTEN = { spar: "Spar", lidl: "Lidl", hofer: "Hofer", penny: "Penny", billa: "Billa", dm: "dm" };
 const SPEICHER = "aktionenfitness.einkauf.v1";
 
 const $ = (s) => document.querySelector(s);
@@ -41,6 +41,49 @@ function badge(kette) {
   b.className = `badge badge--kette badge--${kette}`;
   b.textContent = KETTEN[kette] ?? kette;
   return b;
+}
+
+// Wie wurde die Zeile verstanden? "2 ×", "1 kg", "10er"
+function verstanden(e) {
+  const teile = [];
+  if (e.anzahl && e.anzahl !== 1) teile.push(`${e.anzahl.toLocaleString("de-AT")} ×`);
+  if (e.menge) {
+    if (e.einheit === "stk") teile.push(`${e.menge}er`);
+    else if (e.menge >= 1000) teile.push(`${(e.menge / 1000).toLocaleString("de-AT")} ${e.einheit === "g" ? "kg" : "l"}`);
+    else teile.push(`${e.menge.toLocaleString("de-AT")} ${e.einheit}`);
+  }
+  return teile.join(" ");
+}
+
+// Vorschau unter der Eingabe: jede erkannte Zeile mit Status und bestem Angebot
+function vorschauZeichnen(r) {
+  const ul = $("#vorschau");
+  $("#vorschauBox").hidden = r.eintraege.length === 0;
+  const wahl = new Map();
+  for (const xs of Object.values(r.aufteilung)) for (const x of xs) wahl.set(x.eintrag, x.treffer);
+  ul.replaceChildren(...r.eintraege.map(({ eintrag: e }) => {
+    const li = document.createElement("li");
+    const t = wahl.get(e);
+    li.className = t ? "ok" : "fehlt";
+    const icon = document.createElement("span");
+    icon.className = "ek-vorschau__icon";
+    icon.textContent = t ? "✓" : "–";
+    const name = document.createElement("span");
+    name.className = "ek-vorschau__name";
+    name.textContent = e.name;
+    const menge = verstanden(e);
+    if (menge) {
+      const m = document.createElement("small");
+      m.textContent = menge;
+      name.append(" ", m);
+    }
+    const rechts = document.createElement("span");
+    rechts.className = "ek-vorschau__wo";
+    if (t) rechts.append(badge(t.angebot.kette), " ", euro(t.kosten.preis));
+    else rechts.textContent = "keine Aktion";
+    li.append(icon, name, rechts);
+    return li;
+  }));
 }
 
 // ---------- Darstellung ----------
@@ -173,6 +216,13 @@ function zeichnen(liste, r) {
     const h3 = document.createElement("h3");
     const alle = A.finde(e, alleAngebote, $("#tag").value);
     h3.textContent = e.text;
+    const menge = verstanden(e);
+    if (menge) {
+      const m = document.createElement("small");
+      m.className = "ek-menge";
+      m.textContent = menge;
+      h3.append(" ", m);
+    }
     const anz = document.createElement("span");
     anz.textContent = `${alle.length} Treffer`;
     h3.append(anz);
@@ -203,6 +253,7 @@ function berechnen() {
   const liste = A.parseListe($("#liste").value);
   const r = A.auswerten(liste, angebote(), { tag: $("#tag").value, ausgeschlossen: zustand.ausgeschlossen });
   zeichnen(liste, r);
+  vorschauZeichnen(r);
 }
 
 // ---------- Start ----------

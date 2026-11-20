@@ -22,6 +22,7 @@ Legende: ☐ offen · ◐ in Arbeit · ☑ erledigt
 | A.5 | Empfehlung: pro Geschäft „x von n Produkten in Aktion, Ersparnis ≥ y €“ und günstigste Aufteilung pro Produkt | ☑ |
 | A.6 | Seite `web/einkauf.html`: Eingabe, Ergebnis, Treffer an-/abwählen, Neuberechnung | ☑ |
 | A.7 | Tests für Parser und Abgleich (`node --test`) mit typischen Einträgen | ☑ |
+| A.8 | Eingabe ausgebaut: Kommas, Klammern als Notiz, „10er“, „½ kg“, Überschriften, Kästchen; optionale Eigenschaften (light, mager …); Vorschau „So verstanden“ | ☑ |
 
 Grenzen von Schritt A: Ohne Normalpreise kann der **Gesamtpreis** eines Einkaufs nicht berechnet werden. Es lässt sich nur
 sagen, was in Aktion ist und wie viel man dabei spart (sofern der Händler den Normalpreis angibt).

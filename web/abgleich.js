@@ -49,6 +49,11 @@
     ["schweinefleisch", "schwein", "schweins"],
     ["klopapier", "toilettenpapier"],
     ["rote bete", "rote ruben", "rote rube", "randen"],
+    ["huttenkase", "cottage"],
+    ["huhnerbrust", "huhnerfilet", "hendlfilet"],
+    ["erdnussbutter", "erdnussmus", "erdnusscreme"],
+    ["haferflocken", "haferflocke"],
+    ["griechisch", "greek"],
   ];
 
   // Alle Schreibweisen eines Wortes über Synonyme, auch kombiniert ("huhnerbrust" -> "hendlfilet")
@@ -78,10 +83,24 @@
   const FUELLWOERTER = new Set(["und", "oder", "von", "vom", "fur", "mit", "ohne", "eine", "einen", "ein", "etwas", "paar",
     "viel", "frisch", "frische", "frischer", "frisches", "die", "der", "das"]);
 
+  // Aufzählungszeichen und Abhakkästchen am Zeilenanfang: "- ", "• ", "1. ", "[ ] ", "☐ ", "- [x] "
+  const AUFZAEHLUNG = /^\s*(?:(?:[-*•·–>+]|\d+[.)])\s*)?(?:\[[ xX]?\]|[☐☑✓✔])?\s*/;
+
   function parseZeile(zeile) {
-    let text = zeile.replace(/^\s*(?:[-*•·–>]|\d+[.)])\s*/, "").trim(); // Aufzählungszeichen weg
-    if (!text) return null;
+    const original = zeile.replace(AUFZAEHLUNG, "").trim();
+    let text = original;
+    if (!text || text.startsWith("#") || /:\s*$/.test(text)) return null; // leer, Kommentar, Überschrift "Kühlregal:"
     let anzahl = 1, menge = null, einheit = null;
+
+    // Klammern sind Notizen: Mengen darin zählen, der Rest nicht ("Eier (10er)", "Skyr (Natur, 2 Stk)")
+    text = text.replace(/\(([^)]*)\)/g, (_, innen) => {
+      const m = innen.match(/\d+(?:[.,]\d+)?\s*(?:er\b|[x×]|kg|kilo|gramm|g|ml|liter|l|stk|stück|stuck|st|pkg|packungen?|flaschen?|dosen?)\b\.?/i);
+      return m ? ` ${m[0]} ` : " ";
+    });
+    // "½ kg", "1/2 l"
+    text = text.replace(/½/g, "0.5 ").replace(/\b1\/2\s*(?=[a-z])/gi, "0.5 ").replace(/\b1\/4\s*(?=[a-z])/gi, "0.25 ");
+    // "10er Eier", "Eier 6er" -> Packung mit 10 Stück
+    text = text.replace(/(\d+)\s*er\b(?:\s*(?:pack(?:ung)?|pkg))?/i, (_, n) => { menge = Number(n); einheit = "stk"; return " "; });
 
     // "2x Milch", "Milch x2", "2 x Milch"
     text = text.replace(/(?:^|\s)(\d+)\s*[x×]\s*|\s*[x×]\s*(\d+)\s*$/i, (_, a, b) => { anzahl = Number(a || b); return " "; });
@@ -98,12 +117,17 @@
 
     const woerter = norm(text).split(" ").filter((w) => w && !FUELLWOERTER.has(w) && !/^\d+$/.test(w));
     if (!woerter.length) return null;
-    return { text: zeile.trim().replace(/^\s*(?:[-*•·–>]|\d+[.)])\s*/, ""), begriff: woerter.join(" "), woerter, anzahl, menge, einheit,
+    // Anzeigename: wie eingegeben, nur ohne Mengen ("Hüttenkäse", nicht "huttenkase")
+    const name = text.replace(/\s+/g, " ").trim().replace(/^[,.\s]+|[,.\s]+$/g, "") || woerter.join(" ");
+    return { text: original, name, begriff: woerter.join(" "), woerter, anzahl, menge, einheit,
       bio: woerter.includes("bio") };
   }
 
   function parseListe(text) {
-    return String(text).split(/\r?\n|;/).map(parseZeile).filter(Boolean);
+    // Zeilen, Strichpunkte und Kommas trennen Produkte – aber nicht das Komma in "1,5 kg"
+    // (Kommas in Klammern gehören zur Notiz und trennen nichts)
+    const geschuetzt = String(text).replace(/\([^)\n]*\)/g, (k) => k.replace(/,/g, "\u0001"));
+    return geschuetzt.split(/\r?\n|;|,(?!\d)/).map((z) => parseZeile(z.replace(/\u0001/g, ","))).filter(Boolean);
   }
 
   // ---------- Passgenauigkeit ----------
@@ -133,20 +157,39 @@
     return best;
   }
 
+  // Eigenschaften, die nicht jeder Produktname nennt: fehlen sie, passt das Produkt trotzdem (etwas schlechter)
+  const EIGENSCHAFTEN = new Set(["light", "mager", "natur", "griechisch", "griechischer", "griechisches", "fettarm", "halbfett",
+    "vollfett", "laktosefrei", "ungesusst", "ungezuckert", "zuckerfrei", "tk", "tiefgekuhlt", "gefroren", "gross", "klein",
+    "billig", "gunstig", "regional", "osterreichisch", "pur", "plain", "high", "protein", "pro", "frei", "freiland",
+    "bodenhaltung", "mittel", "zart", "fein", "grob", "gemischt", "weiss", "braun", "vollkorn"]);
+  // Bestimmungswörter, die man vom gesuchten Kompositum abtrennen darf: "Magertopfen" -> auch "Speisetopfen"
+  const MODIFIKATOREN = ["mager", "light", "griechisch", "natur", "bio", "fettarm", "halbfett",
+    "laktosefrei", "protein", "high"];
+
+  function besterTreffer(s, namensWoerter) {
+    let best = 0;
+    for (const w of namensWoerter) best = Math.max(best, wortTreffer(s, w));
+    if (best < 0.8) {
+      const mod = MODIFIKATOREN.find((m) => s.startsWith(m) && s.length - m.length >= 4);
+      if (mod) for (const w of namensWoerter) best = Math.max(best, 0.8 * wortTreffer(s.slice(mod.length), w));
+    }
+    return best;
+  }
+
   function bewerte(eintrag, angebot) {
     const namensWoerter = norm(angebot.name).split(" ").filter(Boolean);
     const woerter = eintrag.woerter.filter((w) => w !== "bio");
     if (!woerter.length) return 0;
-    let summe = 0;
-    for (const s of woerter) {
-      let best = 0;
-      for (const w of namensWoerter) best = Math.max(best, wortTreffer(s, w));
-      // Mehrwortsynonyme ("rote bete" ~ "rote ruben")
-      if (!best && woerter.length > 1) best = 0;
-      if (best === 0) return 0; // jedes Suchwort muss vorkommen
+    const pflicht = woerter.filter((w) => !EIGENSCHAFTEN.has(w));
+    const kern = pflicht.length ? pflicht : woerter; // nur Eigenschaften ("Protein")? dann sind sie Pflicht
+    let summe = 0, fehlend = 0;
+    for (const s of kern) {
+      const best = besterTreffer(s, namensWoerter);
+      if (best === 0) return 0; // jedes Hauptwort muss vorkommen
       summe += best;
     }
-    let punkte = summe / woerter.length;
+    for (const s of woerter) if (!kern.includes(s) && besterTreffer(s, namensWoerter) < 0.6) fehlend++;
+    let punkte = (summe / kern.length) * Math.pow(0.85, fehlend);
     // Verarbeitete Produkte abwerten, außer man sucht genau danach
     const sucheText = woerter.join(" ");
     if (namensWoerter.some((w) => istVerarbeitet(w) && !woerter.some((s) => w.includes(s) && istVerarbeitet(s))
@@ -166,15 +209,16 @@
     "riegel", "chips", "curry", "auflauf", "pfanne", "dippers", "basis", "fix", "baguette", "pizza", "snack", "kuchen",
     "torte", "tortina", "pudding", "dessert", "chicken", "nugget", "nuggets", "cremissimo", "magnum", "sauce", "sugo",
     "aufstrich", "schnitte", "rulade", "nikolo", "krampus", "adventkalender", "intermezzo", "bonbon", "keks", "kekse",
-    "wurfel", "noodles", "suppe", "laibchen", "nudelgericht", "fertiggericht"];
+    "wurfel", "noodles", "suppe", "laibchen", "nudelgericht", "fertiggericht", "tasche", "taschen", "tascherl", "sandwich",
+    "sticks", "stick", "roulade", "likor", "praline", "pralinen", "lebkuchen", "stollen"];
   function istVerarbeitet(w) {
     return VERARBEITET.some((m) => w === m || (m.length >= 4 && w.endsWith(m)));
   }
   // Ersatzprodukte: Präfix + Suchwort ist etwas anderes ("Hafermilch" ist keine Milch)
   const ERSATZ_PRAEFIX = ["kokosnuss", "kokos", "hafer", "mandel", "soja", "reis", "karfiol", "schoko", "erdnuss", "kakao",
-    "butter", "dinkel", "erbsen", "vanille", "erdbeer"];
+    "butter", "dinkel", "erbsen", "vanille", "erdbeer", "uberraschungs", "nougat"];
   // Händler-Kategorien für verarbeitete Produkte (Billa/Penny liefern sie mit)
-  const KATEGORIE_VERARBEITET = /\beis\b|eiscreme|tiefkuhlgerichte|fertiggerichte|susses|knabber|dessert|snack/; // \b: nicht "Fleisch"
+  const KATEGORIE_VERARBEITET = /\beis\b|eiscreme|pizza|tiefkuhlgerichte|fertiggerichte|susses|knabber|dessert|snack/; // \b: nicht "Fleisch"
 
   const SCHWELLE = 0.6;
 
