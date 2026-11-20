@@ -77,6 +77,17 @@ https://cdn.ipaper.io/iPaper/Papers/{paperId}/Enrichments/v1/{version}/{hash}/Pa
 - Typ 3 = Deko-GIF, Typ 9 = Popup
 - Parser: `aktionen/stores/ipaper.py`, Fixture: `spar_ipaper_enrichments.json`
 
+**Viewer-HTML** ✅ (`https://flugblatt.interspar.at/{region}/{slug}/` = `viewerUrl`): enthält
+`window.staticSettings` mit
+- `pageTexts`: **Volltext jeder Seite** (Index 0 = Seite 1), u. a. „NÖM PRO Cottage Cheese … MENGEN VORTEIL 40%
+  billiger! 1 Becher 1,99 ab 2 Becher je 1 19“. Preise sind zerlegt („1 19“ = 1,19 €), die Reihenfolge ist durch
+  das Layout teils durcheinander, deshalb ist eine Auswertung per Text-KI nötig, Regex reicht nicht.
+- `pageTitle`: echte Gültigkeit „Do., 19.11.26 - Mi., 02.12.26“ (die API sagt 17.11.)
+- `enrichments.chunkUrls`: fertige URLs inkl. Token für die PageX-Y.json
+- `aws.url` + `aws.policy`: Basis-URL und Token für Seitenbilder (`Pages/{n}/Normal.jpg` bzw. `Zoom.jpg`, ungeprüft)
+- `modules.hasDownloadPdf: true`: PDF-Download vorhanden (Alternative)
+- Parser: `ipaper.parse_viewer_html()`, Fixture: `spar_ipaper_viewer.html`
+
 **Einschränkung:** In NÖ KW47, Seiten 1–25, sind nur rund 40 Produkte verlinkt, fast nur **Non-Food**
 (Glühwein, Bettwäsche, Haushaltsgeräte). Lebensmittel, die nur im Markt verkauft werden, z. B. NÖM Cottage
 Cheese, haben **keinen** Link. Für Lebensmittel-Aktionen müssen wir also die **Seitenbilder** auswerten

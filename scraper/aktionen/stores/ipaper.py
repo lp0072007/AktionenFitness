@@ -10,8 +10,10 @@ nur im Markt verkauft werden, haben meist keinen Link.
 
 from __future__ import annotations
 
+import json
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from datetime import date
 
 _PRODUKT_URL_RE = re.compile(r"/p/(\d+)(?:[/?#]|$)")
 
@@ -45,3 +47,60 @@ def produkt_links(data: dict) -> list[FlugblattLink]:
         if nr not in links:
             links[nr] = FlugblattLink(seite=e["pageIndex"] + 1, produkt_nr=nr, name=e.get("menuitemName"), position=pos)
     return list(links.values())
+
+
+# --- Viewer-Seite (HTML) -----------------------------------------------------
+
+_SETTINGS_MARKER = "window.staticSettings ="
+_TITEL_DATUM_RE = re.compile(r"(\d{1,2})\.(\d{1,2})\.(\d{2,4})")
+
+
+@dataclass
+class Flipbook:
+    """Daten aus window.staticSettings der Viewer-Seite (z. B. flugblatt.interspar.at/...)."""
+
+    name: str
+    titel: str                                      # z. B. "Do., 19.11.26 - Mi., 02.12.26"
+    seitentexte: list[str] = field(default_factory=list)  # Index 0 = Seite 1
+    enrichment_urls: list[str] = field(default_factory=list)
+    bilder_basis_url: str | None = None             # aws.url
+    bilder_token: str | None = None                 # aws.policy, läuft nach ca. 1 Tag ab
+
+    @property
+    def gueltig(self) -> tuple[date, date] | None:
+        """Gültigkeit aus dem Titel, z. B. 'Do., 19.11.26 - Mi., 02.12.26'."""
+        daten = []
+        for t, m, j in _TITEL_DATUM_RE.findall(self.titel):
+            jahr = int(j) + 2000 if len(j) == 2 else int(j)
+            daten.append(date(jahr, int(m), int(t)))
+        return (daten[0], daten[1]) if len(daten) >= 2 else None
+
+    def seitenbild_url(self, seite: int, zoom: bool = False) -> str | None:
+        """URL des Seitenbilds (1-basiert). Pfadschema laut token_path '/Pages/', noch ungeprüft."""
+        if not self.bilder_basis_url or not self.bilder_token:
+            return None
+        datei = "Zoom.jpg" if zoom else "Normal.jpg"
+        return f"{self.bilder_basis_url}Pages/{seite}/{datei}?{self.bilder_token}"
+
+
+def static_settings(html: str) -> dict:
+    """Liest das JSON-Objekt window.staticSettings aus dem HTML der Viewer-Seite."""
+    start = html.find(_SETTINGS_MARKER)
+    if start < 0:
+        raise ValueError("window.staticSettings nicht gefunden: ist das eine iPaper-Viewer-Seite?")
+    start = html.index("{", start)
+    obj, _ = json.JSONDecoder().raw_decode(html, start)
+    return obj
+
+
+def parse_viewer_html(html: str) -> Flipbook:
+    s = static_settings(html)
+    aws = s.get("aws") or {}
+    return Flipbook(
+        name=s.get("name") or "",
+        titel=s.get("pageTitle") or "",
+        seitentexte=list(s.get("pageTexts") or []),
+        enrichment_urls=list(((s.get("enrichments") or {}).get("chunkUrls") or {}).values()),
+        bilder_basis_url=aws.get("url"),
+        bilder_token=aws.get("policy"),
+    )
