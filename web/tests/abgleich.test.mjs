@@ -129,3 +129,17 @@ test("Eigenschaften sind optional, Modifikator-Komposita, Hüttenkäse = Cottage
   assert.deepEqual(ids("Frischkäse"), []);
   assert.deepEqual(ids("Vollkornbrot"), []);
 });
+
+test("Milch findet Milch, nicht Käse mit Milch im Namen", () => {
+  const ang = [
+    { id: "1", kette: "penny", name: "Salzburg Milch Almkönig Scheiben", preis: 6.69 },
+    { id: "2", kette: "spar", name: "SalzburgMilch Premium Bergbauern H-Milch 3,5% Fett", preis: 0.89 },
+    { id: "3", kette: "penny", name: "Österreichische Vollmilch aus Deiner Region", preis: 1.19 },
+    { id: "4", kette: "billa", name: "BILLA Heumilch Gouda", preis: 1.99 },
+    { id: "5", kette: "billa", name: "Schärdinger Topfen Creme", preis: 1.0 },
+  ];
+  const ids = (q) => A.finde(A.parseZeile(q), ang).map((t) => t.angebot.id).sort();
+  assert.deepEqual(ids("Milch"), ["2", "3"]);
+  assert.deepEqual(ids("Gouda"), ["4"]);
+  assert.deepEqual(ids("Topfen Creme"), ["5"]);
+});

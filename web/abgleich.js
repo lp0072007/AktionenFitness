@@ -190,6 +190,9 @@
     }
     for (const s of woerter) if (!kern.includes(s) && besterTreffer(s, namensWoerter) < 0.6) fehlend++;
     let punkte = (summe / kern.length) * Math.pow(0.85, fehlend);
+    // Steht im Namen eine andere Produktart, die man nicht sucht, ist es etwas anderes:
+    // "Milch" -> nicht "Heumilch Gouda" oder "Salzburg Milch Almkönig Scheiben" (beides Käse)
+    if (namensWoerter.some((w) => istProduktart(w) && !woerter.some((s) => besterTreffer(s, [w]) >= 0.6))) punkte *= 0.5;
     // Verarbeitete Produkte abwerten, außer man sucht genau danach
     const sucheText = woerter.join(" ");
     if (namensWoerter.some((w) => istVerarbeitet(w) && !woerter.some((s) => w.includes(s) && istVerarbeitet(s))
@@ -213,6 +216,13 @@
     "sticks", "stick", "roulade", "likor", "praline", "pralinen", "lebkuchen", "stollen"];
   function istVerarbeitet(w) {
     return VERARBEITET.some((m) => w === m || (m.length >= 4 && w.endsWith(m)));
+  }
+  // Produktarten: Wörter, die sagen, was ein Produkt eigentlich ist (auch als Kopf eines Kompositums: "Bergkäse")
+  const PRODUKTARTEN = ["kase", "gouda", "emmentaler", "edamer", "camembert", "scheiben", "joghurt", "jogurt", "butter",
+    "schokolade", "creme", "topfen", "rahm", "obers", "kakao", "wurst", "schinken", "salami", "aufstrich", "kefir",
+    "buttermilch", "molke"];
+  function istProduktart(w) {
+    return PRODUKTARTEN.some((m) => w === m || (m.length >= 4 && w.endsWith(m)));
   }
   // Ersatzprodukte: Präfix + Suchwort ist etwas anderes ("Hafermilch" ist keine Milch)
   const ERSATZ_PRAEFIX = ["kokosnuss", "kokos", "hafer", "mandel", "soja", "reis", "karfiol", "schoko", "erdnuss", "kakao",
