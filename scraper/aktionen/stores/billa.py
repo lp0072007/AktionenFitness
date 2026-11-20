@@ -46,23 +46,28 @@ def parse_produkt(p: dict) -> FlugblattAngebot | None:
 
 
 def aktuelle_angebote(heute: date | None = None, tage_voraus: int = 10, client: httpx.Client | None = None,
-                      pause: float = 1.0) -> list[FlugblattAngebot]:
+                      pause: float = 0.3) -> list[FlugblattAngebot]:
     heute = heute or date.today()
     client = client or httpx.Client(headers={"User-Agent": UA}, timeout=60, follow_redirects=True)
-    try:
-        kategorien = kategorien_aus_html(get_mit_wiederholung(client, f"{BASIS}/aktionen").text) or STANDARD_KATEGORIEN
-    except httpx.HTTPError:
-        kategorien = STANDARD_KATEGORIEN
     gesehen: dict[str, FlugblattAngebot] = {}
     sorten: set[tuple] = set()
-    for kat in kategorien:
+    kategorien = list(STANDARD_KATEGORIEN)
+    neu_gelesen = False
+    while kategorien:
+        kat = kategorien.pop(0)
         seite = 0
         while True:
             url = (f"{BASIS}/api/product-discovery/categories/{kat}/products"
                    f"?inPromotion=true&sortBy=relevance&page={seite}&pageSize={SEITENGROESSE}")
             r = get_mit_wiederholung(client, url)
             if r.status_code == 404:
-                break  # Kategorie gibt es nicht mehr
+                # Kategorie umbenannt: einmalig die aktuelle Liste von /aktionen holen (4,6 MB, daher nur im Notfall)
+                if not neu_gelesen:
+                    neu_gelesen = True
+                    erledigt = set(STANDARD_KATEGORIEN) - set(kategorien) - {kat}
+                    html = get_mit_wiederholung(client, f"{BASIS}/aktionen").text
+                    kategorien = [k for k in kategorien_aus_html(html) if k not in erledigt]
+                break
             r.raise_for_status()
             daten = r.json()
             rewe.sammeln(daten.get("results") or [], heute, tage_voraus, gesehen, sorten, f"{BASIS}/produkte")

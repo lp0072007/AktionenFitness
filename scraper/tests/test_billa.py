@@ -51,3 +51,24 @@ def test_ablauf_mehrere_kategorien():
     c = httpx.Client(transport=httpx.MockTransport(handler), base_url="https://shop.billa.at")
     a = aktuelle_angebote(heute=date(2026, 11, 20), client=c, pause=0)
     assert sorted(x.name for x in a) == ["Alpro Skyr Natur Ungesüßt", "Alpro Skyr Vanille"]
+
+
+def test_kategorie_umbenannt_liest_aktuelle_liste():
+    from aktionen.stores import billa
+
+    aufrufe = []
+
+    def handler(r):
+        aufrufe.append(r.url.path)
+        if r.url.path == "/aktionen":
+            return httpx.Response(200, text='product-group-kuehlwaren-neu-99999-{"inPromotion"')
+        if "kuehlwaren-neu-99999" in r.url.path:
+            return httpx.Response(200, json={"total": 1, "results": [produkt(sku="9")]})
+        if "obst-und-gemuese" in r.url.path:
+            return httpx.Response(404, json={})
+        return httpx.Response(200, json={"total": 0, "results": []})
+
+    c = httpx.Client(transport=httpx.MockTransport(handler))
+    a = billa.aktuelle_angebote(heute=date(2026, 11, 20), client=c, pause=0)
+    assert [x.produkt_id for x in a] == ["9"]
+    assert aufrufe.count("/aktionen") == 1      # Übersicht nur einmal und nur wegen der 404

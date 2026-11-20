@@ -138,7 +138,7 @@ def _holen(client: httpx.Client, url: str) -> str:
 
 
 def aktuelle_angebote(heute: date | None = None, tage_voraus: int = 10, client: httpx.Client | None = None,
-                      pause: float = 1.0) -> list[FlugblattAngebot]:
+                      pause: float = 0.3) -> list[FlugblattAngebot]:
     """Alle Angebote mit Starttag von gestern-vor-7-Tagen bis `tage_voraus` Tage in der Zukunft."""
     heute = heute or date.today()
     client = client or httpx.Client(headers={"User-Agent": UA}, timeout=60, follow_redirects=True)

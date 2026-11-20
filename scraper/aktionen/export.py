@@ -12,6 +12,8 @@ import argparse
 import io
 import json
 import sys
+import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from pathlib import Path
 
@@ -83,36 +85,48 @@ def treffer_als_dict(t: FitnessTreffer, kette: str, region: str, i: int, bild: s
     }
 
 
+def _bild_speichern(client: httpx.Client, url: str, ziel: Path) -> None:
+    r = client.get(url)
+    r.raise_for_status()
+    bild = Image.open(io.BytesIO(r.content))
+    weiss = Image.new("RGB", bild.size, "white")  # PNG mit Transparenz auf Weiß
+    weiss.paste(bild, mask=bild.convert("RGBA").split()[-1])
+    weiss.thumbnail((480, 480))
+    weiss.save(ziel, "JPEG", quality=82, optimize=True)
+
+
 def kette_exportieren(kette: str, bilder_ordner: Path | None = None) -> dict:
-    """Österreichweite Kette (Lidl, Hofer). Produktbilder werden lokal verkleinert gespeichert."""
+    """Österreichweite Kette (Lidl, Hofer, Penny, Billa). Produktbilder werden parallel geladen und verkleinert."""
     modul = WEITERE_KETTEN[kette]
+    print(f"  {kette}: lade Angebote …", file=sys.stderr, flush=True)
+    t0 = time.time()
     angebote = modul.aktuelle_angebote()
     treffer = fitness_angebote(angebote)
+    print(f"  {kette}: {len(angebote)} Aktionen, {len(treffer)} fitnessrelevant ({time.time() - t0:.0f} s)",
+          file=sys.stderr, flush=True)
     bilder: dict[int, str] = {}
     if bilder_ordner is not None:
         ordner = bilder_ordner / kette
         ordner.mkdir(parents=True, exist_ok=True)
         web = bilder_ordner.parent.parent
-        with httpx.Client(headers={"User-Agent": modul.UA}, timeout=60, follow_redirects=True) as c:
-            for t in treffer:
-                a = t.angebot
-                if not a.bild_url:
-                    continue
-                ziel = ordner / f"{a.produkt_id}.jpg"
-                if not ziel.exists():
-                    try:
-                        r = c.get(a.bild_url)
-                        r.raise_for_status()
-                        bild = Image.open(io.BytesIO(r.content))
-                        weiss = Image.new("RGB", bild.size, "white")  # PNG mit Transparenz auf Weiß
-                        weiss.paste(bild, mask=bild.convert("RGBA").split()[-1])
-                        weiss.thumbnail((480, 480))
-                        weiss.save(ziel, "JPEG", quality=82, optimize=True)
-                    except Exception as e:  # noqa: BLE001
-                        print(f"  {kette}-Bild {a.produkt_id}: {e}", file=sys.stderr)
-                        continue
-                bilder[id(t)] = ziel.relative_to(web).as_posix()
-    print(f"  {kette}: {len(angebote)} Aktionen, {len(treffer)} fitnessrelevant", file=sys.stderr)
+        aufgaben = {}
+        for t in treffer:
+            if t.angebot.bild_url:
+                ziel = ordner / f"{t.angebot.produkt_id}.jpg"
+                aufgaben[id(t)] = (t.angebot.bild_url, ziel)
+        neu = {k: v for k, v in aufgaben.items() if not v[1].exists()}  # schon vorhandene nicht nochmal laden
+        if neu:
+            print(f"  {kette}: lade {len(neu)} Bilder …", file=sys.stderr, flush=True)
+        with httpx.Client(headers={"User-Agent": modul.UA}, timeout=60, follow_redirects=True) as c, \
+                ThreadPoolExecutor(max_workers=8) as pool:
+            laeufe = {pool.submit(_bild_speichern, c, url, ziel): (k, ziel) for k, (url, ziel) in neu.items()}
+            for f in as_completed(laeufe):
+                k, ziel = laeufe[f]
+                if f.exception():
+                    print(f"  {kette}-Bild {ziel.stem}: {f.exception()}", file=sys.stderr)
+        for k, (_, ziel) in aufgaben.items():
+            if ziel.exists():
+                bilder[k] = ziel.relative_to(web).as_posix()
     return {
         "anzahl_angebote": len(angebote),
         "angebote": [treffer_als_dict(t, kette, "at", i, bilder.get(id(t))) for i, t in enumerate(treffer)],
