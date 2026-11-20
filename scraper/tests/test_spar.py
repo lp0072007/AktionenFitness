@@ -131,3 +131,14 @@ def test_naehrwert_tabelle_varianten():
     n = parse_naehrwert_tabelle("Brennwert | 1500 kJ | 358 kcal\nProtein | 13,5 g\nBallaststoffe | 10 g\nNatrium | 5 mg")
     assert (n.kcal, n.protein, n.ballaststoffe) == (358, 13.5, 10)
     assert parse_naehrwert_tabelle("") is None
+
+
+def test_naehrwerte_mit_prozent_spalte():
+    # NÖM Cottage Cheese natur (2020001850105), echte Tabelle mit Referenzmengen-%-Spalte
+    text = (
+        "Energie | ca. 382kJ | ca. 91kcal | ca. 5%<br />\nFett | ca. 4,5g | ca. 6%<br />\n"
+        "Fett, davon gesättigte Fettsäuren | ca. 2,7g | ca. 14%<br />\nKohlenhydrate | ca. 2,8g | ca. 1%<br />\n"
+        "Kohlenhydrate, davon Zucker | ca. 2,8g | ca. 3%<br />\nEiweiß | ca. 9,9g | ca. 20%<br />\nSalz | ca. 0,85g | ca. 14%<br />"
+    )
+    n = parse_naehrwert_tabelle(text)
+    assert (n.kcal, n.protein, n.fett, n.gesaettigte_fettsaeuren, n.kohlenhydrate, n.salz) == (91, 9.9, 4.5, 2.7, 2.8, 0.85)

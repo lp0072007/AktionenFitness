@@ -44,8 +44,19 @@ Aktionsinfo. Die Suche liefert also nur Regalpreise, keine Flugblatt-Aktionen.
 | `breadcrumb` | Kategorie (z. B. Frischkäse) |
 | `product.ingredients` | Zutaten, Allergene |
 
-Beim NÖM Cottage Cheese natur (`2020001850105`, gerade im Flugblatt) hat der Aufruf im Browser **nicht**
-funktioniert. Ursache noch unklar.
+Beim NÖM Cottage Cheese natur (`2020001850105`, KW47 im Flugblatt mit Mengenvorteil) liefert auch die
+Detail-API `currentPrice: 1.99` und leere `promotions`. **Flugblatt-Aktionen sind im Online-Shop nicht
+enthalten**, wir brauchen dafür das Flugblatt selbst.
+
+### Flugblatt (iPaper)
+
+Seite: `https://www.interspar.at/aktionen/niederoesterreich/niederoesterreich_kw47`, also **pro Bundesland
+und Kalenderwoche**. Im JS gefunden:
+- `/api/ipaper/leaflets/{…}/{…}`: Flugblatt-Daten (vermutlich Region + Flugblatt-Name)
+- `/api/ipaper/leaflets` mit Key `ipaper-leaflets-…`: Liste der Flugblätter
+- `cdn.ipaper.io/flipbooks/api/v3/latest.js`: Flugblatt-Viewer von iPaper (externer Anbieter)
+
+Offen: Inhalt dieser Antworten. Gibt es Produkte/Hotspots als JSON oder nur Seitenbilder?
 
 Sonstige Endpunkte:
 - `/api/data/p/{productNumber}` liefert nur CMS-Inhalt (`{"story":null}`) und ist irrelevant
