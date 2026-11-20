@@ -6,30 +6,39 @@ die Webshops intern verwenden. Offizielle, dokumentierte APIs bietet keine Kette
 
 ## Spar (erste Kette)
 
-| Was | Stand |
+### Aktueller Endpunkt (gefunden 20.11.2026 über DevTools) ✅
+
+| Endpunkt | Zweck |
 |---|---|
-| Bisheriger Endpunkt | `https://search-spar.spar-ics.com/fact-finder/rest/v4/search/products_lmos_at?query=*&q=*&page=1&hitsPerPage=…` |
-| Live-Test 20.11.2026 | ❌ Server antwortet, aber `"Channel 'products_lmos_at' does not exist."`, der Kanalname hat sich geändert |
-| Technik | FACT-Finder (Suchdienst), liefert JSON mit `hits[].masterValues` |
-| www.spar.at | Cloudflare-Schutz („Just a moment…“) bei einfachen Requests |
+| `https://www.interspar.at/api/search/flyout?q=skyr&scope=all` | Suchvorschläge, max. 5 Produkte, `total` = Gesamtzahl |
+| `https://www.interspar.at/api/search/results?q=skyr&scope=all&productLimit=…` | Suchergebnisseite (Format noch prüfen) |
 
-**Bekannte Felder in `masterValues`** (aus heissepreise, Stand der alten API):
-`product-number`, `title` (Marke), `name`, `short-description`, `short-description-2/3` (Menge, z. B. „450 g“),
-`price`, `price-per-unit` (z. B. „€8,87/kg“), `item-type` (`WeightProduct` bei Gewichtsware), `biolevel`, `marketing-text`.
-Welche Felder Aktionen markieren (Streichpreis, Aktionstext, gültig bis) ist noch **unbekannt**.
+Beispielantwort: `scraper/tests/fixtures/spar_flyout_skyr.json`. Wichtige Felder pro Produkt:
 
-### Nächster Schritt: aktuellen Endpunkt im Browser finden
+| Feld | Beispiel | Bedeutung |
+|---|---|---|
+| `productNumber` | `2020004900746` | Spar-Artikelnummer (keine EAN) |
+| `name` | `S-BUDGET Skyr 1 KG` | Name inkl. Menge am Ende |
+| `brand` | `S-BUDGET` | Marke |
+| `price.currentPrice` | `2.99` | aktueller Preis |
+| `price.referencePrice.price` | `2.99` | Grundpreis pro kg / l |
+| `unit.shortCode` | `kg` / `l` | Einheit des Grundpreises |
+| `badges.image[].key` | `vegan`, `lactose-free` | Eigenschaften |
+| `image.url` | … | Produktbild |
+| `availabilityCase` | `fos-market-search` / `online-only` | im Markt / nur online |
 
-1. Auf https://www.spar.at (oder interspar.at) im Online-Shop nach „Skyr“ suchen
-2. DevTools öffnen (F12) → Tab **Network** → Filter **Fetch/XHR**
-3. Seite neu laden / Suche wiederholen und nach Requests suchen, die JSON mit Produkten liefern
-   (Stichworte: `fact-finder`, `search`, `products`, `spar-ics`)
-4. Rechtsklick auf den Request → „Copy as cURL“ und in `docs/spar-request.txt` speichern
-   (Cookies/Tokens vorher entfernen)
-5. Die Antwort (Response) als `scraper/tests/fixtures/spar_echt.json` speichern, damit wir Parser und Tests
-   auf echten Daten aufbauen und die Aktionsfelder finden
+**Offen:**
+- **Aktionsfelder** (Streichpreis, Aktionstext, gültig bis): In der Beispielantwort war kein Produkt in Aktion.
+  → Ein Produkt suchen, das gerade im Angebot ist, und dessen JSON ansehen.
+- **Aktionsseite**: Gibt es einen Endpunkt, der *alle* aktuellen Angebote liefert (statt Suche nach Begriff)?
+  → Auf interspar.at/spar.at die Angebote-Seite öffnen und im Network-Tab nach `/api/` suchen.
+- **Cloudflare**: Von Cloud-IPs kommt eine „Just a moment…“-Seite statt JSON. Von einer Heim-IP aus testen.
+  Wenn das auch blockiert wird, Alternative überlegen (z. B. Billa zuerst).
 
-Zusätzlich die **Aktionsseite** (spar.at → Angebote / Flugblatt) ansehen: Kommen die Angebote dort ebenfalls als JSON?
+### Alter Endpunkt (tot)
+
+`search-spar.spar-ics.com/fact-finder/rest/v4/search/products_lmos_at` (von heissepreise genutzt) antwortet
+seit 11/2026 mit `"Channel 'products_lmos_at' does not exist."`.
 
 ## Weitere Ketten (für später, laut heissepreise)
 

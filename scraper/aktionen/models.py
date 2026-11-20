@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from datetime import date
 
 
@@ -20,6 +20,8 @@ class Angebot:
     gueltig_bis: date | None = None
     ean: str | None = None
     bio: bool = False
+    bild_url: str | None = None
+    tags: list[str] = field(default_factory=list)  # z. B. "vegan", "lactose-free"
 
     @property
     def ist_aktion(self) -> bool:

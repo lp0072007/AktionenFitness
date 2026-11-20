@@ -1,8 +1,4 @@
-"""Tests für den Spar-Parser.
-
-Die Fixture `spar_alt_format.json` ist von Hand nachgebaut nach dem (alten) Feldformat aus heissepreise.
-Sobald eine echte Antwort vorliegt, als `spar_echt.json` ablegen und Tests darauf umstellen.
-"""
+"""Tests für den Spar-Parser auf Basis einer echten Interspar-Antwort (tests/fixtures/spar_flyout_skyr.json)."""
 
 import json
 from pathlib import Path
@@ -11,45 +7,70 @@ import pytest
 
 from aktionen.models import Angebot
 from aktionen.stores.base import parse_menge, parse_preis
-from aktionen.stores.spar import SparStore
+from aktionen.stores.spar import SparStore, produkte_aus_antwort
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
 
 @pytest.fixture
-def raw():
-    return json.loads((FIXTURES / "spar_alt_format.json").read_text(encoding="utf-8"))
+def produkte():
+    data = json.loads((FIXTURES / "spar_flyout_skyr.json").read_text(encoding="utf-8"))
+    return {p["productNumber"]: p for p in produkte_aus_antwort(data)}
 
 
-def test_parse_normales_produkt(raw):
-    a = SparStore().parse(raw[0])
-    assert a.produkt_id == "2020001234567"
-    assert a.name == "Magertopfen"
-    assert a.marke == "SPAR"
-    assert a.preis == 0.99
-    assert (a.menge, a.einheit) == (250, "g")
-    assert a.preis_pro_kg == 3.96
-    assert not a.bio
+def test_alle_produkte_gefunden(produkte):
+    assert len(produkte) == 5
 
 
-def test_parse_gewichtsware(raw):
-    a = SparStore().parse(raw[1])
-    assert a.preis == 18.99
+def test_parse_skyr_1kg(produkte):
+    a = SparStore().parse(produkte["2020004900746"])
+    assert a.kette == "spar"
+    assert a.name == "S-BUDGET Skyr 1 KG"
+    assert a.marke == "S-BUDGET"
+    assert a.preis == 2.99
     assert (a.menge, a.einheit) == (1000, "g")
-    assert a.bio
+    assert a.preis_pro_kg == 2.99
+    assert not a.ist_aktion
+    assert a.bild_url.startswith("https://www.interspar.at/media/")
 
 
-def test_parse_ohne_produktnummer_wird_ignoriert(raw):
-    assert SparStore().parse(raw[2]) is None
+def test_parse_400g_mit_badges(produkte):
+    a = SparStore().parse(produkte["2020003999345"])
+    assert (a.menge, a.einheit) == (400, "g")
+    assert a.preis_pro_kg == 4.98  # stimmt mit referencePrice von Spar überein
+    assert a.tags == ["vegan", "lactose-free", "gluten-free"]
+
+
+def test_parse_liter(produkte):
+    a = SparStore().parse(produkte["2020000432623"])
+    assert (a.menge, a.einheit) == (700, "ml")
+
+
+def test_menge_fallback_aus_grundpreis(produkte):
+    raw = dict(produkte["2020003562716"], name="Arla Skyr Natur")  # ohne Mengenangabe im Namen
+    a = SparStore().parse(raw)
+    assert (a.menge, a.einheit) == (400, "g")  # 1,99 € / 4,98 €/kg ≈ 400 g
+
+
+def test_streichpreis_wird_erkannt(produkte):
+    raw = json.loads(json.dumps(produkte["2020003562716"]))
+    raw["price"]["regularPrice"] = 2.49
+    a = SparStore().parse(raw)
+    assert a.ist_aktion
+    assert a.rabatt_prozent == 20.1
+
+
+def test_ohne_produktnummer_wird_ignoriert():
+    assert SparStore().parse({"name": "kaputt", "price": {"currentPrice": 1}}) is None
 
 
 @pytest.mark.parametrize(
     "text,erwartet",
     [
         ("450 g", (450, "g")),
-        ("1,5 l", (1500, "ml")),
+        ("Skyr 1 KG", (1000, "g")),
+        ("Whisky 0,7 L", (700, "ml")),
         ("4 x 125 g", (500, "g")),
-        ("1 kg", (1000, "g")),
         ("10 Stk.", (10, "stk")),
         ("ohne Angabe", (None, None)),
     ],
