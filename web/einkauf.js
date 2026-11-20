@@ -58,6 +58,19 @@ function verstanden(e) {
   return teile.join(" ");
 }
 
+// Keine Aktion am Einkaufstag? Dann die nächste kommende (oder gerade abgelaufene) Aktion suchen,
+// damit man sieht, dass es sie gibt – nur an einem anderen Tag.
+function andererTag(e) {
+  const tag = $("#tag").value;
+  const alle = A.finde(e, angebote().filter((a) => !zustand.ausgeschlossen.has(a.id)), null);
+  const kommend = alle.filter((t) => t.angebot.gueltig_von && t.angebot.gueltig_von > tag)
+    .sort((x, y) => x.angebot.gueltig_von.localeCompare(y.angebot.gueltig_von));
+  if (kommend.length) return { treffer: kommend[0], text: `ab ${datum(kommend[0].angebot.gueltig_von)}` };
+  const vorbei = alle.filter((t) => t.angebot.gueltig_bis && t.angebot.gueltig_bis < tag);
+  if (vorbei.length) return { treffer: vorbei[0], text: `nur bis ${datum(vorbei[0].angebot.gueltig_bis)}` };
+  return null;
+}
+
 // ---------- Liste bearbeiten ----------
 // Text aus dem Eingabefeld (auch mehrere eingefügte Zeilen oder "Skyr, Topfen") -> ein Punkt pro Produkt
 function hinzufuegen(text) {
@@ -109,7 +122,14 @@ function listeZeichnen(paare, r) {
     const rechts = document.createElement("span");
     rechts.className = "ek-vorschau__wo";
     if (t) rechts.append(badge(t.angebot.kette), " ", euro(t.kosten.preis));
-    else rechts.textContent = "keine Aktion";
+    else {
+      const anders = andererTag(e);
+      if (anders) {
+        li.classList.add("spaeter");
+        rechts.append(badge(anders.treffer.angebot.kette), " ", anders.text);
+        rechts.title = `${anders.treffer.angebot.name}: am gewählten Einkaufstag nicht gültig`;
+      } else rechts.textContent = "keine Aktion";
+    }
     const label = document.createElement("label");
     label.append(haken, name, rechts);
     const weg = document.createElement("button");
@@ -270,7 +290,11 @@ function zeichnen(liste, r) {
     if (!alle.length) {
       const p = document.createElement("p");
       p.className = "ek-keine";
-      p.textContent = "Keine passende Aktion gefunden.";
+      const anders = andererTag(e);
+      p.textContent = anders
+        ? `Am gewählten Einkaufstag nicht in Aktion – ${KETTEN[anders.treffer.angebot.kette] ?? anders.treffer.angebot.kette}: ` +
+          `${anders.treffer.angebot.name} ${anders.text} (${euro(anders.treffer.angebot.preis)}). Einkaufstag oben ändern, um damit zu rechnen.`
+        : "Keine passende Aktion gefunden.";
       box.append(p);
     } else {
       const ul = document.createElement("ul");

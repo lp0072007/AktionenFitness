@@ -113,3 +113,4 @@
 .ek-vorschau__wo { display: flex; align-items: center; gap: 4px; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .ek-vorschau li.erledigt label { opacity: .5; }
 .ek-vorschau li.erledigt .ek-vorschau__name { text-decoration: line-through; text-decoration-thickness: 2px; }
+.ek-vorschau li.spaeter .ek-vorschau__wo { color: var(--warn); font-size: .85rem; }
