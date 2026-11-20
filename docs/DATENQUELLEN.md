@@ -27,6 +27,15 @@ Beispielantwort: `scraper/tests/fixtures/spar_flyout_skyr.json`. Wichtige Felder
 | `image.url` | … | Produktbild |
 | `availabilityCase` | `fos-market-search` / `online-only` | im Markt / nur online |
 
+**Test mit Flugblatt-Aktion (20.11.2026):** NÖM Cottage Cheese natur 200 G (`2020001850105`) ist im Flugblatt
+als Mengenvorteil (1 Stk. 1,99 €, ab 2 Stk. je 1,19 €). Die Such-API zeigt nur `currentPrice: 1.99` und **keine**
+Aktionsinfo. Die Suche liefert also nur Regalpreise, keine Flugblatt-Aktionen.
+
+Weitere Endpunkte auf der Produktseite (noch nicht ausgewertet):
+- `/api/product/by-number/{productNumber}`: Produktdetails (evtl. Aktionen, Nährwerte)
+- `/api/data/p/{productNumber}`
+- `/api/markets/locations`: Märkte (Preise/Aktionen evtl. marktabhängig)
+
 **Offen:**
 - **Aktionsfelder** (Streichpreis, Aktionstext, gültig bis): In der Beispielantwort war kein Produkt in Aktion.
   → Ein Produkt suchen, das gerade im Angebot ist, und dessen JSON ansehen.
