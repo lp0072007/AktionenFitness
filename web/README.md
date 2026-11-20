@@ -4,6 +4,10 @@ Statische Website ohne Build-Schritt: `index.html`, `style.css`, `app.js`.
 
 ## Ansehen
 
+Zuerst einmal die Daten erzeugen (siehe unten, `python -m aktionen.export`). Die Daten und Bilder sind
+nicht im Git, weil sie sich jede Woche ändern.
+
+
 `index.html` einfach im Browser öffnen (Doppelklick). Oder mit lokalem Server:
 
 ```bash

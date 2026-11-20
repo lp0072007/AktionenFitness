@@ -19,5 +19,8 @@ node_modules/
 .idea/
 .vscode/
 
-# Flugblatt-Ausschnitte (Bildrechte beim Händler, werden mit python -m aktionen.export erzeugt)
+# Erzeugte Website-Daten (python -m aktionen.export), ändern sich jede Woche
+# Flugblatt-Ausschnitte: Bildrechte beim Händler
+web/data/angebote.json
+web/data/angebote.js
 web/data/bilder/
