@@ -26,16 +26,29 @@ def test_echte_kacheln():
     assert baum.preis == 9.99 and baum.menge is None and "Tiefpreisaktion" in baum.aktion
 
 
-def test_rabatt_und_menge_aus_vergleichspreis():
+def test_echter_reduzierter_preis():
+    # echte Kachel (UP2FASHION Haussocken) von hofer.at, 20.11.2026, gekürzt
+    kachel = '''<div class="product-tile__brandname"><p>UP2FASHION</p></div>
+      <div class="product-tile__name"><p>Damen-/Herren-Haussocken</p></div>
+      <div class="product-tile__unit-of-measurement"><p>per Packung</p></div>
+      <div class="base-price base-price--on-sale base-price--product-tile" data-test="product-tile__price">
+      <div class="base-price__discount-tag__wrapper"></div><span class="base-price__regular">
+      <ins class="base-price__discounted" aria-label="Reduzierter Preis: € 2,09">€ 2,09</ins>
+      <span class="base-price__superscript--discounted base-price__superscript">¹ </span></span>
+      <span class="base-price__was-price"><del aria-label="Originalpreis: € 2,99">€ 2,99</del></span></div></a>'''
+    a = parse_kachel("000000000000999", kachel)
+    assert (a.preis, a.normalpreis) == (2.09, 2.99)
+    assert a.aktion[0] == "-30%"
+
+
+def test_menge_aus_vergleichspreis():
     kachel = '''<div class="product-tile__brandname"><p>ZURÜCK ZUM URSPRUNG</p></div>
       <div class="product-tile__name"><p>Bio-Magertopfen</p></div>
       <div class="product-tile__unit-of-measurement"><p>per Packung</p></div>
       <div class="product-tile__comparison-price"><p>(€ 3,96/1 kg)</p></div>
-      <div class="base-price base-price--product-tile"><span class="base-price__regular"><span>€ 1,29</span></span>
-      <span class="base-price__discounted"><span>€ 0,99</span></span></div></a>'''
+      <div class="base-price base-price--product-tile"><span class="base-price__regular"><span>€ 0,99</span></span></div></a>'''
     a = parse_kachel("000000000000123", kachel)
-    assert (a.preis, a.normalpreis, a.produkt_id) == (0.99, 1.29, "123")
-    assert a.aktion[0] == "-23%"
+    assert (a.preis, a.normalpreis, a.produkt_id) == (0.99, None, "123")
     assert (a.menge, a.einheit) == (250, "g")                      # 0,99 € / 3,96 €/kg
 
 
@@ -62,3 +75,9 @@ def test_ablauf_mit_tagesseiten():
     a = aktuelle_angebote(heute=date(2026, 11, 20), client=c, pause=0)
     assert len(a) == 3                                                 # doppelte Produkte nur einmal
     assert {x.gueltig_von for x in a} == {date(2026, 11, 19)}          # erster Starttag zählt
+
+
+def test_tausenderpunkt():
+    kachel = '''<div class="product-tile__name"><p>Sauna Skyline L</p></div>
+      <div class="base-price base-price--product-tile"><span class="base-price__regular"><span>€ 1.649,00</span></span></div></a>'''
+    assert parse_kachel("1", kachel).preis == 1649.0

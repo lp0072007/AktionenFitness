@@ -29,7 +29,7 @@ _TAG_SEITE_RE = re.compile(r'href="(?:https://www\.hofer\.at)?/angebote/(\d{4}-\
 _KACHEL_RE = re.compile(
     r'<div id="product-tile-(\d+)"(.*?)(?=<div id="product-tile-|class="product-teaser-list__header|</main>|$)', re.S
 )
-_PREIS_RE = re.compile(r"€\s*(\d+),(\d{2}|-)")
+_PREIS_RE = re.compile(r"€\s*(\d{1,3}(?:\.\d{3})+|\d+),(\d{2}|-)")  # auch "€ 1.399,00"
 # Hofer schreibt "(€ 3,98/1 l)" bzw. "(€ 45,69/100 g)"
 _VERGLEICH_RE = re.compile(r"€\s*(\d+,\d{2})\s*/\s*(\d+(?:,\d+)?)\s*(kg|g|l|ml)\b", re.I)
 
@@ -52,24 +52,29 @@ def tag_seiten(uebersicht_html: str) -> list[str]:
     return sorted(set(_TAG_SEITE_RE.findall(uebersicht_html)))
 
 
+def _preis_aus(text: str) -> float | None:
+    p = _PREIS_RE.search(_text(text))
+    return float(f"{p.group(1).replace('.', '')}.{'00' if p.group(2) == '-' else p.group(2)}") if p else None
+
+
 def _preise(kachel: str) -> tuple[float | None, float | None]:
-    """(aktueller Preis, Streichpreis). Rabattpreis steht in base-price__discounted, alter in __regular."""
-    block = re.search(r'class="base-price base-price--product-tile"(.*?)(?:</a>|$)', kachel, re.S)
+    """(aktueller Preis, Streichpreis).
+
+    Normal:    <span class="base-price__regular"><span>€ 9,99</span>…
+    Reduziert: <div class="base-price base-price--on-sale base-price--product-tile">
+                 <span class="base-price__regular"><ins class="base-price__discounted">€ 2,09</ins>…</span>
+                 <span class="base-price__was-price"><del>€ 2,99</del></span>
+    """
+    block = re.search(r'class="base-price [^"]*base-price--product-tile[^"]*"(.*?)(?:</a>|$)', kachel, re.S)
     if not block:
         return None, None
     b = block.group(1)
+    rabatt = re.search(r'class="base-price__discounted[^"]*"[^>]*>(.*?)</ins>', b, re.S)
+    vorher = re.search(r'class="base-price__was-price[^"]*"[^>]*>(.*?)</span>', b, re.S)
+    if rabatt and (preis := _preis_aus(rabatt.group(1))) is not None:
+        return preis, _preis_aus(vorher.group(1)) if vorher else None
     regulaer = re.search(r'class="base-price__regular[^"]*"[^>]*>(.*?)</span>', b, re.S)
-    rabatt = re.search(r'class="base-price__discounted[^"]*"[^>]*>(.*?)</span>', b, re.S)
-
-    def wert(m):
-        if not m:
-            return None
-        p = _PREIS_RE.search(_text(m.group(1)))
-        return float(f"{p.group(1)}.{'00' if p.group(2) == '-' else p.group(2)}") if p else None
-
-    if rabatt and wert(rabatt) is not None:
-        return wert(rabatt), wert(regulaer)
-    return wert(regulaer), None
+    return (_preis_aus(regulaer.group(1)) if regulaer else None), None
 
 
 def parse_kachel(produkt_id: str, kachel: str, ab: date | None = None) -> FlugblattAngebot | None:
