@@ -128,7 +128,7 @@ function listeZeichnen(paare, r) {
         li.classList.add("spaeter");
         rechts.append(badge(anders.treffer.angebot.kette), " ", anders.text);
         rechts.title = `${anders.treffer.angebot.name}: am gewählten Einkaufstag nicht gültig`;
-      } else rechts.textContent = "keine Aktion";
+      } else rechts.textContent = DATEN.erstellt ? "keine Aktion" : "keine Daten";
     }
     const label = document.createElement("label");
     label.append(haken, name, rechts);
@@ -198,7 +198,14 @@ function zeichnen(liste, r) {
   emp.replaceChildren();
   const h = document.createElement("h2");
   const beste = r.rangliste[0];
-  if (!beste) {
+  if (!DATEN.erstellt) {
+    emp.classList.add("ek-empfehlung--fehler");
+    h.textContent = "⚠ Keine Aktionsdaten geladen";
+    const p = document.createElement("p");
+    p.textContent = "Die Datei web/data/aktionen.js fehlt. Im Ordner scraper (mit aktivierter venv) einmal " +
+      "„python -m aktionen.export“ ausführen und die Seite neu laden.";
+    emp.append(h, p);
+  } else if (!beste) {
     h.textContent = "Diese Woche ist nichts von deiner Liste in Aktion.";
     emp.append(h);
   } else {

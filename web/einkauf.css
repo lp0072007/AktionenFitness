@@ -114,3 +114,4 @@
 .ek-vorschau li.erledigt label { opacity: .5; }
 .ek-vorschau li.erledigt .ek-vorschau__name { text-decoration: line-through; text-decoration-thickness: 2px; }
 .ek-vorschau li.spaeter .ek-vorschau__wo { color: var(--warn); font-size: .85rem; }
+.ek-empfehlung--fehler { border-color: var(--warn); background: color-mix(in srgb, var(--warn) 10%, var(--flaeche)); }
