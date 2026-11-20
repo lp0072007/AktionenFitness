@@ -19,10 +19,11 @@ from datetime import date
 import httpx
 
 from ..flugblatt_pdf import FlugblattAngebot
-from .base import get_mit_wiederholung, parse_menge
+from .base import USER_AGENT, get_mit_wiederholung, parse_menge
 
 BASIS = "https://www.hofer.at"
-UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0 Safari/537.36"
+# Ehrliche Programm-Kennung. Eine vorgetäuschte Chrome-Kennung wird von Hofers Bot-Schutz gesperrt (403).
+UA = USER_AGENT
 
 _TAG_SEITE_RE = re.compile(r'href="(?:https://www\.hofer\.at)?/angebote/(\d{4}-\d{2}-\d{2})(?:"|\?)')
 _KACHEL_RE = re.compile(
@@ -126,7 +127,7 @@ def angebote_aus_html(seite_html: str, ab: date | None = None) -> list[Flugblatt
 def _holen(client: httpx.Client, url: str) -> str:
     r = get_mit_wiederholung(client, url)
     if r.status_code == 403 or "Access Denied" in r.text[:500]:
-        raise HoferBlockiert("hofer.at hat die Anfrage gesperrt (403). Von einer Heim-IP aus versuchen.")
+        raise HoferBlockiert(f"hofer.at hat die Anfrage gesperrt (403): {url}")
     r.raise_for_status()
     return r.text
 
