@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Einkaufsliste abgleichen</title>
+  <meta name="description" content="Einkaufsliste eingeben und mit den aktuellen Aktionen von Spar, Lidl, Hofer, Penny und Billa abgleichen.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧾</text></svg>">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="einkauf.css">
+</head>
+<body>
+  <header class="kopf">
+    <div class="kopf__inhalt">
+      <div class="marke">
+        <span class="marke__logo" aria-hidden="true">🧾</span>
+        <div>
+          <h1>Einkaufsliste abgleichen</h1>
+          <p class="marke__sub" id="stand">Wo ist was in Aktion?</p>
+        </div>
+      </div>
+      <a class="zurueck" href="index.html">💪 Fitness-Angebote</a>
+    </div>
+  </header>
+
+  <main class="ek-layout">
+    <section class="ek-eingabe" aria-label="Einkaufsliste">
+      <label class="feld">
+        <span>Deine Einkaufsliste (eine Zeile pro Produkt)</span>
+        <textarea id="liste" rows="12" spellcheck="false" placeholder="- 2x Milch
+- Haferflocken 1kg
+- 500g Hendlfilet
+- Skyr
+- Eier
+- Nudeln
+- Butter"></textarea>
+      </label>
+      <div class="ek-optionen">
+        <label class="feld">
+          <span>Region (für Spar)</span>
+          <select id="region"></select>
+        </label>
+        <label class="feld">
+          <span>Einkaufstag</span>
+          <input id="tag" type="date">
+        </label>
+      </div>
+      <p class="ek-hinweis">Tipp: Mengen wie „2x“, „500g“ oder „1kg“ werden erkannt. Die Liste wird im Browser gespeichert.</p>
+    </section>
+
+    <section class="ek-ergebnis" aria-live="polite">
+      <div id="leerHinweis" class="ek-leer">Gib links deine Einkaufsliste ein – das Ergebnis erscheint hier.</div>
+      <div id="ergebnis" hidden>
+        <div class="ek-empfehlung" id="empfehlung"></div>
+        <h2 class="ek-titel">Geschäfte im Vergleich</h2>
+        <div class="ek-rangliste" id="rangliste"></div>
+        <h2 class="ek-titel">Günstigste Aufteilung</h2>
+        <div id="aufteilung"></div>
+        <h2 class="ek-titel">Alle Treffer pro Produkt</h2>
+        <p class="ek-hinweis">Falscher Treffer? Häkchen entfernen – die Empfehlung wird sofort neu berechnet.</p>
+        <div id="eintraege"></div>
+      </div>
+    </section>
+  </main>
+
+  <template id="trefferVorlage">
+    <li class="ek-treffer">
+      <label class="ek-treffer__wahl"><input type="checkbox" checked aria-label="Treffer passt"></label>
+      <img class="ek-treffer__bild" alt="" loading="lazy">
+      <div class="ek-treffer__text">
+        <span class="badge badge--kette"></span>
+        <a class="ek-treffer__name" target="_blank" rel="noopener"></a>
+        <span class="ek-treffer__info"></span>
+      </div>
+      <div class="ek-treffer__preis"></div>
+    </li>
+  </template>
+
+  <script src="data/aktionen.js"></script>
+  <script src="abgleich.js"></script>
+  <script src="einkauf.js"></script>
+</body>
+</html>

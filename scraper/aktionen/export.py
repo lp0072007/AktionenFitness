@@ -57,6 +57,31 @@ def angebote_aus_pdf(pfad, fortschritt: Fortschritt | None = None) -> list[Flugb
     return angebote
 
 
+def aktion_als_dict(a: FlugblattAngebot, kette: str, region: str, i: int, bild: str | None = None) -> dict:
+    """Schlanke Form für den Einkaufslisten-Abgleich (alle Aktionen, nicht nur Fitness)."""
+    d = {
+        "id": f"{kette}-{a.produkt_id}" if a.produkt_id else f"{kette}-{region}-{a.seite}-{i}",
+        "kette": kette,
+        "name": a.name,
+        "preis": a.preis,
+        "normalpreis": a.normalpreis,
+        "ab_menge": a.ab_menge,
+        "zusatzpreis": a.zusatzpreis,
+        "zusatz_text": a.zusatz_text,
+        "menge": a.menge,
+        "einheit": a.einheit,
+        "pro_kg": a.pro_kg,
+        "gueltig_von": a.gueltig_von.isoformat() if a.gueltig_von else None,
+        "gueltig_bis": a.gueltig_bis.isoformat() if a.gueltig_bis else None,
+        "aktion": a.aktion,
+        "url": a.url,
+        "bild": bild or a.bild_url,
+        "seite": a.seite or None,
+        "kategorie": a.kategorie_pfad,
+    }
+    return {k: v for k, v in d.items() if v not in (None, [], False)}  # kleinere Datei
+
+
 def treffer_als_dict(t: FitnessTreffer, kette: str, region: str, i: int, bild: str | None = None) -> dict:
     a, k = t.angebot, t.kategorie
     zuordnung = {True: "geprueft", False: "unsicher", None: "unbekannt"}[a.grundpreis_ok]
@@ -133,9 +158,13 @@ def kette_exportieren(kette: str, bilder_ordner: Path | None = None) -> dict:
         for k, (_, ziel) in aufgaben.items():
             if ziel.exists():
                 bilder[k] = ziel.relative_to(web).as_posix()
+    bild_von = {id(t.angebot): bilder.get(id(t)) for t in treffer}
     return {
         "anzahl_angebote": len(angebote),
         "angebote": [treffer_als_dict(t, kette, "at", i, bilder.get(id(t))) for i, t in enumerate(treffer)],
+        # dm hat keine Aktionen (Dauerpreise) und kommt deshalb nicht in den Aktions-Abgleich
+        "alle": [] if kette == "dm" else
+                [aktion_als_dict(a, kette, "at", i, bild_von.get(id(a))) for i, a in enumerate(angebote)],
     }
 
 
@@ -168,6 +197,12 @@ def region_exportieren(region: str, pdf: str | None = None, bilder_ordner: Path 
         "angebote": [
             treffer_als_dict(t, "spar", region, i, bilder.get(index_treffer[id(t)]) if bilder else None)
             for i, t in enumerate(treffer)
+        ],
+        "alle": [
+            {**aktion_als_dict(a, "spar", region, i, bilder.get(i) if bilder else None),
+             "gueltig_von": gueltig[0].isoformat() if gueltig else None,
+             "gueltig_bis": gueltig[1].isoformat() if gueltig else None}
+            for i, a in enumerate(angebote)
         ],
     }
 
@@ -211,6 +246,14 @@ def main(argv: list[str] | None = None) -> int:
     gesamt.ende()
 
     args.ziel.parent.mkdir(parents=True, exist_ok=True)
+    # Alle Aktionen (für den Einkaufslisten-Abgleich) in eine eigene Datei, damit die Startseite schlank bleibt
+    aktionen = {
+        "erstellt": daten["erstellt"],
+        "regionen": {r["region"]: {"name": r["name"], "angebote": r.pop("alle", [])} for r in daten["regionen"]},
+        "ketten": {k: daten[k].pop("alle", []) for k in WEITERE_KETTEN if daten[k]},
+    }
+    (args.ziel.parent / "aktionen.js").write_text(
+        "window.AKTIONEN = " + json.dumps(aktionen, ensure_ascii=False, separators=(",", ":")) + ";\n", encoding="utf-8")
     text = json.dumps(daten, ensure_ascii=False, indent=1)
     args.ziel.write_text(text, encoding="utf-8")
     # Zusätzlich als JS, damit index.html auch per Doppelklick (file://) funktioniert, wo fetch() blockiert ist

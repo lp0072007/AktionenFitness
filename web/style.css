@@ -239,3 +239,10 @@ a { color: var(--akzent); }
   .marke h1 { font-size: 17px; }
   .marke__logo { font-size: 24px; }
 }
+
+/* Link zur Abgleich-Seite (Kopfzeile) */
+.zurueck {
+  text-decoration: none; font-weight: 600; padding: 8px 12px; border-radius: 999px;
+  background: var(--flaeche-2); color: var(--text); white-space: nowrap; margin-left: auto;
+}
+@media (max-width: 480px) { .zurueck { font-size: 13px; padding: 6px 10px; } }

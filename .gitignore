@@ -23,4 +23,5 @@ node_modules/
 # Flugblatt-Ausschnitte: Bildrechte beim Händler
 web/data/angebote.json
 web/data/angebote.js
+web/data/aktionen.js
 web/data/bilder/

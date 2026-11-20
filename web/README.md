@@ -35,6 +35,12 @@ Diese Bilder sind **nicht im Git** (Bildrechte beim Händler, ca. 1 MB pro Regio
 `python -m aktionen.export` ausführen, sonst zeigt die Website die Karten ohne Bild.
 Mit `--ohne-bilder` lässt sich das abschalten.
 
+## Einkaufsliste abgleichen (`einkauf.html`)
+
+Einkaufsliste als Stichpunkte eingeben („- 2x Milch“, „500g Hendlfilet“) → Abgleich mit **allen** aktuellen Aktionen
+(Spar-Region, Lidl, Hofer, Penny, Billa; Daten: `data/aktionen.js`) → Empfehlung, wo am meisten in Aktion ist,
+günstigste Aufteilung auf Geschäfte, falsche Treffer abwählbar. Logik: `abgleich.js`, Tests: `node --test` im Ordner `web`.
+
 ## Funktionen
 
 - Bildausschnitt aus dem Flugblatt auf jeder Karte (antippen zum Vergrößern)

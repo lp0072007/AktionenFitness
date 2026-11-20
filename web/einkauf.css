@@ -1,0 +1,80 @@
+/* Einkaufsliste abgleichen – ergänzt style.css */
+.zurueck {
+  text-decoration: none; font-weight: 600; padding: 8px 12px; border-radius: 999px;
+  background: var(--flaeche-2); color: var(--text); white-space: nowrap;
+}
+.ek-layout {
+  max-width: 1280px; margin: 0 auto; padding: 16px;
+  display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 20px; align-items: start;
+}
+.ek-eingabe {
+  position: sticky; top: 76px; background: var(--flaeche); border: 1px solid var(--rand);
+  border-radius: var(--radius); box-shadow: var(--schatten); padding: 14px; display: flex; flex-direction: column; gap: 12px;
+}
+.ek-eingabe textarea {
+  width: 100%; min-height: 220px; resize: vertical; border: 1px solid var(--rand); border-radius: 10px; padding: 10px;
+  background: var(--flaeche); font: 15px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: var(--text);
+}
+.ek-eingabe textarea:focus { outline: 2px solid var(--akzent); outline-offset: 1px; }
+.ek-optionen { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.ek-optionen .feld input, .ek-optionen .feld select { width: 100%; }
+.ek-hinweis { color: var(--text-leise); font-size: 12px; margin: 0; }
+.ek-leer { color: var(--text-leise); padding: 40px 0; text-align: center; }
+.ek-titel { font-size: 16px; margin: 22px 0 10px; }
+
+.ek-empfehlung {
+  background: var(--akzent-weich); border: 1px solid var(--akzent); border-radius: var(--radius); padding: 14px 16px;
+}
+.ek-empfehlung h2 { margin: 0 0 6px; font-size: 18px; }
+.ek-empfehlung p { margin: 4px 0; }
+
+.ek-rangliste { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
+.ek-kette {
+  background: var(--flaeche); border: 1px solid var(--rand); border-radius: 12px; padding: 10px 12px;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.ek-kette strong { font-size: 20px; }
+.ek-kette span { color: var(--text-leise); font-size: 13px; }
+.ek-kette--erste { border-color: var(--akzent); box-shadow: 0 0 0 1px var(--akzent); }
+
+.ek-gruppe { background: var(--flaeche); border: 1px solid var(--rand); border-radius: 12px; padding: 10px 12px; margin-bottom: 10px; }
+.ek-gruppe__kopf { display: flex; justify-content: space-between; align-items: center; font-weight: 700; margin-bottom: 6px; }
+.ek-gruppe ul { list-style: none; margin: 0; padding: 0; }
+.ek-gruppe li { display: flex; justify-content: space-between; gap: 10px; padding: 4px 0; border-top: 1px solid var(--rand); font-size: 14px; }
+.ek-gruppe li:first-child { border-top: 0; }
+.ek-gruppe small { color: var(--text-leise); }
+.ek-fehlt { color: var(--text-leise); font-size: 14px; }
+
+.ek-eintrag { background: var(--flaeche); border: 1px solid var(--rand); border-radius: 12px; padding: 10px 12px; margin-bottom: 10px; }
+.ek-eintrag h3 { font-size: 15px; margin: 0 0 6px; display: flex; justify-content: space-between; gap: 8px; }
+.ek-eintrag h3 span { color: var(--text-leise); font-weight: 400; font-size: 13px; }
+.ek-eintrag ul { list-style: none; margin: 0; padding: 0; }
+.ek-treffer {
+  display: grid; grid-template-columns: auto 48px minmax(0, 1fr) auto; gap: 10px; align-items: center;
+  padding: 6px 0; border-top: 1px solid var(--rand);
+}
+.ek-treffer:first-child { border-top: 0; }
+.ek-treffer--aus { opacity: .45; }
+.ek-treffer__wahl input { width: 18px; height: 18px; accent-color: var(--akzent); }
+.ek-treffer__bild { width: 48px; height: 48px; object-fit: contain; background: #fff; border-radius: 8px; }
+.ek-treffer__bild[src=""] , .ek-treffer__bild:not([src]) { visibility: hidden; }
+.ek-treffer__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ek-treffer__text .badge { align-self: flex-start; }
+.ek-treffer__name { color: var(--text); text-decoration: none; font-weight: 600; font-size: 14px; overflow-wrap: anywhere; }
+.ek-treffer__name[href]:hover { text-decoration: underline; }
+.ek-treffer__info { font-size: 12px; color: var(--text-leise); }
+.ek-treffer__info.warn { color: var(--warn); }
+.ek-treffer__preis { text-align: right; font-weight: 700; white-space: nowrap; }
+.ek-treffer__preis small { display: block; font-weight: 400; color: var(--text-leise); font-size: 12px; }
+.ek-keine { color: var(--text-leise); font-size: 14px; margin: 0; }
+
+@media (max-width: 900px) {
+  .ek-layout { grid-template-columns: minmax(0, 1fr); }
+  .ek-eingabe { position: static; }
+}
+@media (max-width: 480px) {
+  .ek-treffer { grid-template-columns: auto 40px minmax(0, 1fr); }
+  .ek-treffer__preis { grid-column: 3; text-align: left; }
+  .ek-treffer__bild { width: 40px; height: 40px; }
+  .zurueck { font-size: 13px; padding: 6px 10px; }
+}
