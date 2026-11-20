@@ -19,7 +19,10 @@ import httpx
 from PIL import Image
 
 from .ausschnitte import ausschnitte_speichern
-from .stores import lidl
+from .stores import hofer, lidl
+
+# Österreichweite Ketten mit strukturierten Daten: Name -> Modul mit aktuelle_angebote() und UA
+WEITERE_KETTEN = {"lidl": lidl, "hofer": hofer}
 from .fitness import DATEN_ORDNER, FitnessTreffer, fitness_angebote
 from .flugblatt_pdf import FlugblattAngebot, analysiere_seite
 from .spar_flugblatt import REGIONEN, aktuelles_flugblatt, pdf_herunterladen
@@ -50,7 +53,7 @@ def treffer_als_dict(t: FitnessTreffer, kette: str, region: str, i: int, bild: s
     a, k = t.angebot, t.kategorie
     zuordnung = {True: "geprueft", False: "unsicher", None: "unbekannt"}[a.grundpreis_ok]
     return {
-        "id": f"lidl-{a.produkt_id}" if kette == "lidl" and a.produkt_id else f"{kette}-{region}-{a.seite}-{i}",
+        "id": f"{kette}-{a.produkt_id}" if kette in WEITERE_KETTEN and a.produkt_id else f"{kette}-{region}-{a.seite}-{i}",
         "kette": kette,
         "name": a.name,
         "beschreibung": a.beschreibung,
@@ -75,21 +78,22 @@ def treffer_als_dict(t: FitnessTreffer, kette: str, region: str, i: int, bild: s
         "protein_pro_euro_zusatz": t.protein_pro_euro_zusatz,
         "kcal_pro_euro": t.kcal_pro_euro,
         "protein_pro_100kcal": t.protein_pro_100kcal,
-        "zuordnung": "strukturiert" if kette == "lidl" else zuordnung,  # geprueft = Preis passt zum Grundpreis
+        "zuordnung": "strukturiert" if kette in WEITERE_KETTEN else zuordnung,  # geprueft = Preis passt zum Grundpreis
         "bild": bild,             # Ausschnitt aus dem Flugblatt, relativ zu web/
     }
 
 
-def lidl_exportieren(bilder_ordner: Path | None = None) -> dict:
-    """Lidl-Angebote (österreichweit). Produktbilder werden lokal verkleinert gespeichert."""
-    angebote = lidl.aktuelle_angebote()
+def kette_exportieren(kette: str, bilder_ordner: Path | None = None) -> dict:
+    """Österreichweite Kette (Lidl, Hofer). Produktbilder werden lokal verkleinert gespeichert."""
+    modul = WEITERE_KETTEN[kette]
+    angebote = modul.aktuelle_angebote()
     treffer = fitness_angebote(angebote)
     bilder: dict[int, str] = {}
     if bilder_ordner is not None:
-        ordner = bilder_ordner / "lidl"
+        ordner = bilder_ordner / kette
         ordner.mkdir(parents=True, exist_ok=True)
         web = bilder_ordner.parent.parent
-        with httpx.Client(headers={"User-Agent": lidl.UA}, timeout=60, follow_redirects=True) as c:
+        with httpx.Client(headers={"User-Agent": modul.UA}, timeout=60, follow_redirects=True) as c:
             for t in treffer:
                 a = t.angebot
                 if not a.bild_url:
@@ -105,13 +109,13 @@ def lidl_exportieren(bilder_ordner: Path | None = None) -> dict:
                         weiss.thumbnail((480, 480))
                         weiss.save(ziel, "JPEG", quality=82, optimize=True)
                     except Exception as e:  # noqa: BLE001
-                        print(f"  Lidl-Bild {a.produkt_id}: {e}", file=sys.stderr)
+                        print(f"  {kette}-Bild {a.produkt_id}: {e}", file=sys.stderr)
                         continue
                 bilder[id(t)] = ziel.relative_to(web).as_posix()
-    print(f"  lidl: {len(angebote)} Lebensmittel-Aktionen, {len(treffer)} fitnessrelevant", file=sys.stderr)
+    print(f"  {kette}: {len(angebote)} Aktionen, {len(treffer)} fitnessrelevant", file=sys.stderr)
     return {
         "anzahl_angebote": len(angebote),
-        "angebote": [treffer_als_dict(t, "lidl", "at", i, bilder.get(id(t))) for i, t in enumerate(treffer)],
+        "angebote": [treffer_als_dict(t, kette, "at", i, bilder.get(id(t))) for i, t in enumerate(treffer)],
     }
 
 
@@ -154,26 +158,29 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--pdf", help="nur mit genau einer --region")
     p.add_argument("--ziel", type=Path, default=WEB_DATEN)
     p.add_argument("--ohne-bilder", action="store_true", help="keine Flugblatt-Ausschnitte erzeugen")
-    p.add_argument("--ohne-lidl", action="store_true", help="nur Spar")
+    p.add_argument("--ohne-lidl", action="store_true")
+    p.add_argument("--ohne-hofer", action="store_true")
     args = p.parse_args(argv)
 
     regionen = sorted(REGIONEN) if args.alle else (args.region or STANDARD_REGIONEN)
     if args.pdf and len(regionen) != 1:
         p.error("--pdf geht nur mit genau einer --region")
 
-    # Struktur: regionen[] = Spar pro Bundesland, lidl = österreichweit (gilt für alle Regionen)
-    daten = {"erstellt": datetime.now().isoformat(timespec="minutes"), "regionen": [], "lidl": None}
+    # Struktur: regionen[] = Spar pro Bundesland; lidl, hofer = österreichweit (gelten für alle Regionen)
+    daten = {"erstellt": datetime.now().isoformat(timespec="minutes"), "regionen": [], "lidl": None, "hofer": None}
     bilder = None if args.ohne_bilder else args.ziel.parent / BILDER_UNTERORDNER
     for r in regionen:
         try:
             daten["regionen"].append(region_exportieren(r, args.pdf, bilder))
         except Exception as e:  # noqa: BLE001
             print(f"  {r}: übersprungen ({e})", file=sys.stderr)
-    if not args.ohne_lidl:
+    for kette in WEITERE_KETTEN:
+        if getattr(args, f"ohne_{kette}"):
+            continue
         try:
-            daten["lidl"] = lidl_exportieren(bilder)
+            daten[kette] = kette_exportieren(kette, bilder)
         except Exception as e:  # noqa: BLE001
-            print(f"  lidl: übersprungen ({e})", file=sys.stderr)
+            print(f"  {kette}: übersprungen ({e})", file=sys.stderr)
 
     args.ziel.parent.mkdir(parents=True, exist_ok=True)
     text = json.dumps(daten, ensure_ascii=False, indent=1)
@@ -181,9 +188,10 @@ def main(argv: list[str] | None = None) -> int:
     # Zusätzlich als JS, damit index.html auch per Doppelklick (file://) funktioniert, wo fetch() blockiert ist
     args.ziel.with_suffix(".js").write_text(f"window.ANGEBOTE = {text};\n", encoding="utf-8")
     n = sum(len(r["angebote"]) for r in daten["regionen"])
-    n_lidl = len(daten["lidl"]["angebote"]) if daten["lidl"] else 0
-    print(f"{args.ziel}: Spar {len(daten['regionen'])} Regionen / {n} Fitness-Angebote, Lidl {n_lidl}", file=sys.stderr)
-    return 0 if daten["regionen"] or daten["lidl"] else 1
+    weitere = ", ".join(f"{k.capitalize()} {len(daten[k]['angebote']) if daten[k] else 'übersprungen'}"
+                        for k in WEITERE_KETTEN)
+    print(f"{args.ziel}: Spar {len(daten['regionen'])} Regionen / {n} Fitness-Angebote, {weitere}", file=sys.stderr)
+    return 0 if daten["regionen"] or any(daten[k] for k in WEITERE_KETTEN) else 1
 
 
 if __name__ == "__main__":

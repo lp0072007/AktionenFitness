@@ -54,3 +54,21 @@ def test_angebotsseiten_und_grid_daten():
             '</a><a href="/c/store/aktion/a10107111"></a><div data-grid-data="{&quot;title&quot;:&quot;Nudeln&quot;}">')
     assert angebotsseiten(html) == ["/c/store/aktion/a10107111"]
     assert produkte_aus_html(html) == [{"title": "Nudeln"}]
+
+
+def test_wiederholung_nach_abbruch():
+    import httpx
+
+    from aktionen.stores.base import get_mit_wiederholung
+
+    versuche = []
+
+    def handler(r):
+        versuche.append(1)
+        if len(versuche) < 3:
+            raise httpx.RemoteProtocolError("Server disconnected without sending a response.")
+        return httpx.Response(200, text="ok")
+
+    c = httpx.Client(transport=httpx.MockTransport(handler))
+    assert get_mit_wiederholung(c, "https://www.lidl.at/", warte=0).text == "ok"
+    assert len(versuche) == 3

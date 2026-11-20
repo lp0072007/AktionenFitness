@@ -174,6 +174,22 @@ Ergebnis KW 47: 140 Lebensmittel-Aktionen, davon 10 fitnessrelevant.
 Übersicht `v4/overview?client_locale=lidl%2Fde-AT&region_id=0&store_id=0`) liefert Seiten mit Bildern, PDF-Link
 und Hotspots. Strukturierte `products` gibt es dort aber **nur für Non-Food** (113 von 119), deshalb wird sie nicht genutzt.
 
+## Hofer ✅ (nur von Heim-IP)
+
+`www.hofer.at` sperrt Rechenzentrums-IPs (Akamai „Access Denied“, 403). Von einer Heim-IP aus geht es (getestet 20.11.2026).
+
+- Übersicht `https://www.hofer.at/angebote` verlinkt pro Starttag eine Seite `/angebote/2026-11-19`
+  (Abschnitte „ANGEBOTE AB MONTAG, 16.11.“ usw.).
+- Serverseitig gerendertes HTML, Kachel `<div id="product-tile-000000000000744520">` mit
+  `product-tile__brandname`, `product-tile__name`, `product-tile__unit-of-measurement` („400 ml per Stück“,
+  „0,2 KG/ATG per Stück“), `product-tile__comparison-price` („(€ 3,98/1 l)“), `base-price__regular` /
+  `base-price__discounted`, Badges (`base-label`: „Tiefpreisaktion“, „Verfügbar seit 16.11.2026“).
+- Parser: `aktionen/stores/hofer.py`, Fixture `hofer_kacheln.html`
+- Noch nicht geprüft: Struktur der Tagesseiten (vermutlich gleiche Kacheln) und ob dort alle Produkte stehen
+  oder per „Mehr anzeigen“ nachgeladen werden (`asl.api.hofer.at` = Hofers API, im HTML als `API_AZURE_BASE_URL`).
+- Flugblatt: `katalog.hofer.at` (Publitas). Von überall erreichbar, Hotspots enthalten aber nur Links, keine Produkte.
+  PDF unter `config.downloadPdfUrl` (view.publitas.com), das wäre ein möglicher Plan B wie bei Spar.
+
 ## Weitere Ketten (für später, laut heissepreise)
 
 | Kette | Endpunkt (intern, ungeprüft) |

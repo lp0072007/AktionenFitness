@@ -114,3 +114,20 @@ class Store(ABC):
 
     def angebote(self, query: str) -> list[Angebot]:
         return [a for r in self.fetch_raw(query) if (a := self.parse(r)) is not None]
+
+
+def get_mit_wiederholung(client, url: str, versuche: int = 3, warte: float = 3.0):
+    """GET mit Wiederholung bei Verbindungsabbrüchen und 5xx-Fehlern (z. B. 'Server disconnected')."""
+    import time
+
+    import httpx
+
+    for i in range(versuche):
+        try:
+            r = client.get(url)
+            if r.status_code < 500 or i == versuche - 1:
+                return r
+        except httpx.TransportError:
+            if i == versuche - 1:
+                raise
+        time.sleep(warte * (i + 1))

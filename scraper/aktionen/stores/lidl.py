@@ -22,7 +22,7 @@ from zoneinfo import ZoneInfo
 import httpx
 
 from ..flugblatt_pdf import FlugblattAngebot
-from .base import parse_menge
+from .base import get_mit_wiederholung, parse_menge
 
 BASIS = "https://www.lidl.at"
 UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0 Safari/537.36"
@@ -121,11 +121,11 @@ def aktuelle_angebote(heute: date | None = None, tage_voraus: int = 10, client: 
     """Alle Lebensmittel-Aktionen, die heute gelten oder in den nächsten `tage_voraus` Tagen starten."""
     heute = heute or date.today()
     client = client or httpx.Client(headers={"User-Agent": UA}, timeout=60, follow_redirects=True)
-    start = client.get(BASIS + "/")
+    start = get_mit_wiederholung(client, BASIS + "/")
     start.raise_for_status()
     gesehen: dict[str, FlugblattAngebot] = {}
     for pfad in angebotsseiten(start.text):
-        r = client.get(BASIS + pfad)
+        r = get_mit_wiederholung(client, BASIS + pfad)
         if r.status_code != 200:
             continue
         for item in produkte_aus_html(r.text):

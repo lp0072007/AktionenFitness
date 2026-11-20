@@ -50,7 +50,8 @@ function speichern(schluessel, wert) {
 const $ = (sel) => document.querySelector(sel);
 const euro = (x) => x.toLocaleString("de-AT", { style: "currency", currency: "EUR" });
 const zahl = (x, stellen = 0) => x.toLocaleString("de-AT", { maximumFractionDigits: stellen, minimumFractionDigits: stellen });
-const KETTEN = { spar: "Spar", lidl: "Lidl" };
+const KETTEN = { spar: "Spar", lidl: "Lidl", hofer: "Hofer" };
+const LANDESWEIT = ["lidl", "hofer"]; // gelten in ganz Österreich
 const WOCHENTAG = (iso) => new Date(iso + "T00:00:00").toLocaleDateString("de-AT", { weekday: "short" });
 const datum = (iso) => (iso ? new Date(iso + "T00:00:00").toLocaleDateString("de-AT", { day: "2-digit", month: "2-digit" }) : "");
 
@@ -70,7 +71,7 @@ function aktuelleRegion() {
 function alleAngebote() {
   // Spar gilt pro Bundesland, Lidl österreichweit
   const r = aktuelleRegion();
-  return [...(r?.angebote ?? []), ...(DATEN.lidl?.angebote ?? [])];
+  return [...(r?.angebote ?? []), ...LANDESWEIT.flatMap((k) => DATEN[k]?.angebote ?? [])];
 }
 
 function gefilterteAngebote() {
@@ -122,7 +123,7 @@ function karteBauen(a, rang) {
     link.href = a.url;
     link.target = "_blank";
     link.rel = "noopener";
-    link.textContent = "lidl.at ↗";
+    link.textContent = `${a.kette}.at ↗`;
     quelle.replaceChildren(link);
   } else quelle.textContent = `Flugblatt S. ${a.seite}`;
   // Gültigkeit: Lidl pro Angebot, Spar = Zeitraum des Flugblatts der Region
@@ -309,13 +310,13 @@ function listeOeffnen(offen) {
 // ---------- Kopfzeile, Region ----------
 function kopfAktualisieren() {
   const r = aktuelleRegion();
-  if (!r && !DATEN.lidl) {
+  if (!r && !LANDESWEIT.some((k) => DATEN[k])) {
     $("#gueltigkeit").textContent = "Keine Daten – zuerst `python -m aktionen.export` ausführen";
     return;
   }
   const teile = [];
   if (r) teile.push(`Spar ${r.name}${r.gueltig_von ? ` ${datum(r.gueltig_von)}–${datum(r.gueltig_bis)}` : ""}`);
-  if (DATEN.lidl) teile.push("Lidl");
+  for (const k of LANDESWEIT) if (DATEN[k]) teile.push(KETTEN[k]);
   const anzahl = alleAngebote().length;
   $("#gueltigkeit").textContent = `${teile.join(" + ")} · ${anzahl} Fitness-Angebote`;
   const link = $("#flugblattLink");
