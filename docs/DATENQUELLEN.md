@@ -88,6 +88,17 @@ https://cdn.ipaper.io/iPaper/Papers/{paperId}/Enrichments/v1/{version}/{hash}/Pa
 - `modules.hasDownloadPdf: true`: PDF-Download vorhanden (Alternative)
 - Parser: `ipaper.parse_viewer_html()`, Fixture: `spar_ipaper_viewer.html`
 
+**PDF-Download** ✅: `https://cdn.ipaper.io/iPaper/Papers/{paperGuid}/Download.pdf?…&token=…&expires=…`
+(NÖ KW47: 25 Seiten, 21 MB). Mit `pdfplumber` bekommt man jedes Wort mit Position, Schriftgröße und Schriftart:
+- Produktname: Schriftgröße ~11, Beschreibung ~8
+- Preis: Euro groß (~39), Cent daneben kleiner (~23), z. B. `1` + `19`
+- Aktionstext: „MENGEN VORTEIL“ (16), „40% billiger!“, „1 Becher 1,99 / ab 2 Becher je“ (8)
+- Achtung: Die Seitennummerierung im PDF ist gegenüber `pageTexts` um 1 verschoben (Cottage Cheese: pageTexts[12], PDF-Seite 14)
+
+Prototyp `scraper/experimente/pdf_preise_proto.py` („Preis zum nächsten Produktnamen“): Auf S. 14 sind ca. 2 von 5
+Zuordnungen richtig, auf S. 9 fehlen Preise. Die Positionen sind sauber, aber die Zuordnung braucht eine bessere
+Kachel-Erkennung. Idee: zuerst Produktkacheln bilden (Spalten/Raster, Bildpositionen), dann pro Kachel auswerten.
+
 **Einschränkung:** In NÖ KW47, Seiten 1–25, sind nur rund 40 Produkte verlinkt, fast nur **Non-Food**
 (Glühwein, Bettwäsche, Haushaltsgeräte). Lebensmittel, die nur im Markt verkauft werden, z. B. NÖM Cottage
 Cheese, haben **keinen** Link. Für Lebensmittel-Aktionen müssen wir also die **Seitenbilder** auswerten
