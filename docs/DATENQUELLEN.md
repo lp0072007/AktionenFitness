@@ -63,7 +63,24 @@ Fixtures: `spar_flugblaetter.json`, `spar_flugblatt_noe.json`. Gruppen: 9 Bundes
 getrennt, Osttirol eigenes), Einzelmarkt-Folder (z. B. `wien_im20_kw47`), `sonderfolder`, `weinwelt`.
 
 Der Viewer (`flugblatt.interspar.at`) ist ein **iPaper**-Flipbook (`cdn.ipaper.io/flipbooks/api/v3/latest.js`).
-Offen: Liefert er Produkte/Hotspots/Text als JSON oder nur Seitenbilder?
+
+**Enrichments** (klickbare Bereiche), z. B. für NÖ KW47:
+```
+https://cdn.ipaper.io/iPaper/Papers/{paperId}/Enrichments/v1/{version}/{hash}/Page1-25.json
+    ?token=HS256-…&token_ignore_params=true&token_path=/iPaper/Papers/{paperId}/Enrichments/&expires={unix}
+```
+- `paperId` = `fe9329db-0a2c-4b9d-8659-3b30f6e27bf7`, `version` = 1794554264 (13.11.2026, Veröffentlichung)
+- Token läuft ca. 1 Tag nach Abruf ab (`expires`), muss also jedes Mal frisch geholt werden.
+  **Offen:** Woher kommen paperId, hash und token? Vermutlich aus dem HTML von flugblatt.interspar.at.
+- Typ 1 = Link. URL `https://www.interspar.at/p/{Artikelnummer}` → **Artikelnummer im Flugblatt** ✅
+- Typ 6 = Menü „Passenden Artikel finden“, Einträge mit `parentid` + `menuitemName`
+- Typ 3 = Deko-GIF, Typ 9 = Popup
+- Parser: `aktionen/stores/ipaper.py`, Fixture: `spar_ipaper_enrichments.json`
+
+**Einschränkung:** In NÖ KW47, Seiten 1–25, sind nur rund 40 Produkte verlinkt, fast nur **Non-Food**
+(Glühwein, Bettwäsche, Haushaltsgeräte). Lebensmittel, die nur im Markt verkauft werden, z. B. NÖM Cottage
+Cheese, haben **keinen** Link. Für Lebensmittel-Aktionen müssen wir also die **Seitenbilder** auswerten
+(KI/Bilderkennung) und die Produkte per Such-API mit Spar-Artikeln abgleichen.
 
 Sonstige Endpunkte:
 - `/api/data/p/{productNumber}` liefert nur CMS-Inhalt (`{"story":null}`) und ist irrelevant
