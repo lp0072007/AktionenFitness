@@ -10,9 +10,9 @@ def angebot(bbox, name="X"):
 
 def test_foto_ueber_dem_text_wird_mitgenommen():
     a = angebot((552, 837, 800, 960))                       # Text + Preis (wie Cottage Cheese)
-    foto = Rechteck(549, 587, 697, 688)                     # Produktfoto direkt darüber
+    foto = Rechteck(560, 600, 790, 830)                     # Produktfoto direkt darüber
     r = ausschnitt_bereich(a, [foto], *SEITE)
-    assert r.top <= 587 and r.bottom >= 960
+    assert r.top <= 600 and r.bottom >= 960
 
 
 def test_foto_unter_dem_text_und_hintergrund_werden_ignoriert():
