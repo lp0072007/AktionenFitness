@@ -21,6 +21,32 @@ class Naehrwerte:
 
 
 @dataclass
+class Flugblatt:
+    kette: str
+    id: str                      # z. B. "niederoesterreich/niederoesterreich_kw47"
+    name: str
+    gruppe: str                  # Bundesland, "sonderfolder", "weinwelt", ...
+    region: str | None           # Bundesland, None bei überregionalen Foldern
+    gueltig_ab: date
+    gueltig_bis: date            # letzter gültiger Tag (inklusive)
+    woche: str | None = None     # "KW 47"
+    viewer_url: str | None = None
+
+    @property
+    def ist_regional(self) -> bool:
+        return self.region is not None
+
+    def gueltig_am(self, tag: date) -> bool:
+        return self.gueltig_ab <= tag <= self.gueltig_bis
+
+    def to_dict(self) -> dict:
+        d = asdict(self)
+        d["gueltig_ab"] = self.gueltig_ab.isoformat()
+        d["gueltig_bis"] = self.gueltig_bis.isoformat()
+        return d
+
+
+@dataclass
 class Angebot:
     kette: str                       # "spar", "billa", ...
     produkt_id: str                  # Produktnummer der Kette

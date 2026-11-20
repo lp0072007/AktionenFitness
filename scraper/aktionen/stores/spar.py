@@ -12,14 +12,46 @@ bekommen eine "Just a moment..."-Seite statt JSON.
 
 from __future__ import annotations
 
+from datetime import date, datetime, timedelta
+from zoneinfo import ZoneInfo
+
 import httpx
 
-from ..models import Angebot
+from ..models import Angebot, Flugblatt
 from .base import USER_AGENT, Store, parse_menge, parse_naehrwert_tabelle
 
 BASE_URL = "https://www.interspar.at"
 RESULTS_PATH = "/api/search/results"
 DETAIL_PATH = "/api/product/by-number/{nr}"
+FLUGBLAETTER_PATH = "/api/ipaper/leaflets"
+FLUGBLATT_PATH = "/api/ipaper/leaflets/{gruppe}/{slug}"
+
+WIEN = ZoneInfo("Europe/Vienna")
+
+
+def _lokales_datum(iso: str, ende: bool = False) -> date:
+    """'2026-11-16T23:00:00.000Z' -> 17.11.2026 (österreichische Zeit).
+
+    Endzeitpunkte sind exklusiv (Mitternacht des Folgetags), daher bei ende=True eine Sekunde abziehen.
+    """
+    dt = datetime.fromisoformat(iso.replace("Z", "+00:00")).astimezone(WIEN)
+    if ende:
+        dt -= timedelta(seconds=1)
+    return dt.date()
+
+
+def parse_flugblatt(raw: dict) -> Flugblatt:
+    return Flugblatt(
+        kette="spar",
+        id=f"{raw['group']}/{raw['slug']}",
+        name=raw.get("accessibleName") or raw["slug"],
+        gruppe=raw["group"],
+        region=raw.get("region"),
+        gueltig_ab=_lokales_datum(raw["validFrom"]),
+        gueltig_bis=_lokales_datum(raw["validTo"], ende=True),
+        woche=raw.get("weekLabel"),
+        viewer_url=raw.get("viewerUrl"),
+    )
 
 # Mögliche Feldnamen für den Streichpreis in der Suche. Die echten Namen sind noch unbekannt,
 # weil in den bisherigen Beispielantworten kein Produkt in Aktion war.
@@ -133,6 +165,18 @@ class SparStore(Store):
             bild_url=(raw.get("image") or {}).get("url"),
             tags=tags,
             bio="bio" in tags or name.lower().startswith("bio ") or " bio " in name.lower(),
+        )
+
+    # --- Flugblätter --------------------------------------------------------
+
+    def flugblaetter(self, data: dict | None = None) -> list[Flugblatt]:
+        data = data if data is not None else self._get_json(FLUGBLAETTER_PATH, referer="/aktionen")
+        return [parse_flugblatt(r) for r in data.get("leaflets") or []]
+
+    def flugblatt(self, gruppe: str, slug: str) -> Flugblatt:
+        """Einzelnes Flugblatt, enthält zusätzlich die viewer_url (flugblatt.interspar.at)."""
+        return parse_flugblatt(
+            self._get_json(FLUGBLATT_PATH.format(gruppe=gruppe, slug=slug), referer=f"/aktionen/{gruppe}/{slug}")
         )
 
     # --- Produktdetails ----------------------------------------------------

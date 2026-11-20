@@ -1,0 +1,66 @@
+{
+ "_quelle": "Echte Antwort von https://www.interspar.at/api/ipaper/leaflets (20.11.2026, gekürzt auf 5 von 22)",
+ "leaflets": [
+  {
+   "accessibleName": "261112-1-Online-Flugblatt Niederoesterreich KW 47",
+   "coverUrl": "/api/ipaper/leaflets/niederoesterreich/niederoesterreich_kw47/cover",
+   "detailPath": "/aktionen/niederoesterreich/niederoesterreich_kw47",
+   "group": "niederoesterreich",
+   "listingLabel": "Niederösterreich",
+   "region": "niederoesterreich",
+   "slug": "niederoesterreich_kw47",
+   "validFrom": "2026-11-16T23:00:00.000Z",
+   "validTo": "2026-12-02T23:00:00.000Z",
+   "weekLabel": "KW 47"
+  },
+  {
+   "accessibleName": "261112-1-Online-Flugblatt Wien KW 47",
+   "coverUrl": "/api/ipaper/leaflets/wien/wien_kw47/cover",
+   "detailPath": "/aktionen/wien/wien_kw47",
+   "group": "wien",
+   "listingLabel": "Wien",
+   "region": "wien",
+   "slug": "wien_kw47",
+   "validFrom": "2026-11-16T23:00:00.000Z",
+   "validTo": "2026-12-02T23:00:00.000Z",
+   "weekLabel": "KW 47"
+  },
+  {
+   "accessibleName": "INTERSPAR am Schottentor KW47 2026",
+   "coverUrl": "/api/ipaper/leaflets/wien/wien_im20_kw47/cover",
+   "detailPath": "/aktionen/wien/wien_im20_kw47",
+   "group": "wien",
+   "listingLabel": "Wien",
+   "region": "wien",
+   "slug": "wien_im20_kw47",
+   "validFrom": "2026-11-16T23:00:00.000Z",
+   "validTo": "2026-12-02T23:00:00.000Z",
+   "weekLabel": "KW 47"
+  },
+  {
+   "accessibleName": "301001-1-Sonderfolder Festtagstisch KW47",
+   "coverUrl": "/api/ipaper/leaflets/sonderfolder/festtagstisch_kw47/cover",
+   "detailPath": "/aktionen/sonderfolder/festtagstisch_kw47",
+   "group": "sonderfolder",
+   "listingLabel": "Sonderfolder",
+   "region": null,
+   "slug": "festtagstisch_kw47",
+   "validFrom": "2026-11-16T23:00:00.000Z",
+   "validTo": "2026-12-31T23:00:00.000Z",
+   "weekLabel": "KW 47"
+  },
+  {
+   "accessibleName": "261110-4-weinwelt-bestseller 12-2026",
+   "coverUrl": "/api/ipaper/leaflets/weinwelt/261110-4-weinwelt-bestseller-12-2026/cover",
+   "detailPath": "/aktionen/weinwelt/261110-4-weinwelt-bestseller-12-2026",
+   "group": "weinwelt",
+   "listingLabel": "Weinwelt",
+   "region": null,
+   "slug": "261110-4-weinwelt-bestseller-12-2026",
+   "validFrom": "2026-11-16T23:00:00.000Z",
+   "validTo": "2026-12-09T23:00:00.000Z",
+   "weekLabel": null
+  }
+ ],
+ "region": null
+}

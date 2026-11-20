@@ -33,6 +33,7 @@ def main(argv: list[str] | None = None) -> int:
     quelle.add_argument("--query", default="*", help="Suchbegriff, z. B. skyr")
     quelle.add_argument("--nr", help="Produktnummer für Detailabfrage (inkl. Nährwerte)")
     quelle.add_argument("--datei", type=Path, help="Gespeicherte JSON-Antwort statt Live-Abfrage")
+    quelle.add_argument("--flugblaetter", action="store_true", help="Aktuelle Flugblätter auflisten")
     p.add_argument("--raw", action="store_true", help="Rohdaten der Kette ausgeben (zum Felder-Erkunden)")
     p.add_argument("--json", action="store_true", help="Ausgabe als JSON")
     args = p.parse_args(argv)
@@ -41,6 +42,8 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.datei:
             data = json.loads(args.datei.read_text(encoding="utf-8"))
+        elif args.flugblaetter:
+            data = store._get_json("/api/ipaper/leaflets", referer="/aktionen")
         elif args.nr:
             data = store.fetch_detail(args.nr)
         else:
@@ -51,6 +54,11 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.raw:
         print(json.dumps(data, indent=2, ensure_ascii=False))
+        return 0
+
+    if "leaflets" in data:  # Flugblatt-Liste
+        for f in store.flugblaetter(data):
+            print(f"{f.gueltig_ab:%d.%m.} – {f.gueltig_bis:%d.%m.%Y}  {f.gruppe:<18} {f.name}")
         return 0
 
     if "product" in data:  # Detail-Antwort

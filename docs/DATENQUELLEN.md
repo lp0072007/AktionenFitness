@@ -51,12 +51,19 @@ enthalten**, wir brauchen dafür das Flugblatt selbst.
 ### Flugblatt (iPaper)
 
 Seite: `https://www.interspar.at/aktionen/niederoesterreich/niederoesterreich_kw47`, also **pro Bundesland
-und Kalenderwoche**. Im JS gefunden:
-- `/api/ipaper/leaflets/{…}/{…}`: Flugblatt-Daten (vermutlich Region + Flugblatt-Name)
-- `/api/ipaper/leaflets` mit Key `ipaper-leaflets-…`: Liste der Flugblätter
-- `cdn.ipaper.io/flipbooks/api/v3/latest.js`: Flugblatt-Viewer von iPaper (externer Anbieter)
+und Kalenderwoche**.
 
-Offen: Inhalt dieser Antworten. Gibt es Produkte/Hotspots als JSON oder nur Seitenbilder?
+| Endpunkt | Inhalt |
+|---|---|
+| `/api/ipaper/leaflets` ✅ | Alle aktuellen Flugblätter: `group`, `slug`, `region`, `validFrom`, `validTo` (UTC, Ende exklusiv), `weekLabel` |
+| `/api/ipaper/leaflets/{group}/{slug}` ✅ | Dasselbe + `viewerUrl`, z. B. `https://flugblatt.interspar.at/niederoesterreich/niederoesterreich_kw47/` |
+| `/api/ipaper/leaflets/{group}/{slug}/cover` | Titelbild |
+
+Fixtures: `spar_flugblaetter.json`, `spar_flugblatt_noe.json`. Gruppen: 9 Bundesländer (Burgenland Nord/Süd
+getrennt, Osttirol eigenes), Einzelmarkt-Folder (z. B. `wien_im20_kw47`), `sonderfolder`, `weinwelt`.
+
+Der Viewer (`flugblatt.interspar.at`) ist ein **iPaper**-Flipbook (`cdn.ipaper.io/flipbooks/api/v3/latest.js`).
+Offen: Liefert er Produkte/Hotspots/Text als JSON oder nur Seitenbilder?
 
 Sonstige Endpunkte:
 - `/api/data/p/{productNumber}` liefert nur CMS-Inhalt (`{"story":null}`) und ist irrelevant

@@ -5,6 +5,7 @@ description = "Supermarkt-Aktionen einlesen und für Fitness auswerten"
 requires-python = ">=3.11"
 dependencies = [
     "httpx>=0.27",
+    "tzdata; sys_platform == 'win32'",  # Zeitzonen für zoneinfo unter Windows
 ]
 
 [project.optional-dependencies]
