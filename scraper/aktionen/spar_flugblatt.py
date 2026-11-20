@@ -83,18 +83,26 @@ def pdf_url(viewer: str, client: httpx.Client | None = None) -> str:
     return r.headers["location"]
 
 
-def pdf_herunterladen(fb: SparFlugblatt, ordner: Path, client: httpx.Client | None = None) -> Path:
+def pdf_herunterladen(fb: SparFlugblatt, ordner: Path, client: httpx.Client | None = None, fortschritt=None) -> Path:
     """Lädt das PDF (ca. 20 MB) in den Ordner. Ist es schon da, wird es nicht nochmal geladen."""
     ordner.mkdir(parents=True, exist_ok=True)
     ziel = ordner / f"spar_{fb.region}_kw{fb.kw}.pdf"
     if ziel.exists() and ziel.stat().st_size > 0:
+        if fortschritt:
+            fortschritt.setze(ziel.stat().st_size, ziel.stat().st_size)
+            fortschritt.fertig("(schon vorhanden)")
         return ziel
     client = client or _client()
     with client.stream("GET", pdf_url(fb.viewer_url, client)) as r:
         r.raise_for_status()
+        gesamt = int(r.headers.get("content-length") or 0) or None
         tmp = ziel.with_suffix(".part")
         with tmp.open("wb") as f:
             for chunk in r.iter_bytes():
                 f.write(chunk)
+                if fortschritt:
+                    fortschritt.weiter(len(chunk), gesamt)
     tmp.replace(ziel)
+    if fortschritt:
+        fortschritt.fertig()
     return ziel

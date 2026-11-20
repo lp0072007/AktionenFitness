@@ -29,7 +29,7 @@ def parse_produkt(p: dict) -> FlugblattAngebot | None:
 
 
 def aktuelle_angebote(heute: date | None = None, tage_voraus: int = 10, client: httpx.Client | None = None,
-                      pause: float = 0.3) -> list[FlugblattAngebot]:
+                      pause: float = 0.3, fortschritt=None) -> list[FlugblattAngebot]:
     """Alle Lebensmittel-Aktionen, die heute gelten oder in den nächsten `tage_voraus` Tagen starten."""
     heute = heute or date.today()
     client = client or httpx.Client(headers={"User-Agent": UA, "Accept": "application/json"}, timeout=60)
@@ -42,6 +42,8 @@ def aktuelle_angebote(heute: date | None = None, tage_voraus: int = 10, client: 
         r.raise_for_status()
         daten = r.json()
         rewe.sammeln(daten.get("results") or [], heute, tage_voraus, gesehen, sorten, f"{BASIS}/produkte")
+        if fortschritt:
+            fortschritt.weiter(len(daten.get("results") or []), daten.get("total"))
         seite += 1
         if not daten.get("results") or seite * SEITENGROESSE >= (daten.get("total") or 0):
             break

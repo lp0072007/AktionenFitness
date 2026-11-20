@@ -46,15 +46,17 @@ def parse_produkt(p: dict) -> FlugblattAngebot | None:
 
 
 def aktuelle_angebote(heute: date | None = None, tage_voraus: int = 10, client: httpx.Client | None = None,
-                      pause: float = 0.3) -> list[FlugblattAngebot]:
+                      pause: float = 0.3, fortschritt=None) -> list[FlugblattAngebot]:
     heute = heute or date.today()
     client = client or httpx.Client(headers={"User-Agent": UA}, timeout=60, follow_redirects=True)
     gesehen: dict[str, FlugblattAngebot] = {}
     sorten: set[tuple] = set()
     kategorien = list(STANDARD_KATEGORIEN)
     neu_gelesen = False
+    erledigt_kategorien = 0
     while kategorien:
         kat = kategorien.pop(0)
+        erledigt_kategorien += 1
         seite = 0
         while True:
             url = (f"{BASIS}/api/product-discovery/categories/{kat}/products"
@@ -71,6 +73,11 @@ def aktuelle_angebote(heute: date | None = None, tage_voraus: int = 10, client: 
             r.raise_for_status()
             daten = r.json()
             rewe.sammeln(daten.get("results") or [], heute, tage_voraus, gesehen, sorten, f"{BASIS}/produkte")
+            if fortschritt:
+                # Anteil = erledigte Kategorien + Anteil der aktuellen Kategorie
+                anteil_kat = min(1.0, (seite + 1) * SEITENGROESSE / max(1, daten.get("total") or 1))
+                gesamt_kat = erledigt_kategorien + len(kategorien)
+                fortschritt.setze(erledigt_kategorien - 1 + anteil_kat, gesamt_kat)
             seite += 1
             time.sleep(pause)
             if not daten.get("results") or seite * SEITENGROESSE >= (daten.get("total") or 0):

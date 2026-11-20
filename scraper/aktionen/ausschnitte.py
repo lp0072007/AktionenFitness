@@ -81,7 +81,7 @@ def ausschnitt_bereich(
 
 
 def ausschnitte_speichern(pdf_pfad, angebote: list[FlugblattAngebot], ordner: Path, praefix: str,
-                          nur: set[int] | None = None, max_breite: int = 640) -> dict[int, Path]:
+                          nur: set[int] | None = None, max_breite: int = 640, fortschritt=None) -> dict[int, Path]:
     """Speichert die Ausschnitte als JPEG. Rückgabe: Index in `angebote` -> Datei.
 
     nur: Indizes der Angebote, für die Bilder erzeugt werden sollen (z. B. nur die fitnessrelevanten).
@@ -95,8 +95,12 @@ def ausschnitte_speichern(pdf_pfad, angebote: list[FlugblattAngebot], ordner: Pa
         if nur is None or i in nur:
             nach_seite.setdefault(a.seite, []).append(i)
 
+    if fortschritt:
+        fortschritt.setze(0, len(nach_seite))
     with pdfplumber.open(pdf_pfad) as pdf:
         for nr, indizes in nach_seite.items():
+            if fortschritt:
+                fortschritt.weiter()
             page = pdf.pages[nr - 1]
             bilder = [Rechteck(b["x0"], b["top"], b["x1"], b["bottom"]) for b in page.images]
             gleiche_seite = [a for a in angebote if a.seite == nr]
@@ -112,4 +116,6 @@ def ausschnitte_speichern(pdf_pfad, angebote: list[FlugblattAngebot], ordner: Pa
                 ziel = ordner / f"{praefix}-s{nr}-{i}.jpg"
                 teil.save(ziel, "JPEG", quality=82, optimize=True)
                 ergebnis[i] = ziel
+    if fortschritt:
+        fortschritt.fertig(f"{len(ergebnis)} Ausschnitte")
     return ergebnis

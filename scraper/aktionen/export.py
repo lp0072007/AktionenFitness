@@ -21,6 +21,7 @@ import httpx
 from PIL import Image
 
 from .ausschnitte import ausschnitte_speichern
+from .fortschritt import Fortschritt, Gesamt
 from .stores import billa, hofer, lidl, penny
 
 # Österreichweite Ketten mit strukturierten Daten: Name -> Modul mit aktuelle_angebote() und UA
@@ -40,14 +41,18 @@ REGION_NAMEN = {
 }
 
 
-def angebote_aus_pdf(pfad) -> list[FlugblattAngebot]:
+def angebote_aus_pdf(pfad, fortschritt: Fortschritt | None = None) -> list[FlugblattAngebot]:
     import pdfplumber
 
     angebote = []
     with pdfplumber.open(pfad) as pdf:
         for n, seite in enumerate(pdf.pages, start=1):
+            if fortschritt:
+                fortschritt.setze(n, len(pdf.pages))
             woerter = seite.extract_words(use_text_flow=True, extra_attrs=["size", "fontname"])
             angebote += analysiere_seite(woerter, n)
+    if fortschritt:
+        fortschritt.fertig(f"{len(angebote)} Angebote")
     return angebote
 
 
@@ -98,12 +103,10 @@ def _bild_speichern(client: httpx.Client, url: str, ziel: Path) -> None:
 def kette_exportieren(kette: str, bilder_ordner: Path | None = None) -> dict:
     """Österreichweite Kette (Lidl, Hofer, Penny, Billa). Produktbilder werden parallel geladen und verkleinert."""
     modul = WEITERE_KETTEN[kette]
-    print(f"  {kette}: lade Angebote …", file=sys.stderr, flush=True)
-    t0 = time.time()
-    angebote = modul.aktuelle_angebote()
+    f = Fortschritt("Angebote")
+    angebote = modul.aktuelle_angebote(fortschritt=f)
     treffer = fitness_angebote(angebote)
-    print(f"  {kette}: {len(angebote)} Aktionen, {len(treffer)} fitnessrelevant ({time.time() - t0:.0f} s)",
-          file=sys.stderr, flush=True)
+    f.fertig(f"{len(angebote)} Aktionen, {len(treffer)} fitnessrelevant")
     bilder: dict[int, str] = {}
     if bilder_ordner is not None:
         ordner = bilder_ordner / kette
@@ -115,15 +118,16 @@ def kette_exportieren(kette: str, bilder_ordner: Path | None = None) -> dict:
                 ziel = ordner / f"{t.angebot.produkt_id}.jpg"
                 aufgaben[id(t)] = (t.angebot.bild_url, ziel)
         neu = {k: v for k, v in aufgaben.items() if not v[1].exists()}  # schon vorhandene nicht nochmal laden
-        if neu:
-            print(f"  {kette}: lade {len(neu)} Bilder …", file=sys.stderr, flush=True)
+        fb = Fortschritt("Bilder", len(neu))
         with httpx.Client(headers={"User-Agent": modul.UA}, timeout=60, follow_redirects=True) as c, \
                 ThreadPoolExecutor(max_workers=8) as pool:
             laeufe = {pool.submit(_bild_speichern, c, url, ziel): (k, ziel) for k, (url, ziel) in neu.items()}
-            for f in as_completed(laeufe):
-                k, ziel = laeufe[f]
-                if f.exception():
-                    print(f"  {kette}-Bild {ziel.stem}: {f.exception()}", file=sys.stderr)
+            fehler = 0
+            for lauf in as_completed(laeufe):
+                fb.weiter()
+                if lauf.exception():
+                    fehler += 1
+            fb.fertig(f"{fehler} nicht ladbar" if fehler else ("alle schon vorhanden" if not neu else ""))
         for k, (_, ziel) in aufgaben.items():
             if ziel.exists():
                 bilder[k] = ziel.relative_to(web).as_posix()
@@ -137,15 +141,16 @@ def region_exportieren(region: str, pdf: str | None = None, bilder_ordner: Path 
     fb = None
     if pdf is None:
         fb = aktuelles_flugblatt(region)
-        print(f"  {region}: {fb.flipbook.name} ({fb.flipbook.titel})", file=sys.stderr)
-        pdf = pdf_herunterladen(fb, DATEN_ORDNER)
-    angebote = angebote_aus_pdf(pdf)
+        print(f"    {fb.flipbook.name} ({fb.flipbook.titel})", file=sys.stderr)
+        pdf = pdf_herunterladen(fb, DATEN_ORDNER, fortschritt=Fortschritt("PDF laden", einheit="MB"))
+    angebote = angebote_aus_pdf(pdf, Fortschritt("Seiten lesen"))
     treffer = fitness_angebote(angebote)
     bilder: dict[int, str] = {}
     if bilder_ordner is not None:
         index = {id(a): i for i, a in enumerate(angebote)}
         nur = {index[id(t.angebot)] for t in treffer}
-        dateien = ausschnitte_speichern(pdf, angebote, bilder_ordner / region, f"spar-{region}", nur)
+        dateien = ausschnitte_speichern(pdf, angebote, bilder_ordner / region, f"spar-{region}", nur,
+                                        fortschritt=Fortschritt("Ausschnitte"))
         web = bilder_ordner.parent.parent  # .../web
         bilder = {i: d.relative_to(web).as_posix() for i, d in dateien.items()}
         index_treffer = {id(t): index[id(t.angebot)] for t in treffer}
@@ -185,18 +190,22 @@ def main(argv: list[str] | None = None) -> int:
     # Struktur: regionen[] = Spar pro Bundesland; lidl, hofer = österreichweit (gelten für alle Regionen)
     daten = {"erstellt": datetime.now().isoformat(timespec="minutes"), "regionen": [], "lidl": None, "hofer": None, "penny": None, "billa": None}
     bilder = None if args.ohne_bilder else args.ziel.parent / BILDER_UNTERORDNER
+    ketten = [k for k in WEITERE_KETTEN if not getattr(args, f"ohne_{k}")]
+    # Aufwand grob: Spar-Region (PDF + Auswertung) ≈ 2,5 × Kette, Billa ≈ 1,5 × (viele Angebote)
+    gesamt = Gesamt([2.5] * len(regionen) + [1.5 if k == "billa" else 1.0 for k in ketten])
     for r in regionen:
+        gesamt.schritt(f"Spar {REGION_NAMEN.get(r, r)}")
         try:
             daten["regionen"].append(region_exportieren(r, args.pdf, bilder))
         except Exception as e:  # noqa: BLE001
-            print(f"  {r}: übersprungen ({e})", file=sys.stderr)
-    for kette in WEITERE_KETTEN:
-        if getattr(args, f"ohne_{kette}"):
-            continue
+            print(f"\n    übersprungen ({e})", file=sys.stderr)
+    for kette in ketten:
+        gesamt.schritt(kette.capitalize())
         try:
             daten[kette] = kette_exportieren(kette, bilder)
         except Exception as e:  # noqa: BLE001
-            print(f"  {kette}: übersprungen ({e})", file=sys.stderr)
+            print(f"\n    übersprungen ({e})", file=sys.stderr)
+    gesamt.ende()
 
     args.ziel.parent.mkdir(parents=True, exist_ok=True)
     text = json.dumps(daten, ensure_ascii=False, indent=1)

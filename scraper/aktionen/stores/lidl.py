@@ -117,14 +117,17 @@ def parse_produkt(item: dict) -> FlugblattAngebot | None:
 
 
 def aktuelle_angebote(heute: date | None = None, tage_voraus: int = 10, client: httpx.Client | None = None,
-                      pause: float = 0.3) -> list[FlugblattAngebot]:
+                      pause: float = 0.3, fortschritt=None) -> list[FlugblattAngebot]:
     """Alle Lebensmittel-Aktionen, die heute gelten oder in den nächsten `tage_voraus` Tagen starten."""
     heute = heute or date.today()
     client = client or httpx.Client(headers={"User-Agent": UA}, timeout=60, follow_redirects=True)
     start = get_mit_wiederholung(client, BASIS + "/")
     start.raise_for_status()
     gesehen: dict[str, FlugblattAngebot] = {}
-    for pfad in angebotsseiten(start.text):
+    seiten = angebotsseiten(start.text)
+    for pfad in seiten:
+        if fortschritt:
+            fortschritt.weiter(1, len(seiten))
         r = get_mit_wiederholung(client, BASIS + pfad)
         if r.status_code != 200:
             continue

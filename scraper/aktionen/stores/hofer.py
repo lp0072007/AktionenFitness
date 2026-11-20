@@ -138,16 +138,18 @@ def _holen(client: httpx.Client, url: str) -> str:
 
 
 def aktuelle_angebote(heute: date | None = None, tage_voraus: int = 10, client: httpx.Client | None = None,
-                      pause: float = 0.3) -> list[FlugblattAngebot]:
+                      pause: float = 0.3, fortschritt=None) -> list[FlugblattAngebot]:
     """Alle Angebote mit Starttag von gestern-vor-7-Tagen bis `tage_voraus` Tage in der Zukunft."""
     heute = heute or date.today()
     client = client or httpx.Client(headers={"User-Agent": UA}, timeout=60, follow_redirects=True)
     uebersicht = _holen(client, BASIS + "/angebote")
     gesehen: dict[str, FlugblattAngebot] = {}
-    for tag in tag_seiten(uebersicht):
+    tage = [t for t in tag_seiten(uebersicht)
+            if -7 <= (date.fromisoformat(t) - heute).days <= tage_voraus]
+    for tag in tage:
         ab = date.fromisoformat(tag)
-        if (ab - heute).days > tage_voraus or (heute - ab).days > 7:
-            continue
+        if fortschritt:
+            fortschritt.weiter(1, len(tage))
         for a in angebote_aus_html(_holen(client, f"{BASIS}/angebote/{tag}"), ab):
             gesehen.setdefault(a.produkt_id, a)  # gleiches Produkt an mehreren Tagen: erster Starttag zählt
         time.sleep(pause)
