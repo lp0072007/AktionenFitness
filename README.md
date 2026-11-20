@@ -26,11 +26,12 @@ AktionenFitness/
 ```bash
 cd scraper
 python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
-pip install -e ".[dev]"
+pip install -e ".[dev,pdf]"
 pytest
 python -m aktionen spar --query skyr
+python -m aktionen.flugblatt_pdf flugblatt.pdf 14     # Angebote aus einem Flugblatt-PDF
 ```
 
 ## Status
 
-Phase 1: Datenquellen anbinden, angefangen mit **Spar**. Siehe [docs/DATENQUELLEN.md](docs/DATENQUELLEN.md).
+Phase 1: Datenquellen. **Spar** fast fertig: Flugblatt-Liste, Flugblatt-PDF-Auswertung ohne KI, Produktdetails mit Nährwerten. Siehe [docs/DATENQUELLEN.md](docs/DATENQUELLEN.md).

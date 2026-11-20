@@ -95,9 +95,21 @@ https://cdn.ipaper.io/iPaper/Papers/{paperId}/Enrichments/v1/{version}/{hash}/Pa
 - Aktionstext: „MENGEN VORTEIL“ (16), „40% billiger!“, „1 Becher 1,99 / ab 2 Becher je“ (8)
 - Achtung: Die Seitennummerierung im PDF ist gegenüber `pageTexts` um 1 verschoben (Cottage Cheese: pageTexts[12], PDF-Seite 14)
 
-Prototyp `scraper/experimente/pdf_preise_proto.py` („Preis zum nächsten Produktnamen“): Auf S. 14 sind ca. 2 von 5
-Zuordnungen richtig, auf S. 9 fehlen Preise. Die Positionen sind sauber, aber die Zuordnung braucht eine bessere
-Kachel-Erkennung. Idee: zuerst Produktkacheln bilden (Spalten/Raster, Bildpositionen), dann pro Kachel auswerten.
+**Auswertung ohne KI: `scraper/aktionen/flugblatt_pdf.py`** (`python -m aktionen.flugblatt_pdf datei.pdf [seiten]`)
+1. Rollen über die **Schriftart** (Spar): `MuseoSansCond-900` = Produktname, `-500` = Beschreibung,
+   `MuseoSansRounded-900` / `TrueNorth3DBlack` = Preis + Badges, `MuseoSansRounded-700` = Bedingung
+2. Preise = große Euro-Ziffern + kleinere Cent rechts daneben (einzeln gesetzte Ziffern werden verbunden)
+3. „Zusätzlich -25%“, „Mit %-Aktion“, „SPAR-App-Gutschein“ über einem Preis → Zusatzpreis
+4. Hauptpreis → Produktname: globale Zuordnung nach Abstand, Strafe wenn der Preis links vom Namen steht,
+   **Grundpreis-Kontrolle**: „400-g-Becher (= per kg 1,98)“ ergibt 0,79 €. Passt der Preis, gibt es einen Bonus,
+   sonst eine Strafe. Das löst die meisten Verwechslungen bei dicht stehenden Produkten.
+5. Bedingungen („statt 2,89“, „1 Becher 1,99 ab 2 Becher je“) und Badges („2+1 GRATIS“, „-40%“) → nächster Preis
+
+Stand 20.11.2026, NÖ KW47: 193 Angebote auf 22 Seiten. Die Seiten 7, 9, 11, 12, 14, 15 sind händisch geprüft und
+**alle richtig** (Tests in `tests/test_flugblatt_pdf.py`). Stichproben auf anderen Seiten zeigen noch Fehler, z. B.
+S. 8 (Bio-Eier: der Fr/Sa-Preis landet bei Bio-Orange) und S. 17 (Titel in gesperrter Schrift wie „R a d i e r e“).
+Geschätzte Gesamtgenauigkeit: 85–90 %. Für die Fitness-Auswahl reicht das als Start, weil die Nährwerte-Abfrage
+falsche Zuordnungen zusätzlich auffallen lässt.
 
 **Einschränkung:** In NÖ KW47, Seiten 1–25, sind nur rund 40 Produkte verlinkt, fast nur **Non-Food**
 (Glühwein, Bettwäsche, Haushaltsgeräte). Lebensmittel, die nur im Markt verkauft werden, z. B. NÖM Cottage
