@@ -72,3 +72,13 @@ def test_wiederholung_nach_abbruch():
     c = httpx.Client(transport=httpx.MockTransport(handler))
     assert get_mit_wiederholung(c, "https://www.lidl.at/", warte=0).text == "ok"
     assert len(versuche) == 3
+
+
+def test_wartet_bei_429():
+    import httpx
+
+    from aktionen.stores.base import get_mit_wiederholung
+
+    antworten = [httpx.Response(429, headers={"retry-after": "0"}), httpx.Response(200, text="ok")]
+    c = httpx.Client(transport=httpx.MockTransport(lambda r: antworten.pop(0)))
+    assert get_mit_wiederholung(c, "https://x/", warte=0).text == "ok"

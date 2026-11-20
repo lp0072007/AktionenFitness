@@ -36,7 +36,8 @@ class Kategorie:
 
 # Reihenfolge wichtig: spezifische Kategorien zuerst. Werte pro 100 g (roh bzw. wie verkauft).
 KATEGORIEN: tuple[Kategorie, ...] = (
-    Kategorie("Proteinpulver", "Protein", (r"\bwhey\b", r"proteinpulver", r"eiweißpulver"), 380, 75, 8, 6),
+    Kategorie("Proteinpulver", "Protein", (r"\bwhey\b", r"protein[- ]?pulver", r"eiweiß[- ]?pulver", r"proteinshake[- ]?pulver",
+                                           r"\bisolat\b", r"casein"), 380, 75, 8, 6, ausschluss=(r"riegel", r"bar\b")),
     Kategorie("Magertopfen", "Protein", (r"magertopfen", r"topfen.*mager"), 67, 12, 4, 0.2),
     Kategorie("Skyr", "Protein", (r"\bskyr\b",), 63, 11, 4, 0.2, ausschluss=(r"drink", r"alternative")),
     Kategorie("Cottage Cheese", "Protein", (r"cottage",), 95, 10.5, 3, 4.5),
@@ -76,6 +77,9 @@ KATEGORIEN: tuple[Kategorie, ...] = (
                           r"carbonara", r"sauce", r"soße", r"pesto", r"salat")),
     Kategorie("Erdäpfel", "Kohlenhydrate", (r"erdäpfel", r"kartoffel"), 75, 2, 16, 0.1,
               ausschluss=(r"chips", r"püree", r"rösti", r"pommes", r"salat", r"knödel")),
+    Kategorie("Rote-Rüben-Saft", "Kohlenhydrate", (r"rote[- ]?(bete|beete|rüben?)[- ]?(direkt)?saft", r"randensaft",
+                                                   r"(direkt)?saft rote[- ]?(bete|beete|rüben?)"), 40, 1, 8.5, 0,
+              ausschluss=(r"shot", r"ingwer")),
     Kategorie("Bananen", "Kohlenhydrate", (r"banane",), 90, 1.1, 20, 0.3, ausschluss=(r"chips", r"nikolo", r"schoko")),
     Kategorie("Milch", "Protein", (r"\bh?-?milch\b", r"vollmilch", r"magermilch", r"\bh-milch"), 50, 3.4, 4.8, 1.5,
               ausschluss=(r"schoko", r"kakao", r"cacao", r"reis", r"hafer", r"pudding", r"milchreis", r"käse",
@@ -94,14 +98,16 @@ _GLOBAL_AUSSCHLUSS = re.compile(
     r"|\beis\b|eiscreme|speiseeis|vanilleeis|schokoeis|fruchteis|baguette|tascherl|puffer|split|basis für|fix für|pizza|toast|sandwich|wrap\b|burger|nugget"
     r"|knödel|strudel|kuchen|torte|pudding|mousse|dessert|riegel|chips|cracker|smoothie|drink|shake"
     r"|gratin|kroketten|wedges|lasagne|auflauf|suppe|eintopf|gulasch|risotto|bowl\b|salat\b|aufstrich"
-    r"|mohnnudeln|germknödel|marillenknödel|palatschinken|schmarrn"
+    r"|mohnnudeln|germknödel|marillenknödel|palatschinken|schmarrn|chili con|würstchen|bratwurst|curry\b"
 )
 
 
 # Händler-Kategorien (Billa/Penny), deren Produkte nie als Grundnahrungsmittel zählen
 _PFAD_AUSSCHLUSS = re.compile(
     r"tiefkühlgerichte|fertiggerichte|pizza|\beis\b|eiscreme|süßes & salziges|knabber|pesto|aromen|glasuren"
-    r"|pommes|kartoffelprodukte|tiefkühl > obst|snack|dessert|aufstrich|frischkäse",
+    r"|pommes|kartoffelprodukte|tiefkühl > obst|snack|dessert|aufstrich|frischkäse|riegel|trinkmahlzeit|baby"
+    r"|kosmetik|pflege|tiernahrung|katze|hund|kontaktlinse|augen|dusch|\bbad\b|shampoo|haar|haut|creme|lotion"
+    r"|zahn|mund|deo|parfum|make-up|nagel|rasur|windel|reinig|wasch|putz|spül|shots?\b",
     re.I,
 )
 

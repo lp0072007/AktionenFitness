@@ -22,10 +22,11 @@ from PIL import Image
 
 from .ausschnitte import ausschnitte_speichern
 from .fortschritt import Fortschritt, Gesamt
-from .stores import billa, hofer, lidl, penny
+from .stores import billa, dm, hofer, lidl, penny
 
 # Österreichweite Ketten mit strukturierten Daten: Name -> Modul mit aktuelle_angebote() und UA
-WEITERE_KETTEN = {"lidl": lidl, "hofer": hofer, "penny": penny, "billa": billa}
+KETTEN_NAMEN = {"lidl": "Lidl", "hofer": "Hofer", "penny": "Penny", "billa": "Billa", "dm": "dm"}
+WEITERE_KETTEN = {"lidl": lidl, "hofer": hofer, "penny": penny, "billa": billa, "dm": dm}
 from .fitness import DATEN_ORDNER, FitnessTreffer, fitness_angebote
 from .flugblatt_pdf import FlugblattAngebot, analysiere_seite
 from .spar_flugblatt import REGIONEN, aktuelles_flugblatt, pdf_herunterladen
@@ -106,7 +107,8 @@ def kette_exportieren(kette: str, bilder_ordner: Path | None = None) -> dict:
     f = Fortschritt("Angebote")
     angebote = modul.aktuelle_angebote(fortschritt=f)
     treffer = fitness_angebote(angebote)
-    f.fertig(f"{len(angebote)} Aktionen, {len(treffer)} fitnessrelevant")
+    art = "Produkte (Dauerpreise)" if kette == "dm" else "Aktionen"
+    f.fertig(f"{len(angebote)} {art}, {len(treffer)} fitnessrelevant")
     bilder: dict[int, str] = {}
     if bilder_ordner is not None:
         ordner = bilder_ordner / kette
@@ -181,6 +183,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--ohne-hofer", action="store_true")
     p.add_argument("--ohne-penny", action="store_true")
     p.add_argument("--ohne-billa", action="store_true")
+    p.add_argument("--ohne-dm", action="store_true")
     args = p.parse_args(argv)
 
     regionen = sorted(REGIONEN) if args.alle else (args.region or STANDARD_REGIONEN)
@@ -188,11 +191,11 @@ def main(argv: list[str] | None = None) -> int:
         p.error("--pdf geht nur mit genau einer --region")
 
     # Struktur: regionen[] = Spar pro Bundesland; lidl, hofer = österreichweit (gelten für alle Regionen)
-    daten = {"erstellt": datetime.now().isoformat(timespec="minutes"), "regionen": [], "lidl": None, "hofer": None, "penny": None, "billa": None}
+    daten = {"erstellt": datetime.now().isoformat(timespec="minutes"), "regionen": [], "lidl": None, "hofer": None, "penny": None, "billa": None, "dm": None}
     bilder = None if args.ohne_bilder else args.ziel.parent / BILDER_UNTERORDNER
     ketten = [k for k in WEITERE_KETTEN if not getattr(args, f"ohne_{k}")]
-    # Aufwand grob: Spar-Region (PDF + Auswertung) ≈ 2,5 × Kette, Billa ≈ 1,5 × (viele Angebote)
-    gesamt = Gesamt([2.5] * len(regionen) + [1.5 if k == "billa" else 1.0 for k in ketten])
+    # Aufwand grob: Spar-Region (PDF + Auswertung) ≈ 2,5 × Kette, Billa ≈ 1,5 × (viele Angebote), dm ≈ 4 ×
+    gesamt = Gesamt([2.5] * len(regionen) + [{"billa": 1.5, "dm": 4.0}.get(k, 1.0) for k in ketten])  # dm: 3 s Pausen
     for r in regionen:
         gesamt.schritt(f"Spar {REGION_NAMEN.get(r, r)}")
         try:
@@ -200,7 +203,7 @@ def main(argv: list[str] | None = None) -> int:
         except Exception as e:  # noqa: BLE001
             print(f"\n    übersprungen ({e})", file=sys.stderr)
     for kette in ketten:
-        gesamt.schritt(kette.capitalize())
+        gesamt.schritt(KETTEN_NAMEN.get(kette, kette))
         try:
             daten[kette] = kette_exportieren(kette, bilder)
         except Exception as e:  # noqa: BLE001
@@ -213,7 +216,7 @@ def main(argv: list[str] | None = None) -> int:
     # Zusätzlich als JS, damit index.html auch per Doppelklick (file://) funktioniert, wo fetch() blockiert ist
     args.ziel.with_suffix(".js").write_text(f"window.ANGEBOTE = {text};\n", encoding="utf-8")
     n = sum(len(r["angebote"]) for r in daten["regionen"])
-    weitere = ", ".join(f"{k.capitalize()} {len(daten[k]['angebote']) if daten[k] else 'übersprungen'}"
+    weitere = ", ".join(f"{KETTEN_NAMEN.get(k, k)} {len(daten[k]['angebote']) if daten[k] else 'übersprungen'}"
                         for k in WEITERE_KETTEN)
     print(f"{args.ziel}: Spar {len(daten['regionen'])} Regionen / {n} Fitness-Angebote, {weitere}", file=sys.stderr)
     return 0 if daten["regionen"] or any(daten[k] for k in WEITERE_KETTEN) else 1

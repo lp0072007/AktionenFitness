@@ -219,6 +219,18 @@ Gleiche Rewe-Plattform wie Penny, aber über den Online-Shop (`shop.billa.at`). 
   Fertiggerichte, Pizza, Eis, Snacks usw. aus der Fitness-Auswertung ausgeschlossen (`fitness._PFAD_AUSSCHLUSS`).
 - Gemeinsamer Parser für Penny und Billa: `aktionen/stores/rewe.py`.
 
+## dm ✅ (Dauerpreise)
+
+dm macht kaum Aktionen (1 von 200 Proteinprodukten mit Streichpreis). Eingebunden als **Dauerpreis-Vergleich**.
+
+    GET https://product-search.services.dmtech.com/at/search/crawl?query=tofu&pageSize=100&currentPage=0
+
+`brandName`, `title` („Direktsaft Rote Bete, 1 l“), `dan`, `tileData.price.price.current.value` („2,00 €“),
+`…previous.value` (selten), `tileData.price.tileInfos` („1 l (2,00 € je 1 l)“), `tileData.self`, `tileData.images`,
+`tileData.trackingData.categories` („Gemüsesäfte & Ingwershots“, „Duschgel“ …, damit werden Drogerieartikel ausgeschlossen).
+**Rate-Limit:** Bei schnellen Anfragen kommt 429. Deshalb 3 s Pause und nur 100 Treffer pro Suchbegriff
+(Liste in `aktionen/stores/dm.py`). Bei 429 wird automatisch gewartet (`Retry-After`). KW 47: 683 Produkte, ~150 fitnessrelevant.
+
 ## ADEG ⚠️ (noch nicht eingebunden)
 
 Das Flugblatt gibt es pro Markt (selbstständige Kaufleute). `adeg.at/flugblatt-aktionen/adeg-flugblatt` lädt es erst nach

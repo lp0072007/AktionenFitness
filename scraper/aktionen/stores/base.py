@@ -116,18 +116,29 @@ class Store(ABC):
         return [a for r in self.fetch_raw(query) if (a := self.parse(r)) is not None]
 
 
-def get_mit_wiederholung(client, url: str, versuche: int = 3, warte: float = 3.0):
-    """GET mit Wiederholung bei Verbindungsabbrüchen und 5xx-Fehlern (z. B. 'Server disconnected')."""
+def get_mit_wiederholung(client, url: str, versuche: int = 4, warte: float = 3.0, max_warte: float = 60.0):
+    """GET mit Wiederholung bei Verbindungsabbrüchen, 5xx-Fehlern und 429 (zu viele Anfragen).
+
+    Bei 429 wird so lange gewartet, wie der Server per Retry-After verlangt (höchstens max_warte Sekunden).
+    """
     import time
 
     import httpx
 
     for i in range(versuche):
+        pause = warte * (i + 1)
         try:
             r = client.get(url)
-            if r.status_code < 500 or i == versuche - 1:
+            if r.status_code == 429:
+                try:
+                    pause = min(max_warte, float(r.headers.get("retry-after", pause * 3)))
+                except ValueError:
+                    pause = min(max_warte, pause * 3)
+            elif r.status_code < 500:
+                return r
+            if i == versuche - 1:
                 return r
         except httpx.TransportError:
             if i == versuche - 1:
                 raise
-        time.sleep(warte * (i + 1))
+        time.sleep(pause)
