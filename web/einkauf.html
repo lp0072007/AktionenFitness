@@ -25,16 +25,30 @@
 
   <main class="ek-layout">
     <section class="ek-eingabe" aria-label="Einkaufsliste">
-      <label class="feld">
-        <span>Deine Einkaufsliste (eine Zeile pro Produkt)</span>
-        <textarea id="liste" rows="12" spellcheck="false" placeholder="- 2x Milch
-- Haferflocken 1kg
-- 500g Hendlfilet
-- Skyr, Magertopfen
-- Eier (10er)
-Obst:
-- Bananen"></textarea>
-      </label>
+      <form class="ek-neu" id="neuForm" autocomplete="off">
+        <label class="feld">
+          <span>Produkt hinzufügen</span>
+          <input id="neu" type="text" enterkeyhint="enter" placeholder="z. B. 2x Milch, 500g Hendlfilet …">
+        </label>
+        <button class="knopf" type="submit" aria-label="Hinzufügen">＋</button>
+      </form>
+      <p class="ek-hinweis">Eintippen und <b>Enter</b> – jedes Produkt erscheint als eigener Punkt. Mengen wie „2x“, „500g“,
+        „1,5 kg“ oder „10er“ werden erkannt. Mehrere Zeilen einfügen geht auch.</p>
+
+      <div class="ek-vorschau">
+        <div class="ek-vorschau__kopf">
+          <h2 class="ek-titel">Deine Liste</h2>
+          <span id="erledigtZaehler"></span>
+        </div>
+        <ul id="vorschau"></ul>
+        <p class="ek-hinweis" id="listeLeer">Noch leer – oben das erste Produkt eintippen.</p>
+        <div class="ek-vorschau__aktionen" id="listeAktionen" hidden>
+          <button type="button" class="knopf knopf--leise" id="hakenWeg">Häkchen entfernen</button>
+          <button type="button" class="knopf knopf--leise" id="erledigteWeg">Abgehakte löschen</button>
+          <button type="button" class="knopf knopf--leise" id="allesWeg">Liste leeren</button>
+        </div>
+      </div>
+
       <div class="ek-optionen">
         <label class="feld">
           <span>Region (für Spar)</span>
@@ -45,21 +59,10 @@ Obst:
           <input id="tag" type="date">
         </label>
       </div>
-      <p class="ek-hinweis">Tipp: eine Zeile pro Produkt oder mit Komma trennen. Mengen wie „2x“, „500g“, „1,5 kg“ oder „10er“
-        werden erkannt, Klammern sind Notizen, Zeilen mit „:“ am Ende sind Überschriften. Die Liste wird im Browser gespeichert.</p>
-      <div class="ek-vorschau" id="vorschauBox" hidden>
-        <div class="ek-vorschau__kopf">
-          <h2 class="ek-titel">Deine Liste</h2>
-          <span id="erledigtZaehler"></span>
-          <button type="button" class="knopf knopf--leise" id="hakenWeg" hidden>Häkchen entfernen</button>
-        </div>
-        <p class="ek-hinweis">Abhaken, was schon im Wagen ist – es wird durchgestrichen.</p>
-        <ul id="vorschau"></ul>
-      </div>
     </section>
 
     <section class="ek-ergebnis" aria-live="polite">
-      <div id="leerHinweis" class="ek-leer">Gib links deine Einkaufsliste ein – das Ergebnis erscheint hier.</div>
+      <div id="leerHinweis" class="ek-leer">Trag links deine Produkte ein – das Ergebnis erscheint hier.</div>
       <div id="ergebnis" hidden>
         <div class="ek-empfehlung" id="empfehlung"></div>
         <h2 class="ek-titel">Geschäfte im Vergleich</h2>

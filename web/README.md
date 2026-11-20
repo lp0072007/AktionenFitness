@@ -37,12 +37,12 @@ Mit `--ohne-bilder` lässt sich das abschalten.
 
 ## Einkaufsliste abgleichen (`einkauf.html`)
 
-Einkaufsliste als Stichpunkte eingeben („- 2x Milch“, „500g Hendlfilet“) → Abgleich mit **allen** aktuellen Aktionen
-(Spar-Region, Lidl, Hofer, Penny, Billa; Daten: `data/aktionen.js`) → Empfehlung, wo am meisten in Aktion ist,
-günstigste Aufteilung auf Geschäfte, falsche Treffer abwählbar.
-Eingabe: eine Zeile pro Produkt oder mit Komma getrennt, Aufzählungszeichen und Kästchen („- [ ]“, „☐“) egal, Mengen
-(„2x“, „500g“, „1,5 kg“, „½ kg“, „10er“), Klammern = Notiz, Zeilen mit „:“ am Ende = Überschrift. Eigenschaften wie
-„light“, „mager“, „griechisch“ sind optional. Unter der Eingabe zeigt „Deine Liste“, wie jede Zeile erkannt wurde; dort lässt sich jedes Produkt abhaken (wird durchgestrichen, bleibt gespeichert). Logik: `abgleich.js`, Tests: `node --test` im Ordner `web`.
+Produkt eintippen + **Enter** → erscheint als eigener Punkt in „Deine Liste“ (mit Kreis zum Abhaken → durchgestrichen,
+✕ zum Löschen; alles im Browser gespeichert). Mehrere Zeilen einfügen oder „Skyr, Topfen“ ergibt mehrere Punkte.
+Mengen („2x“, „500g“, „1,5 kg“, „½ kg“, „10er“) werden erkannt, Klammern sind Notizen, Eigenschaften wie „light“ oder
+„mager“ sind optional. Jeder Punkt wird mit **allen** aktuellen Aktionen abgeglichen (Spar-Region, Lidl, Hofer, Penny,
+Billa, dm; Daten: `data/aktionen.js`) → Empfehlung, günstigste Aufteilung auf Geschäfte, falsche Treffer abwählbar.
+Logik: `abgleich.js`, Tests: `node --test` im Ordner `web`.
 
 ## Funktionen
 

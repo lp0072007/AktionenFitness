@@ -4,13 +4,15 @@ const DATEN = window.AKTIONEN || { regionen: {}, ketten: {} };
 const A = window.Abgleich;
 const KETTEN = { spar: "Spar", lidl: "Lidl", hofer: "Hofer", penny: "Penny", billa: "Billa", dm: "dm" };
 const SPEICHER = "aktionenfitness.einkauf.v1";
+let naechsteId = 1;
 
 const $ = (s) => document.querySelector(s);
 const euro = (x) => x.toLocaleString("de-AT", { style: "currency", currency: "EUR" });
 const datum = (iso) => new Date(iso + "T00:00:00").toLocaleDateString("de-AT", { weekday: "short", day: "2-digit", month: "2-digit" });
 const heuteIso = () => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
 
-const zustand = { ausgeschlossen: new Set(), erledigt: new Set() };
+// zeilen: [{ id, text, erledigt }] – jeder Eintrag ist ein eigener Punkt der Liste
+const zustand = { ausgeschlossen: new Set(), zeilen: [] };
 
 function laden() {
   try { return JSON.parse(localStorage.getItem(SPEICHER)) || {}; } catch { return {}; }
@@ -18,8 +20,8 @@ function laden() {
 function speichern() {
   try {
     localStorage.setItem(SPEICHER, JSON.stringify({
-      liste: $("#liste").value, region: $("#region").value, ausgeschlossen: [...zustand.ausgeschlossen],
-      erledigt: [...zustand.erledigt],
+      zeilen: zustand.zeilen.map(({ text, erledigt }) => ({ text, erledigt })),
+      region: $("#region").value, ausgeschlossen: [...zustand.ausgeschlossen],
     }));
   } catch { /* privater Modus */ }
 }
@@ -56,40 +58,44 @@ function verstanden(e) {
   return teile.join(" ");
 }
 
-// Abhak-Liste unter der Eingabe: jede erkannte Zeile mit Kreis zum Abhaken (wird durchgestrichen),
-// dazu das beste Angebot. Abgehakt wird pro Zeilentext gemerkt, auch nach dem Neuladen.
-const erledigtSchluessel = (e) => A.norm(e.text);
+// ---------- Liste bearbeiten ----------
+// Text aus dem Eingabefeld (auch mehrere eingefügte Zeilen oder "Skyr, Topfen") -> ein Punkt pro Produkt
+function hinzufuegen(text) {
+  const neu = A.parseListe(text).map((e) => ({ id: naechsteId++, text: e.text, erledigt: false }));
+  zustand.zeilen.push(...neu);
+  return neu.length;
+}
 
-function vorschauZeichnen(r) {
-  const ul = $("#vorschau");
-  $("#vorschauBox").hidden = r.eintraege.length === 0;
+function aenderung() { speichern(); berechnen(); }
+
+function zaehlerAktualisieren() {
+  const n = zustand.zeilen.filter((z) => z.erledigt).length;
+  $("#erledigtZaehler").textContent = zustand.zeilen.length ? `${n} / ${zustand.zeilen.length} erledigt` : "";
+  $("#hakenWeg").hidden = $("#erledigteWeg").hidden = n === 0;
+}
+
+// Die Liste: jeder Punkt mit Kreis zum Abhaken (wird durchgestrichen), bestem Angebot und ✕ zum Löschen
+function listeZeichnen(paare, r) {
   const wahl = new Map();
   for (const xs of Object.values(r.aufteilung)) for (const x of xs) wahl.set(x.eintrag, x.treffer);
-  // Häkchen von Zeilen, die es nicht mehr gibt, vergessen
-  const vorhanden = new Set(r.eintraege.map(({ eintrag }) => erledigtSchluessel(eintrag)));
-  for (const k of zustand.erledigt) if (!vorhanden.has(k)) zustand.erledigt.delete(k);
-  const anzahlErledigt = r.eintraege.filter(({ eintrag }) => zustand.erledigt.has(erledigtSchluessel(eintrag))).length;
-  $("#erledigtZaehler").textContent = anzahlErledigt ? `${anzahlErledigt} / ${r.eintraege.length} erledigt` : "";
-  $("#hakenWeg").hidden = anzahlErledigt === 0;
+  $("#listeLeer").hidden = paare.length > 0;
+  $("#listeAktionen").hidden = paare.length === 0;
+  zaehlerAktualisieren();
 
-  ul.replaceChildren(...r.eintraege.map(({ eintrag: e }) => {
+  $("#vorschau").replaceChildren(...paare.map(({ zeile, eintrag: e }) => {
     const li = document.createElement("li");
     const t = wahl.get(e);
-    const schluessel = erledigtSchluessel(e);
-    const erledigt = zustand.erledigt.has(schluessel);
-    li.className = (t ? "ok" : "fehlt") + (erledigt ? " erledigt" : "");
-    const icon = document.createElement("input");
-    icon.type = "checkbox";
-    icon.className = "ek-vorschau__haken";
-    icon.checked = erledigt;
-    icon.setAttribute("aria-label", `${e.name} abhaken`);
-    icon.addEventListener("change", () => {
-      if (icon.checked) zustand.erledigt.add(schluessel); else zustand.erledigt.delete(schluessel);
-      li.classList.toggle("erledigt", icon.checked);
+    li.className = (t ? "ok" : "fehlt") + (zeile.erledigt ? " erledigt" : "");
+    const haken = document.createElement("input");
+    haken.type = "checkbox";
+    haken.className = "ek-vorschau__haken";
+    haken.checked = zeile.erledigt;
+    haken.setAttribute("aria-label", `${e.name} abhaken`);
+    haken.addEventListener("change", () => {
+      zeile.erledigt = haken.checked;
+      li.classList.toggle("erledigt", haken.checked);
       speichern();
-      const n = r.eintraege.filter(({ eintrag }) => zustand.erledigt.has(erledigtSchluessel(eintrag))).length;
-      $("#erledigtZaehler").textContent = n ? `${n} / ${r.eintraege.length} erledigt` : "";
-      $("#hakenWeg").hidden = n === 0;
+      zaehlerAktualisieren();
     });
     const name = document.createElement("span");
     name.className = "ek-vorschau__name";
@@ -105,8 +111,17 @@ function vorschauZeichnen(r) {
     if (t) rechts.append(badge(t.angebot.kette), " ", euro(t.kosten.preis));
     else rechts.textContent = "keine Aktion";
     const label = document.createElement("label");
-    label.append(icon, name, rechts);
-    li.append(label);
+    label.append(haken, name, rechts);
+    const weg = document.createElement("button");
+    weg.type = "button";
+    weg.className = "icon-knopf ek-vorschau__weg";
+    weg.textContent = "✕";
+    weg.setAttribute("aria-label", `${e.name} löschen`);
+    weg.addEventListener("click", () => {
+      zustand.zeilen = zustand.zeilen.filter((z) => z !== zeile);
+      aenderung();
+    });
+    li.append(label, weg);
     return li;
   }));
 }
@@ -275,10 +290,11 @@ function zeichnen(liste, r) {
 }
 
 function berechnen() {
-  const liste = A.parseListe($("#liste").value);
+  const paare = zustand.zeilen.map((zeile) => ({ zeile, eintrag: A.parseZeile(zeile.text) })).filter((p) => p.eintrag);
+  const liste = paare.map((p) => p.eintrag);
   const r = A.auswerten(liste, angebote(), { tag: $("#tag").value, ausgeschlossen: zustand.ausgeschlossen });
   zeichnen(liste, r);
-  vorschauZeichnen(r);
+  listeZeichnen(paare, r);
 }
 
 // ---------- Start ----------
@@ -288,9 +304,12 @@ function start() {
   for (const [key, r] of Object.entries(DATEN.regionen)) sel.add(new Option(r.name, key));
   if (gespeichert.region && DATEN.regionen[gespeichert.region]) sel.value = gespeichert.region;
   $("#tag").value = heuteIso();
-  $("#liste").value = gespeichert.liste ?? "";
   zustand.ausgeschlossen = new Set(gespeichert.ausgeschlossen ?? []);
-  zustand.erledigt = new Set(gespeichert.erledigt ?? []);
+  if (Array.isArray(gespeichert.zeilen)) {
+    zustand.zeilen = gespeichert.zeilen.map((z) => ({ id: naechsteId++, text: String(z.text), erledigt: !!z.erledigt }));
+  } else if (gespeichert.liste) {
+    hinzufuegen(gespeichert.liste); // alte Version: Liste als Textblock
+  }
 
   const anzahl = Object.values(DATEN.regionen).reduce((s, r) => s + r.angebote.length, 0) +
     Object.values(DATEN.ketten).reduce((s, l) => s + l.length, 0);
@@ -298,13 +317,25 @@ function start() {
     ? `${anzahl.toLocaleString("de-AT")} Aktionen · Stand ${new Date(DATEN.erstellt).toLocaleString("de-AT")}`
     : "Keine Daten – zuerst `python -m aktionen.export` ausführen";
 
-  let timer;
-  $("#liste").addEventListener("input", () => {
-    clearTimeout(timer);
-    timer = setTimeout(() => { speichern(); berechnen(); }, 250);
+  const feld = $("#neu");
+  $("#neuForm").addEventListener("submit", (ev) => {
+    ev.preventDefault();
+    if (hinzufuegen(feld.value)) { feld.value = ""; aenderung(); }
+    feld.focus();
   });
-  sel.addEventListener("change", () => { speichern(); berechnen(); });
-  $("#hakenWeg").addEventListener("click", () => { zustand.erledigt.clear(); speichern(); berechnen(); });
+  // Mehrere Zeilen einfügen (z. B. aus einer Notiz-App) -> alle auf einmal übernehmen
+  feld.addEventListener("paste", (ev) => {
+    const text = ev.clipboardData?.getData("text") ?? "";
+    if (!/\n/.test(text)) return;
+    ev.preventDefault();
+    if (hinzufuegen(text)) aenderung();
+  });
+  sel.addEventListener("change", aenderung);
+  $("#hakenWeg").addEventListener("click", () => { for (const z of zustand.zeilen) z.erledigt = false; aenderung(); });
+  $("#erledigteWeg").addEventListener("click", () => { zustand.zeilen = zustand.zeilen.filter((z) => !z.erledigt); aenderung(); });
+  $("#allesWeg").addEventListener("click", () => {
+    if (confirm("Ganze Liste löschen?")) { zustand.zeilen = []; aenderung(); }
+  });
   $("#tag").addEventListener("change", berechnen);
   berechnen();
 }
