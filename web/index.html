@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AktionenFitness</title>
+  <meta name="description" content="Die besten Fitness-Angebote aus den Supermarkt-Flugblättern: Protein pro Euro, Makros und Einkaufsliste.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="kopf">
+    <div class="kopf__inhalt">
+      <div class="marke">
+        <span class="marke__logo" aria-hidden="true">💪</span>
+        <div>
+          <h1>AktionenFitness</h1>
+          <p class="marke__sub" id="gueltigkeit">Fitness-Angebote der Woche</p>
+        </div>
+      </div>
+      <button class="liste-knopf" id="listeOeffnen" aria-controls="einkaufsliste" aria-expanded="false">
+        🛒<span class="liste-knopf__text"> Einkaufsliste</span> <span class="zaehler" id="listeZaehler">0</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="inhalt">
+      <div class="filter" role="search">
+        <label class="feld">
+          <span>Region</span>
+          <select id="region"></select>
+        </label>
+        <label class="feld feld--suche">
+          <span>Suche</span>
+          <input id="suche" type="search" placeholder="z. B. Topfen, Reis, Hendl …" autocomplete="off">
+        </label>
+      </div>
+
+      <div class="leiste">
+        <div class="segment" role="tablist" aria-label="Ziel">
+          <button role="tab" data-ziel="protein" aria-selected="true">Protein / €</button>
+          <button role="tab" data-ziel="diaet" aria-selected="false">Diät</button>
+          <button role="tab" data-ziel="aufbau" aria-selected="false">Aufbau</button>
+        </div>
+        <div class="chips" id="gruppen" aria-label="Lebensmittelgruppe">
+          <button class="chip" data-gruppe="" aria-pressed="true">Alle</button>
+          <button class="chip" data-gruppe="Protein" aria-pressed="false">🥩 Protein</button>
+          <button class="chip" data-gruppe="Kohlenhydrate" aria-pressed="false">🍚 Kohlenhydrate</button>
+          <button class="chip" data-gruppe="Fette" aria-pressed="false">🥜 Fette</button>
+        </div>
+      </div>
+
+      <p class="ziel-info" id="zielInfo"></p>
+      <div class="karten" id="karten" aria-live="polite"></div>
+      <p class="leer" id="leer" hidden>Keine passenden Angebote gefunden.</p>
+
+      <footer class="fuss">
+        <p>Nährwerte sind typische Richtwerte je Produktart, keine Etikettenangaben. Preise automatisch aus dem
+          Flugblatt gelesen – vor dem Einkauf im <a id="flugblattLink" href="#" target="_blank" rel="noopener">Original-Flugblatt</a> prüfen.</p>
+        <p id="stand"></p>
+      </footer>
+    </section>
+
+    <aside class="liste" id="einkaufsliste" aria-label="Einkaufsliste">
+      <div class="liste__kopf">
+        <h2>Einkaufsliste</h2>
+        <button class="icon-knopf" id="listeSchliessen" aria-label="Einkaufsliste schließen">✕</button>
+      </div>
+      <ul class="liste__eintraege" id="listeEintraege"></ul>
+      <p class="liste__leer" id="listeLeer">Noch nichts drauf. Tippe bei einem Angebot auf <b>+ Liste</b>.</p>
+      <div class="summen" id="summen" hidden>
+        <div class="summe summe--gross"><span>Gesamt</span><strong id="sumPreis">0,00 €</strong></div>
+        <div class="makros">
+          <div><strong id="sumProtein">0</strong><span>g Protein</span></div>
+          <div><strong id="sumKcal">0</strong><span>kcal</span></div>
+          <div><strong id="sumKh">0</strong><span>g KH</span></div>
+          <div><strong id="sumFett">0</strong><span>g Fett</span></div>
+        </div>
+        <p class="hinweis" id="sumHinweis"></p>
+        <div class="liste__aktionen">
+          <button class="knopf" id="listeKopieren">📋 Als Text kopieren</button>
+          <button class="knopf knopf--leise" id="listeLeeren">Leeren</button>
+        </div>
+      </div>
+    </aside>
+  </main>
+  <div class="schleier" id="schleier" hidden></div>
+
+  <template id="kartenVorlage">
+    <article class="karte">
+      <div class="karte__oben">
+        <span class="badge badge--kat"></span>
+        <span class="karte__seite"></span>
+      </div>
+      <h3 class="karte__name"></h3>
+      <p class="karte__menge"></p>
+      <div class="karte__preis">
+        <strong class="preis"></strong>
+        <span class="normalpreis"></span>
+      </div>
+      <p class="karte__bedingung"></p>
+      <div class="karte__aktionen"></div>
+      <dl class="kennzahlen">
+        <div class="kennzahl kennzahl--haupt"><dt>Protein / €</dt><dd class="k-protein"></dd></div>
+        <div class="kennzahl"><dt>kcal / €</dt><dd class="k-kcal"></dd></div>
+        <div class="kennzahl"><dt>Protein / 100 kcal</dt><dd class="k-dichte"></dd></div>
+      </dl>
+      <button class="knopf karte__knopf">+ Liste</button>
+    </article>
+  </template>
+
+  <script src="data/angebote.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
