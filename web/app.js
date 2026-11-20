@@ -85,6 +85,23 @@ function karteBauen(a, rang) {
     r.title = `Platz ${rang}`;
     k.prepend(r);
   }
+  if (a.bild) {
+    const knopfBild = k.querySelector(".karte__bild");
+    const img = knopfBild.querySelector("img");
+    img.src = a.bild;
+    img.alt = `Flugblatt-Ausschnitt: ${a.name}`;
+    img.addEventListener("error", () => (knopfBild.hidden = true)); // Bilder fehlen, wenn ohne Export geklont
+    knopfBild.hidden = false;
+    knopfBild.addEventListener("click", () => bildZeigen(a));
+  }
+  const z = k.querySelector(".zuordnung");
+  if (a.zuordnung === "geprueft") {
+    z.textContent = "✓ Preis passt zum Grundpreis im Flugblatt";
+    z.className = "zuordnung zuordnung--ok";
+  } else if (a.zuordnung === "unsicher") {
+    z.textContent = "⚠ Zuordnung unsicher – bitte im Flugblatt prüfen";
+    z.className = "zuordnung zuordnung--warn";
+  } else z.remove();
   k.querySelector(".badge--kat").textContent = a.kategorie;
   k.querySelector(".karte__seite").textContent = `Flugblatt S. ${a.seite}`;
   k.querySelector(".karte__name").textContent = a.name;
@@ -131,6 +148,14 @@ function angeboteZeichnen() {
   ziel.replaceChildren(...liste.map((a, i) => karteBauen(a, i + 1)));
   $("#leer").hidden = liste.length > 0;
   $("#zielInfo").textContent = `${liste.length} Angebote · ${ZIELE[zustand.ziel].info}`;
+}
+
+function bildZeigen(a) {
+  const d = $("#grossBild");
+  d.querySelector("img").src = a.bild;
+  d.querySelector("img").alt = `Flugblatt-Ausschnitt: ${a.name}`;
+  d.querySelector(".gross__text").textContent = `${a.name} – Flugblatt Seite ${a.seite}`;
+  d.showModal();
 }
 
 // ---------- Einkaufsliste ----------
@@ -281,6 +306,9 @@ function start() {
       angeboteZeichnen();
     })
   );
+  $("#grossBild").addEventListener("click", (e) => {
+    if (e.target === e.currentTarget) e.currentTarget.close(); // Klick neben das Bild schließt
+  });
   $("#listeOeffnen").addEventListener("click", () => listeOeffnen(true));
   $("#listeSchliessen").addEventListener("click", () => listeOeffnen(false));
   $("#schleier").addEventListener("click", () => listeOeffnen(false));

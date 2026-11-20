@@ -86,9 +86,17 @@
     </aside>
   </main>
   <div class="schleier" id="schleier" hidden></div>
+  <dialog class="gross" id="grossBild" aria-label="Flugblatt-Ausschnitt">
+    <form method="dialog"><button class="icon-knopf gross__zu" aria-label="Schließen">✕</button></form>
+    <img alt="">
+    <p class="gross__text"></p>
+  </dialog>
 
   <template id="kartenVorlage">
     <article class="karte">
+      <button class="karte__bild" hidden aria-label="Ausschnitt aus dem Flugblatt vergrößern">
+        <img alt="" loading="lazy">
+      </button>
       <div class="karte__oben">
         <span class="badge badge--kat"></span>
         <span class="karte__seite"></span>
@@ -106,6 +114,7 @@
         <div class="kennzahl"><dt>kcal / €</dt><dd class="k-kcal"></dd></div>
         <div class="kennzahl"><dt>Protein / 100 kcal</dt><dd class="k-dichte"></dd></div>
       </dl>
+      <p class="zuordnung"></p>
       <button class="knopf karte__knopf">+ Liste</button>
     </article>
   </template>

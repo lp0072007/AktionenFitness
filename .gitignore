@@ -18,3 +18,6 @@ node_modules/
 .DS_Store
 .idea/
 .vscode/
+
+# Flugblatt-Ausschnitte (Bildrechte beim Händler, werden mit python -m aktionen.export erzeugt)
+web/data/bilder/

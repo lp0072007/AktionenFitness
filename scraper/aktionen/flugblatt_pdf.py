@@ -86,6 +86,15 @@ class FlugblattAngebot:
     menge: float | None = None
     einheit: str | None = None
     pro_kg: bool = False               # Preis gilt per kg (Theke, Gewichtsware)
+    bbox: tuple[float, float, float, float] | None = None  # x0, top, x1, bottom aller zugehörigen Texte (PDF-Punkte)
+    grundpreis_ok: bool | None = None  # True: Preis passt zu "(= per kg …)", False: passt nicht, None: kein Grundpreis
+
+    def _erweitern(self, b: "Box") -> None:
+        if self.bbox is None:
+            self.bbox = (b.x0, b.top, b.x1, b.bottom)
+        else:
+            x0, t, x1, u = self.bbox
+            self.bbox = (min(x0, b.x0), min(t, b.top), max(x1, b.x1), max(u, b.bottom))
 
 
 def _font(fontname: str) -> str:
@@ -222,16 +231,20 @@ def _naechster(quelle: Box, ziele: list, max_abstand: float, nur_darunter: bool 
 
 
 def _beschreibung(titel: Box, boxen: list[Box], s: Schriften, alle_titel: list[Box] = ()) -> str:
+    return " ".join(b.text for b in _beschreibung_boxen(titel, boxen, s, alle_titel))
+
+
+def _beschreibung_boxen(titel: Box, boxen: list[Box], s: Schriften, alle_titel: list[Box] = ()) -> list[Box]:
     # bis zum nächsten Produktnamen in derselben Spalte, höchstens 130 pt
     darunter = [t.top for t in alle_titel if t.top > titel.bottom and abs(t.x0 - titel.x0) < 60]
     grenze = min([titel.bottom + 130] + [t - 2 for t in darunter])
-    teile = [
-        b.text for b in boxen
+    return [
+        b for b in boxen
         if b.font == s.beschreibung and b.text.strip() != "oder"
+        and b.size >= 7.5 and b.x1 - b.x0 < 320                # keine Fußzeilen/Kleingedrucktes
         and titel.bottom - 3 <= b.top <= grenze
         and (titel.x0 - 5 <= b.x0 <= titel.x0 + 40 or abs(b.x1 - titel.x1) < 8)  # links- oder rechtsbündig
     ]
-    return " ".join(teile)
 
 
 _NORMALPREIS_RE = re.compile(r"(?i)(?:statt\*?|^\s*1\s+\w+)\s+(\d+,\d{2}|\d+,-)")
@@ -282,10 +295,15 @@ def analysiere_seite(woerter: list[dict], seite: int, s: Schriften = SPAR_SCHRIF
             continue
         beschr = _beschreibung(t, boxen, s, titel)
         menge, einheit = _menge_aus_text(beschr) or _menge_aus_text(t.text) or _stueck_aus_text(beschr) or (None, None)
-        angebote[id(p)] = FlugblattAngebot(
+        erw = erwartet[id(t)]
+        angebot = FlugblattAngebot(
             seite=seite, name=t.text, preis=p.wert, beschreibung=beschr,
             menge=menge, einheit=einheit, pro_kg=bool(re.search(r"\bper kg\b", beschr)) and menge is None,
+            grundpreis_ok=any(abs(p.wert - e) <= max(0.02, e * 0.015) for e in erw) if erw else None,
         )
+        for b in (t, p, *_beschreibung_boxen(t, boxen, s, titel)):
+            angebot._erweitern(b)
+        angebote[id(p)] = angebot
 
     # 3. Bedingungen ("statt 7,99", "1 Becher 1,99 ab 2 Becher je") → Preis darunter
     for b in (b for b in boxen if b.font in s.bedingung or re.match(r"(?i)statt\b", b.text)):
@@ -295,6 +313,7 @@ def analysiere_seite(woerter: list[dict], seite: int, s: Schriften = SPAR_SCHRIF
         if p is None or id(p) not in angebote:
             continue
         a = angebote[id(p)]
+        a._erweitern(b)
         if (m := _NORMALPREIS_RE.search(b.text)) and a.normalpreis is None:
             a.normalpreis = _zahl(m.group(1))
         if m := _AB_MENGE_RE.search(b.text):
@@ -307,6 +326,7 @@ def analysiere_seite(woerter: list[dict], seite: int, s: Schriften = SPAR_SCHRIF
         h = _naechster(p, [h for h in haupt if id(h) in angebote], 200)
         if h:
             angebote[id(h)].zusatzpreis = p.wert
+            angebote[id(h)]._erweitern(p)
 
     # 5. Badges (Preisschrift, aber kein Preis) → nächster Hauptpreis
     preis_teile = {(b.x0, b.top) for p in preise for b in boxen if p.x0 <= b.x0 <= p.x1 and p.top <= b.top <= p.bottom}
@@ -318,6 +338,7 @@ def analysiere_seite(woerter: list[dict], seite: int, s: Schriften = SPAR_SCHRIF
         h = _naechster(b, [h for h in haupt if id(h) in angebote], MAX_ABSTAND_BADGE, nur_darunter=True)
         if h:
             angebote[id(h)].aktion.append(b.text)
+            angebote[id(h)]._erweitern(b)
 
     for a in angebote.values():
         a.aktion = aktion_normalisieren(a.aktion)

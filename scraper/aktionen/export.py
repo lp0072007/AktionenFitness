@@ -14,11 +14,13 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+from .ausschnitte import ausschnitte_speichern
 from .fitness import DATEN_ORDNER, FitnessTreffer, fitness_angebote
 from .flugblatt_pdf import FlugblattAngebot, analysiere_seite
 from .spar_flugblatt import REGIONEN, aktuelles_flugblatt, pdf_herunterladen
 
 WEB_DATEN = Path(__file__).resolve().parents[2] / "web" / "data" / "angebote.json"
+BILDER_UNTERORDNER = "bilder"   # relativ zu web/data, Bilder sind nicht im Git (Rechte beim Händler)
 STANDARD_REGIONEN = ["niederoesterreich", "wien", "steiermark"]
 
 REGION_NAMEN = {
@@ -39,8 +41,9 @@ def angebote_aus_pdf(pfad) -> list[FlugblattAngebot]:
     return angebote
 
 
-def treffer_als_dict(t: FitnessTreffer, kette: str, region: str, i: int) -> dict:
+def treffer_als_dict(t: FitnessTreffer, kette: str, region: str, i: int, bild: str | None = None) -> dict:
     a, k = t.angebot, t.kategorie
+    zuordnung = {True: "geprueft", False: "unsicher", None: "unbekannt"}[a.grundpreis_ok]
     return {
         "id": f"{kette}-{region}-{a.seite}-{i}",
         "kette": kette,
@@ -63,10 +66,12 @@ def treffer_als_dict(t: FitnessTreffer, kette: str, region: str, i: int) -> dict
         "protein_pro_euro_zusatz": t.protein_pro_euro_zusatz,
         "kcal_pro_euro": t.kcal_pro_euro,
         "protein_pro_100kcal": t.protein_pro_100kcal,
+        "zuordnung": zuordnung,   # geprueft = Preis passt zum Grundpreis im Flugblatt
+        "bild": bild,             # Ausschnitt aus dem Flugblatt, relativ zu web/
     }
 
 
-def region_exportieren(region: str, pdf: str | None = None) -> dict:
+def region_exportieren(region: str, pdf: str | None = None, bilder_ordner: Path | None = None) -> dict:
     fb = None
     if pdf is None:
         fb = aktuelles_flugblatt(region)
@@ -74,6 +79,14 @@ def region_exportieren(region: str, pdf: str | None = None) -> dict:
         pdf = pdf_herunterladen(fb, DATEN_ORDNER)
     angebote = angebote_aus_pdf(pdf)
     treffer = fitness_angebote(angebote)
+    bilder: dict[int, str] = {}
+    if bilder_ordner is not None:
+        index = {id(a): i for i, a in enumerate(angebote)}
+        nur = {index[id(t.angebot)] for t in treffer}
+        dateien = ausschnitte_speichern(pdf, angebote, bilder_ordner / region, f"spar-{region}", nur)
+        web = bilder_ordner.parent.parent  # .../web
+        bilder = {i: d.relative_to(web).as_posix() for i, d in dateien.items()}
+        index_treffer = {id(t): index[id(t.angebot)] for t in treffer}
     gueltig = fb.flipbook.gueltig if fb else None
     return {
         "region": region,
@@ -83,7 +96,10 @@ def region_exportieren(region: str, pdf: str | None = None) -> dict:
         "gueltig_von": gueltig[0].isoformat() if gueltig else None,
         "gueltig_bis": gueltig[1].isoformat() if gueltig else None,
         "anzahl_angebote": len(angebote),
-        "angebote": [treffer_als_dict(t, "spar", region, i) for i, t in enumerate(treffer)],
+        "angebote": [
+            treffer_als_dict(t, "spar", region, i, bilder.get(index_treffer[id(t)]) if bilder else None)
+            for i, t in enumerate(treffer)
+        ],
     }
 
 
@@ -93,6 +109,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--alle", action="store_true")
     p.add_argument("--pdf", help="nur mit genau einer --region")
     p.add_argument("--ziel", type=Path, default=WEB_DATEN)
+    p.add_argument("--ohne-bilder", action="store_true", help="keine Flugblatt-Ausschnitte erzeugen")
     args = p.parse_args(argv)
 
     regionen = sorted(REGIONEN) if args.alle else (args.region or STANDARD_REGIONEN)
@@ -102,7 +119,8 @@ def main(argv: list[str] | None = None) -> int:
     daten = {"erstellt": datetime.now().isoformat(timespec="minutes"), "regionen": []}
     for r in regionen:
         try:
-            daten["regionen"].append(region_exportieren(r, args.pdf))
+            bilder = None if args.ohne_bilder else args.ziel.parent / BILDER_UNTERORDNER
+            daten["regionen"].append(region_exportieren(r, args.pdf, bilder))
         except Exception as e:  # noqa: BLE001
             print(f"  {r}: übersprungen ({e})", file=sys.stderr)
 

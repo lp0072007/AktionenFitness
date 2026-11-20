@@ -24,8 +24,17 @@ python -m aktionen.export --alle             # alle 11 Spar-Regionen (dauert ein
 Das schreibt `web/data/angebote.json` und `web/data/angebote.js` (gleicher Inhalt; die `.js`-Variante
 funktioniert auch beim Öffnen per Doppelklick, wo der Browser `fetch()` auf lokale Dateien blockiert).
 
+## Flugblatt-Ausschnitte
+
+Der Export schneidet für jedes Angebot den passenden Bereich aus dem Flugblatt aus (`web/data/bilder/`).
+Diese Bilder sind **nicht im Git** (Bildrechte beim Händler, ca. 1 MB pro Region). Nach dem Klonen einmal
+`python -m aktionen.export` ausführen, sonst zeigt die Website die Karten ohne Bild.
+Mit `--ohne-bilder` lässt sich das abschalten.
+
 ## Funktionen
 
+- Bildausschnitt aus dem Flugblatt auf jeder Karte (antippen zum Vergrößern)
+- Hinweis „✓ Preis passt zum Grundpreis“, wenn die Zuordnung per Grundpreis bestätigt ist
 - Region wählen, Suche, Ziel (Protein/€, Diät, Aufbau), Filter nach Lebensmittelgruppe
 - Einkaufsliste mit Mengen, Gesamtpreis und Makros. Mengenaktionen („ab 2 Stück“) werden richtig berechnet.
   Die Liste wird im Browser gespeichert (localStorage) und lässt sich als Text kopieren.

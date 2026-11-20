@@ -107,12 +107,31 @@ a { color: var(--akzent); }
   background: var(--flaeche); border: 1px solid var(--rand); border-radius: var(--radius); box-shadow: var(--schatten);
   padding: 14px; display: flex; flex-direction: column; gap: 6px; position: relative;
 }
+.karte__bild {
+  display: block; margin: -14px -14px 4px; padding: 0; border: 0; cursor: zoom-in;
+  background: #fff; border-radius: var(--radius) var(--radius) 0 0; overflow: hidden;
+  border-bottom: 1px solid var(--rand);
+}
+.karte__bild img { display: block; width: 100%; height: 190px; object-fit: contain; }
+.karte__bild[hidden] { display: none; }
+.zuordnung { margin: 0; font-size: 12px; }
+.zuordnung--ok { color: var(--akzent); }
+.zuordnung--warn { color: var(--warn); font-weight: 600; }
+.gross {
+  border: 0; border-radius: var(--radius); padding: 12px; max-width: min(92vw, 720px);
+  background: var(--flaeche); color: var(--text); box-shadow: 0 10px 40px rgb(0 0 0 / .35);
+}
+.gross::backdrop { background: rgb(0 0 0 / .6); }
+.gross img { display: block; max-width: 100%; max-height: 75vh; margin: 0 auto; background: #fff; border-radius: 8px; }
+.gross__text { margin: 8px 0 0; font-size: 13px; color: var(--text-leise); }
+.gross form { display: flex; justify-content: flex-end; margin-bottom: 6px; }
+.gross__zu { display: inline-grid; place-items: center; }
 .karte__oben { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .karte__seite { font-size: 12px; color: var(--text-leise); }
 .rang {
   position: absolute; top: -9px; left: -9px; width: 28px; height: 28px; border-radius: 50%;
   background: var(--akzent); color: var(--akzent-text); font-weight: 700; font-size: 13px;
-  display: grid; place-items: center; box-shadow: var(--schatten);
+  display: grid; place-items: center; box-shadow: var(--schatten); z-index: 2;
 }
 .badge { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; }
 .badge--kat { background: var(--akzent-weich); color: var(--text); }
