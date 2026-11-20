@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from aktionen.models import Angebot
-from aktionen.stores.base import parse_menge, parse_preis
+from aktionen.stores.base import parse_menge, parse_naehrwert_tabelle, parse_preis
 from aktionen.stores.spar import SparStore, produkte_aus_antwort
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -88,3 +88,46 @@ def test_rabatt():
     a = Angebot(kette="spar", produkt_id="1", name="Skyr", preis=1.49, normalpreis=1.99)
     assert a.ist_aktion
     assert a.rabatt_prozent == 25.1
+
+
+# --- Produktdetails ---------------------------------------------------------
+
+
+@pytest.fixture
+def detail():
+    return json.loads((FIXTURES / "spar_detail_cottage_protein.json").read_text(encoding="utf-8"))
+
+
+def test_parse_detail_grunddaten(detail):
+    a = SparStore().parse_detail(detail)
+    assert a.produkt_id == "2020005744769"
+    assert a.marke == "Schärdinger"
+    assert a.preis == 4.59
+    assert (a.menge, a.einheit) == (500, "g")  # aus infoSections "Menge 0,500 / Einheit KG"
+    assert a.kategorie == "Frischkäse"
+    assert "preisgesenkt" in a.tags
+    assert not a.ist_aktion
+
+
+def test_parse_detail_naehrwerte(detail):
+    n = SparStore().parse_detail(detail).naehrwerte
+    assert n.kcal == 70
+    assert n.protein == 12
+    assert n.kohlenhydrate == 4.3
+    assert n.zucker == 4.3
+    assert n.fett == 0.5           # "< 0,5g"
+    assert n.gesaettigte_fettsaeuren == 0.5
+    assert n.salz == 0.7
+
+
+def test_protein_pro_euro(detail):
+    a = SparStore().parse_detail(detail)
+    # 500 g * 12 g/100 g = 60 g Protein für 4,59 €
+    assert a.protein_pro_euro == 13.1
+    assert a.kcal_pro_euro == 76.3
+
+
+def test_naehrwert_tabelle_varianten():
+    n = parse_naehrwert_tabelle("Brennwert | 1500 kJ | 358 kcal\nProtein | 13,5 g\nBallaststoffe | 10 g\nNatrium | 5 mg")
+    assert (n.kcal, n.protein, n.ballaststoffe) == (358, 13.5, 10)
+    assert parse_naehrwert_tabelle("") is None

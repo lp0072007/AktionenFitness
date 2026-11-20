@@ -31,9 +31,24 @@ Beispielantwort: `scraper/tests/fixtures/spar_flyout_skyr.json`. Wichtige Felder
 als Mengenvorteil (1 Stk. 1,99 €, ab 2 Stk. je 1,19 €). Die Such-API zeigt nur `currentPrice: 1.99` und **keine**
 Aktionsinfo. Die Suche liefert also nur Regalpreise, keine Flugblatt-Aktionen.
 
-Weitere Endpunkte auf der Produktseite (noch nicht ausgewertet):
-- `/api/product/by-number/{productNumber}`: Produktdetails (evtl. Aktionen, Nährwerte)
-- `/api/data/p/{productNumber}`
+### Produktdetails ✅ (inkl. Nährwerte!)
+
+`https://www.interspar.at/api/product/by-number/{productNumber}`, Beispiel:
+`scraper/tests/fixtures/spar_detail_cottage_protein.json`
+
+| Feld | Inhalt |
+|---|---|
+| `product.nutrition[key=INTERSPARPRODUCTNUTRITIONFACTSTABLE].value` | Nährwerttabelle pro 100 g als Text: `Eiweiß \| ca. 12g<br />…` |
+| `product.infoSections[].items` | u. a. `Menge` (0,500) + `Einheit` (KG), `Preisgesenkt ab` |
+| `product.promotions`, `promotionBadgeText`, `promotionCampaign`, `uvp` | **Aktionsfelder**, Struktur bei Aktion noch unbekannt |
+| `breadcrumb` | Kategorie (z. B. Frischkäse) |
+| `product.ingredients` | Zutaten, Allergene |
+
+Beim NÖM Cottage Cheese natur (`2020001850105`, gerade im Flugblatt) hat der Aufruf im Browser **nicht**
+funktioniert. Ursache noch unklar.
+
+Sonstige Endpunkte:
+- `/api/data/p/{productNumber}` liefert nur CMS-Inhalt (`{"story":null}`) und ist irrelevant
 - `/api/markets/locations`: Märkte (Preise/Aktionen evtl. marktabhängig)
 
 **Offen:**

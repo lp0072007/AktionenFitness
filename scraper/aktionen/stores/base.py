@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+import html
 import re
 from abc import ABC, abstractmethod
 
-from ..models import Angebot
+from ..models import Angebot, Naehrwerte
 
 USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AktionenFitness/0.1 (privates Projekt)"
 
@@ -47,6 +48,57 @@ def parse_preis(wert) -> float | None:
         return float(s)
     except ValueError:
         return None
+
+
+_ZAHL_RE = re.compile(r"(\d+(?:[.,]\d+)?)\s*(kcal|kj|g|mg)?", re.IGNORECASE)
+
+# Reihenfolge wichtig: spezifischere Begriffe zuerst ("davon Zucker" vor "Kohlenhydrate")
+_NAEHRWERT_FELDER = [
+    ("gesättigte", "gesaettigte_fettsaeuren"),
+    ("zucker", "zucker"),
+    ("ballaststoff", "ballaststoffe"),
+    ("kohlenhydrat", "kohlenhydrate"),
+    ("eiweiß", "protein"),
+    ("eiweiss", "protein"),
+    ("protein", "protein"),
+    ("fett", "fett"),
+    ("salz", "salz"),
+]
+
+
+def parse_naehrwert_tabelle(text: str | None) -> Naehrwerte | None:
+    """Parst Tabellen im Format 'Energie | ca. 296kJ | ca. 70kcal<br />Eiweiß | ca. 12g<br />…'.
+
+    Werte wie '< 0,5g' werden als 0,5 übernommen (Obergrenze).
+    """
+    if not text:
+        return None
+    text = html.unescape(text)
+    nw = Naehrwerte()
+    gefunden = False
+    for zeile in re.split(r"<br\s*/?>|\n", text):
+        teile = [t.strip() for t in zeile.split("|")]
+        if len(teile) < 2:
+            continue
+        label = teile[0].lower()
+        if label.startswith("energie") or "brennwert" in label:
+            for wert in teile[1:]:
+                m = _ZAHL_RE.search(wert)
+                if m and (m.group(2) or "").lower() == "kcal":
+                    nw.kcal = float(m.group(1).replace(",", "."))
+                    gefunden = True
+            continue
+        for stichwort, feld in _NAEHRWERT_FELDER:
+            if stichwort in label:
+                m = _ZAHL_RE.search(teile[1])
+                if m:
+                    wert = float(m.group(1).replace(",", "."))
+                    if (m.group(2) or "").lower() == "mg":
+                        wert /= 1000
+                    setattr(nw, feld, wert)
+                    gefunden = True
+                break
+    return nw if gefunden else None
 
 
 class Store(ABC):

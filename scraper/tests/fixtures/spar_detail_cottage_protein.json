@@ -1,0 +1,53 @@
+{
+  "_quelle": "Echte Antwort von https://www.interspar.at/api/product/by-number/2020005744769 (20.11.2026, media gekürzt)",
+  "breadcrumb": [{"text": "Frischkäse", "link": "/c/kuehlregal/kaese/frischkaese"}, {"text": "Schärdinger Cottage Cheese Protein 500 G"}],
+  "product": {
+    "id": "01a0a0494ad87023afeb24c21ec0e5bc",
+    "name": "Schärdinger Cottage Cheese Protein 500 G",
+    "subtitle": null,
+    "articleNumber": "2020005744769",
+    "brandName": "Schärdinger",
+    "badges": {"image": [], "info": [], "awards": [], "availability": null, "showPromotionBadge": true},
+    "media": [{"url": "https://www.interspar.at/media/12/2f/d7/1790184193/A_2020005744769_HB.jpg?ts=1790184193", "fileName": "A_2020005744769_HB"}],
+    "price": {"currentPrice": 4.59, "taxRate": 10, "referencePrice": {"price": 9.18, "referenceUnit": 1, "unitName": "Kilogramm"}},
+    "unit": {"shortCode": "kg", "name": "Kilogramm", "apiAlias": "unit"},
+    "uvp": null,
+    "availability": {"status": "unavailable", "displayStatus": "unavailable"},
+    "deliveryDays": null,
+    "promotions": [],
+    "promotionBadgeText": null,
+    "promotionCampaign": null,
+    "message": null,
+    "infoSections": [
+      {"title": "storefront.pdp.detailSections.beverages", "items": [{"label": "Land", "value": "Österreich"}]},
+      {"title": "storefront.pdp.detailSections.additionalInfo", "items": [
+        {"label": "Preisgesenkt ab", "value": "06.04.2026"},
+        {"label": "Preisgesenkt", "value": "Preisgesenkt"},
+        {"label": "Produkt", "value": "Cottage Cheese"},
+        {"label": "Variante", "value": "Protein"},
+        {"label": "Menge", "value": "0,500"},
+        {"label": "Einheit", "value": "KG"},
+        {"label": "Käse Fett absolut", "value": "0,5%"},
+        {"label": "Käse % Fett", "value": "5%"},
+        {"label": "Käse Präsentationsform", "value": "SB"}
+      ]}
+    ],
+    "ingredients": [
+      {"key": "INTERSPARPRODUCTALLERGENSINGREDIENTS", "label": "storefront.pdp.detailLabels.ingredients", "value": "Zutaten: COTTAGE CHEESE, Salz. In Großbuchstaben angegebene Zutaten enthalten allergene Inhaltsstoffe"},
+      {"key": "INTERSPARPRODUCTALLERGENSALLERGENS", "label": "storefront.pdp.detailLabels.allergens", "value": "Milch und daraus gewonnene Erzeugnisse (inkl. Laktose)"}
+    ],
+    "nutrition": [
+      {"key": "INTERSPARPRODUCTNUTRITIONFACTSPREPARATION", "label": "storefront.pdp.detailLabels.preparationType", "value": "Unzubereitet"},
+      {"key": "INTERSPARPRODUCTNUTRITIONFACTSBASE", "label": "storefront.pdp.detailLabels.nutritionReference", "value": "100g"},
+      {"key": "INTERSPARPRODUCTNUTRITIONFACTSTABLE", "label": "storefront.pdp.nutritionTitle", "value": "Energie | ca. 296kJ | ca. 70kcal<br />\nFett | &lt; 0,5g<br />\nFett, davon gesättigte Fettsäuren | &lt; 0,5g<br />\nKohlenhydrate | ca. 4,3g<br />\nKohlenhydrate, davon Zucker | ca. 4,3g<br />\nEiweiß | ca. 12g<br />\nSalz | ca. 0,7g<br />"}
+    ],
+    "legal": [{"label": "storefront.pdp.detailLabels.manufacturer", "value": "Berglandmilch eGen"}],
+    "description": "Schärdinger Protein Cottage - mit extra viel Eiweiß ist er der perfekte Power Snack für alle, die besonders auf einen aktiven, gesunden Lifestyle achten.",
+    "isFood": false,
+    "availabilityCase": "fos-market-search",
+    "canAddToCart": false,
+    "availableStock": 0
+  },
+  "seo": {"title": "Schärdinger Cottage Cheese Protein 500 G"},
+  "isWineWorldProduct": false
+}
