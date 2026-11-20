@@ -5,27 +5,26 @@ const DATEN = window.ANGEBOTE || { regionen: [] };
 const SPEICHER_LISTE = "aktionenfitness.liste.v1";
 const SPEICHER_EINST = "aktionenfitness.einstellungen.v1";
 
-const ZIELE = {
-  protein: {
-    info: "Sortiert nach Gramm Protein pro Euro – am meisten Eiweiß fürs Geld.",
-    sort: (a, b) => (b.protein_pro_euro ?? -1) - (a.protein_pro_euro ?? -1),
-  },
-  diaet: {
-    info: "Diät: eiweißreiche Lebensmittel (mind. 8 g Protein pro 100 kcal) zuerst, dann nach Protein pro Euro.",
-    sort: (a, b) =>
-      (b.protein_pro_100kcal >= 8) - (a.protein_pro_100kcal >= 8) ||
-      (b.protein_pro_euro ?? -1) - (a.protein_pro_euro ?? -1),
-  },
-  aufbau: {
-    info: "Aufbau: möglichst viele Kalorien pro Euro – günstige Energie für den Masseaufbau.",
-    sort: (a, b) => (b.kcal_pro_euro ?? -1) - (a.kcal_pro_euro ?? -1),
-  },
-};
+// Kilopreis (bzw. Literpreis) aus Preis und Menge. Bei Mengenaktionen zählt der Aktionspreis.
+function grundpreis(a, preis = a.preis) {
+  if (a.pro_kg) return { wert: preis, einheit: "kg" };
+  if (!a.menge) return null;
+  if (a.einheit === "g") return { wert: (preis / a.menge) * 1000, einheit: "kg" };
+  if (a.einheit === "ml") return { wert: (preis / a.menge) * 1000, einheit: "l" };
+  if (a.einheit === "stk") return { wert: preis / a.menge, einheit: "Stück" };
+  return null;
+}
+
+// Sortierung: Kilo-/Literpreis aufsteigend, dann Stückpreise, Angebote ohne Menge ans Ende
+function sortiereNachKilopreis(a, b) {
+  const rang = (g) => (!g ? 2 : g.einheit === "Stück" ? 1 : 0);
+  const ga = grundpreis(a), gb = grundpreis(b);
+  return rang(ga) - rang(gb) || (ga?.wert ?? 0) - (gb?.wert ?? 0);
+}
 
 // ---------- Zustand ----------
 const zustand = {
   region: null,
-  ziel: "protein",
   gruppe: "",
   kette: "", // "" = alle, "spar", "lidl"
   suche: "",
@@ -80,7 +79,7 @@ function gefilterteAngebote() {
     .filter((a) => !zustand.kette || a.kette === zustand.kette)
     .filter((a) => !zustand.gruppe || a.gruppe === zustand.gruppe)
     .filter((a) => !q || `${a.name} ${a.kategorie}`.toLowerCase().includes(q))
-    .sort(ZIELE[zustand.ziel].sort);
+    .sort(sortiereNachKilopreis);
 }
 
 function karteBauen(a, rang) {
@@ -126,14 +125,18 @@ function karteBauen(a, rang) {
     link.textContent = "lidl.at ↗";
     quelle.replaceChildren(link);
   } else quelle.textContent = `Flugblatt S. ${a.seite}`;
+  // Gültigkeit: Lidl pro Angebot, Spar = Zeitraum des Flugblatts der Region
   const gueltig = k.querySelector(".karte__gueltig");
-  if (a.gueltig_von) {
+  const region = aktuelleRegion();
+  const von = a.gueltig_von ?? (a.kette === "spar" ? region?.gueltig_von : null);
+  const bis = a.gueltig_bis ?? (a.kette === "spar" ? region?.gueltig_bis : null);
+  if (von) {
     const heute = new Date().toISOString().slice(0, 10);
-    const zukunft = a.gueltig_von > heute;
-    gueltig.textContent = `${zukunft ? "⏳ erst ab" : "gültig"} ${WOCHENTAG(a.gueltig_von)} ${datum(a.gueltig_von)}` +
-      (a.gueltig_bis ? ` – ${WOCHENTAG(a.gueltig_bis)} ${datum(a.gueltig_bis)}` : "");
+    const zukunft = von > heute;
+    gueltig.textContent = `${zukunft ? "⏳ erst ab" : "📅 gültig"} ${WOCHENTAG(von)} ${datum(von)}` +
+      (bis ? ` – ${WOCHENTAG(bis)} ${datum(bis)}` : "");
     gueltig.classList.toggle("karte__gueltig--zukunft", zukunft);
-  } else gueltig.remove();
+  } else gueltig.textContent = "📅 Gültigkeit siehe Flugblatt";
   k.querySelector(".karte__name").textContent = a.name;
   k.querySelector(".karte__menge").textContent = mengeText(a);
   k.querySelector(".preis").textContent = euro(a.preis);
@@ -152,9 +155,21 @@ function karteBauen(a, rang) {
     akt.append(b);
   }
 
-  k.querySelector(".k-protein").textContent = a.protein_pro_euro != null ? `${zahl(a.protein_pro_euro, 1)} g` : "–";
-  k.querySelector(".k-kcal").textContent = a.kcal_pro_euro != null ? zahl(a.kcal_pro_euro) : "–";
-  k.querySelector(".k-dichte").textContent = `${zahl(a.protein_pro_100kcal, 1)} g`;
+  const gp = grundpreis(a);
+  const kp = k.querySelector(".kilopreis");
+  if (gp) {
+    kp.querySelector(".kilopreis__wert").textContent = `${euro(gp.wert)} / ${gp.einheit}`;
+    kp.querySelector(".kilopreis__label").textContent =
+      gp.einheit === "kg" ? "Kilopreis" : gp.einheit === "l" ? "Literpreis" : "Stückpreis";
+    const extra = [];
+    if (a.ab_menge) extra.push(`ab ${a.ab_menge} Stück`);
+    const gz = a.zusatzpreis ? grundpreis(a, a.zusatzpreis) : null;
+    if (gz) extra.push(`${a.zusatz_text || "Aktionstag"}: ${euro(gz.wert)} / ${gz.einheit}`);
+    kp.querySelector(".kilopreis__extra").textContent = extra.join(" · ");
+  } else {
+    kp.querySelector(".kilopreis__wert").textContent = "–";
+    kp.querySelector(".kilopreis__label").textContent = "Kilopreis unbekannt (keine Mengenangabe)";
+  }
 
   const knopf = k.querySelector(".karte__knopf");
   knopfAktualisieren(knopf, a.id);
@@ -177,7 +192,7 @@ function angeboteZeichnen() {
   const ziel = $("#karten");
   ziel.replaceChildren(...liste.map((a, i) => karteBauen(a, i + 1)));
   $("#leer").hidden = liste.length > 0;
-  $("#zielInfo").textContent = `${liste.length} Angebote · ${ZIELE[zustand.ziel].info}`;
+  $("#zielInfo").textContent = `${liste.length} Angebote · sortiert nach Kilopreis – günstigstes zuerst`;
 }
 
 function bildZeigen(a) {
@@ -267,7 +282,6 @@ function listeZeichnen() {
   $("#sumKh").textContent = zahl(kh);
   $("#sumFett").textContent = zahl(fett);
   $("#sumHinweis").textContent =
-    (protein && preis ? `≈ ${zahl(protein / preis, 1)} g Protein pro Euro. ` : "") +
     (ohneMenge ? `${ohneMenge} Produkt(e) ohne Mengenangabe nicht in den Makros.` : "");
 }
 
@@ -310,13 +324,9 @@ function kopfAktualisieren() {
 }
 
 function einstellungenSpeichern() {
-  speichern(SPEICHER_EINST, { region: zustand.region, ziel: zustand.ziel, gruppe: zustand.gruppe, kette: zustand.kette });
+  speichern(SPEICHER_EINST, { region: zustand.region, gruppe: zustand.gruppe, kette: zustand.kette });
 }
 
-function zielSetzen(ziel) {
-  zustand.ziel = ziel;
-  document.querySelectorAll("[data-ziel]").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.ziel === ziel)));
-}
 function ketteSetzen(kette) {
   zustand.kette = kette;
   document.querySelectorAll("[data-kette]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.kette === kette)));
@@ -342,7 +352,6 @@ function start() {
   for (const r of DATEN.regionen) sel.add(new Option(r.name, r.region));
   zustand.region = DATEN.regionen.some((r) => r.region === einst.region) ? einst.region : DATEN.regionen[0]?.region;
   sel.value = zustand.region ?? "";
-  zielSetzen(ZIELE[einst.ziel] ? einst.ziel : "protein");
   gruppeSetzen(einst.gruppe ?? "");
   ketteSetzen(KETTEN[einst.kette] ? einst.kette : "");
 
@@ -356,13 +365,6 @@ function start() {
     zustand.suche = e.target.value;
     angeboteZeichnen();
   });
-  document.querySelectorAll("[data-ziel]").forEach((b) =>
-    b.addEventListener("click", () => {
-      zielSetzen(b.dataset.ziel);
-      einstellungenSpeichern();
-      angeboteZeichnen();
-    })
-  );
   document.querySelectorAll("[data-gruppe]").forEach((b) =>
     b.addEventListener("click", () => {
       gruppeSetzen(b.dataset.gruppe);

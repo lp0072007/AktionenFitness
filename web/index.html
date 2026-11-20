@@ -38,11 +38,6 @@
       </div>
 
       <div class="leiste">
-        <div class="segment" role="tablist" aria-label="Ziel">
-          <button role="tab" data-ziel="protein" aria-selected="true">Protein / €</button>
-          <button role="tab" data-ziel="diaet" aria-selected="false">Diät</button>
-          <button role="tab" data-ziel="aufbau" aria-selected="false">Aufbau</button>
-        </div>
         <div class="chips" id="ketten" aria-label="Geschäft">
           <button class="chip" data-kette="" aria-pressed="true">Alle Geschäfte</button>
           <button class="chip" data-kette="spar" aria-pressed="false">Spar</button>
@@ -116,11 +111,11 @@
       <p class="karte__gueltig"></p>
       <p class="karte__bedingung"></p>
       <div class="karte__aktionen"></div>
-      <dl class="kennzahlen">
-        <div class="kennzahl kennzahl--haupt"><dt>Protein / €</dt><dd class="k-protein"></dd></div>
-        <div class="kennzahl"><dt>kcal / €</dt><dd class="k-kcal"></dd></div>
-        <div class="kennzahl"><dt>Protein / 100 kcal</dt><dd class="k-dichte"></dd></div>
-      </dl>
+      <div class="kilopreis">
+        <span class="kilopreis__label"></span>
+        <strong class="kilopreis__wert"></strong>
+        <span class="kilopreis__extra"></span>
+      </div>
       <p class="zuordnung"></p>
       <button class="knopf karte__knopf">+ Liste</button>
     </article>

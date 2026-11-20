@@ -39,7 +39,8 @@ Mit `--ohne-bilder` lässt sich das abschalten.
 
 - Bildausschnitt aus dem Flugblatt auf jeder Karte (antippen zum Vergrößern)
 - Hinweis „✓ Preis passt zum Grundpreis“, wenn die Zuordnung per Grundpreis bestätigt ist
-- Region wählen, Suche, Ziel (Protein/€, Diät, Aufbau), Filter nach Lebensmittelgruppe
+- Sortierung nach Kilo-/Literpreis (günstigstes zuerst), Gültigkeit auf jeder Karte
+- Region wählen, Suche, Filter nach Geschäft und Lebensmittelgruppe
 - Einkaufsliste mit Mengen, Gesamtpreis und Makros. Mengenaktionen („ab 2 Stück“) werden richtig berechnet.
   Die Liste wird im Browser gespeichert (localStorage) und lässt sich als Text kopieren.
 - Hell/Dunkel nach Systemeinstellung, für Handy optimiert

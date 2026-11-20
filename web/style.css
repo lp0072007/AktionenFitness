@@ -154,6 +154,14 @@ a { color: var(--akzent); }
 .karte__bedingung:empty { display: none; }
 .karte__aktionen { display: flex; gap: 4px; flex-wrap: wrap; }
 .karte__aktionen:empty { display: none; }
+.kilopreis {
+  display: flex; flex-direction: column; gap: 1px; margin: 6px 0 4px; padding: 8px 10px;
+  background: var(--flaeche-2); border-radius: 10px;
+}
+.kilopreis__label { font-size: 11px; color: var(--text-leise); text-transform: uppercase; letter-spacing: .04em; }
+.kilopreis__wert { font-size: 19px; color: var(--akzent); }
+.kilopreis__extra { font-size: 12px; color: var(--text-leise); }
+.kilopreis__extra:empty { display: none; }
 .kennzahlen {
   display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 6px 0 4px;
   background: var(--flaeche-2); border-radius: 10px; padding: 8px;
