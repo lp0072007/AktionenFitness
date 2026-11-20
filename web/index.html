@@ -43,6 +43,11 @@
           <button role="tab" data-ziel="diaet" aria-selected="false">Diät</button>
           <button role="tab" data-ziel="aufbau" aria-selected="false">Aufbau</button>
         </div>
+        <div class="chips" id="ketten" aria-label="Geschäft">
+          <button class="chip" data-kette="" aria-pressed="true">Alle Geschäfte</button>
+          <button class="chip" data-kette="spar" aria-pressed="false">Spar</button>
+          <button class="chip" data-kette="lidl" aria-pressed="false">Lidl</button>
+        </div>
         <div class="chips" id="gruppen" aria-label="Lebensmittelgruppe">
           <button class="chip" data-gruppe="" aria-pressed="true">Alle</button>
           <button class="chip" data-gruppe="Protein" aria-pressed="false">🥩 Protein</button>
@@ -56,8 +61,9 @@
       <p class="leer" id="leer" hidden>Keine passenden Angebote gefunden.</p>
 
       <footer class="fuss">
-        <p>Nährwerte sind typische Richtwerte je Produktart, keine Etikettenangaben. Preise automatisch aus dem
-          Flugblatt gelesen – vor dem Einkauf im <a id="flugblattLink" href="#" target="_blank" rel="noopener">Original-Flugblatt</a> prüfen.</p>
+        <p>Nährwerte sind typische Richtwerte je Produktart, keine Etikettenangaben. Spar-Preise automatisch aus dem
+          Flugblatt gelesen – vor dem Einkauf im <a id="flugblattLink" href="#" target="_blank" rel="noopener">Original-Flugblatt</a> prüfen.
+          Lidl-Angebote stammen von lidl.at und gelten österreichweit.</p>
         <p id="stand"></p>
       </footer>
     </section>
@@ -98,7 +104,7 @@
         <img alt="" loading="lazy">
       </button>
       <div class="karte__oben">
-        <span class="badge badge--kat"></span>
+        <span class="karte__badges"><span class="badge badge--kette"></span><span class="badge badge--kat"></span></span>
         <span class="karte__seite"></span>
       </div>
       <h3 class="karte__name"></h3>
@@ -107,6 +113,7 @@
         <strong class="preis"></strong>
         <span class="normalpreis"></span>
       </div>
+      <p class="karte__gueltig"></p>
       <p class="karte__bedingung"></p>
       <div class="karte__aktionen"></div>
       <dl class="kennzahlen">

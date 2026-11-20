@@ -72,3 +72,9 @@ def test_rangliste_ziele():
     assert [x.protein_pro_euro for x in protein] == sorted((x.protein_pro_euro or 0 for x in t), reverse=True)
     diaet = rangliste(t, "diaet")
     assert all(x.protein_pro_100kcal >= 8 for x in diaet[:3])
+
+
+def test_thunfisch_in_oel_ueber_beschreibung():
+    assert kategorie_fuer("Nixe Thunfischfilets", "Je 4x 185 g · 1 kg = 6.47 · In Sonnenblumenöl").name == "Thunfisch in Öl"
+    assert kategorie_fuer("Nixe Thunfischfilets", "Je 4x 185 g · im eigenen Saft").name == "Thunfisch"
+    assert kategorie_fuer("Deluxe Frische Lammlachse vom Merino Lamm natur") is None

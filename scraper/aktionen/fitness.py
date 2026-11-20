@@ -27,6 +27,7 @@ class Kategorie:
     fett: float
     gramm_pro_stueck: float | None = None  # für Stückware (Eier)
     ausschluss: tuple[str, ...] = ()
+    mit_beschreibung: bool = False  # Stichwörter auch in der Beschreibung suchen (z. B. "in Sonnenblumenöl")
 
     @property
     def naehrwerte(self) -> Naehrwerte:
@@ -49,11 +50,13 @@ KATEGORIEN: tuple[Kategorie, ...] = (
     Kategorie("Rind mager", "Protein", (r"rindsschnitzel", r"rinderhüfte", r"rindsfilet", r"rinderfilet",
                                         r"tafelspitz", r"beiried"), 120, 22, 0, 3.5),
     Kategorie("Rinder-Faschiertes", "Protein", (r"rind(er|s)?-?faschiert",), 220, 20, 0, 15),
+    Kategorie("Thunfisch in Öl", "Protein", (r"thunfisch.*\bin\b[^.·]*öl",), 200, 24, 0, 11,
+              ausschluss=(r"salat", r"pizza", r"creme", r"aufstrich"), mit_beschreibung=True),
     Kategorie("Thunfisch", "Protein", (r"thunfisch",), 110, 24, 0, 1,
               ausschluss=(r"salat", r"pizza", r"creme", r"aufstrich")),
     Kategorie("Garnelen", "Protein", (r"garnele", r"shrimp", r"crevette"), 80, 18, 0, 1),
     Kategorie("Lachs", "Protein", (r"lachs(?!forelle)", r"lachsforelle"), 200, 20, 0, 13,
-              ausschluss=(r"geräuchert", r"räucher", r"weißburgunder")),
+              ausschluss=(r"geräuchert", r"räucher", r"weißburgunder", r"lammlachs")),
     Kategorie("Magerer Fisch", "Protein", (r"dorsch", r"kabeljau", r"seelachs", r"pangasius", r"zander",
                                            r"goldbrasse", r"forelle", r"saibling"), 95, 19, 0, 2,
               ausschluss=(r"stäbchen", r"paniert", r"backfisch")),
@@ -69,7 +72,8 @@ KATEGORIEN: tuple[Kategorie, ...] = (
               ausschluss=(r"reiswaffel", r"milchreis", r"reisdrink", r"pfanne")),
     Kategorie("Nudeln", "Kohlenhydrate", (r"\bpasta\b", r"teigwaren", r"spaghetti", r"penne", r"fusilli",
                                           r"nudeln"), 355, 12.5, 71, 1.5,
-              ausschluss=(r"noodles", r"fertig", r"suppe", r"instant", r"croissant", r"crepe")),
+              ausschluss=(r"noodles", r"fertig", r"suppe", r"instant", r"croissant", r"crepe", r"bolognese",
+                          r"carbonara", r"sauce", r"soße", r"pesto", r"salat")),
     Kategorie("Erdäpfel", "Kohlenhydrate", (r"erdäpfel", r"kartoffel"), 75, 2, 16, 0.1,
               ausschluss=(r"chips", r"püree", r"rösti", r"pommes", r"salat", r"knödel")),
     Kategorie("Bananen", "Kohlenhydrate", (r"banane",), 90, 1.1, 20, 0.3, ausschluss=(r"chips", r"nikolo", r"schoko")),
@@ -87,12 +91,13 @@ _GLOBAL_AUSSCHLUSS = re.compile(
 )
 
 
-def kategorie_fuer(name: str) -> Kategorie | None:
+def kategorie_fuer(name: str, beschreibung: str = "") -> Kategorie | None:
     n = name.lower()
     if _GLOBAL_AUSSCHLUSS.search(n):
         return None
     for k in KATEGORIEN:
-        if any(re.search(s, n) for s in k.stichwoerter) and not any(re.search(a, n) for a in k.ausschluss):
+        text = f"{n} {beschreibung.lower()}" if k.mit_beschreibung else n
+        if any(re.search(s, text) for s in k.stichwoerter) and not any(re.search(a, n) for a in k.ausschluss):
             return k
     return None
 
@@ -146,7 +151,7 @@ def _gramm(a: FlugblattAngebot, k: Kategorie) -> float | None:
 def fitness_angebote(angebote: list[FlugblattAngebot]) -> list[FitnessTreffer]:
     treffer = []
     for a in angebote:
-        k = kategorie_fuer(a.name)
+        k = kategorie_fuer(a.name, a.beschreibung)
         if k:
             treffer.append(FitnessTreffer(a, k, _gramm(a, k)))
     return treffer

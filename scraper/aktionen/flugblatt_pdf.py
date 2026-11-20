@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
+from datetime import date
 
 from .stores.base import parse_menge
 
@@ -88,6 +89,13 @@ class FlugblattAngebot:
     pro_kg: bool = False               # Preis gilt per kg (Theke, Gewichtsware)
     bbox: tuple[float, float, float, float] | None = None  # x0, top, x1, bottom aller zugehörigen Texte (PDF-Punkte)
     grundpreis_ok: bool | None = None  # True: Preis passt zu "(= per kg …)", False: passt nicht, None: kein Grundpreis
+    # Nur bei Ketten mit strukturierten Daten (z. B. Lidl):
+    zusatz_text: str | None = None     # Bedeutung des Zusatzpreises, z. B. "Lidl Plus"
+    gueltig_von: "date | None" = None
+    gueltig_bis: "date | None" = None
+    bild_url: str | None = None
+    url: str | None = None
+    produkt_id: str | None = None
 
     def _erweitern(self, b: "Box") -> None:
         if self.bbox is None:

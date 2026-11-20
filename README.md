@@ -40,4 +40,4 @@ python -m aktionen.flugblatt_pdf flugblatt.pdf 14                   # alle Angeb
 
 ## Status
 
-**Spar funktioniert durchgehend:** Flugblatt finden → PDF laden → Angebote auslesen (ohne KI) → Fitness-Rangliste. Nährwerte kommen aus einer eigenen Tabelle typischer Werte (`aktionen/fitness.py`). Siehe [docs/DATENQUELLEN.md](docs/DATENQUELLEN.md).
+**Spar und Lidl funktionieren durchgehend.** Lidl: strukturierte Angebote von den Angebotsseiten auf lidl.at (`aktionen/stores/lidl.py`), österreichweit gültig. Spar: Flugblatt finden → PDF laden → Angebote auslesen (ohne KI) → Fitness-Rangliste. Nährwerte kommen aus einer eigenen Tabelle typischer Werte (`aktionen/fitness.py`). Siehe [docs/DATENQUELLEN.md](docs/DATENQUELLEN.md).

@@ -27,6 +27,7 @@ const zustand = {
   region: null,
   ziel: "protein",
   gruppe: "",
+  kette: "", // "" = alle, "spar", "lidl"
   suche: "",
   liste: {}, // id -> { angebot, anzahl }
 };
@@ -50,6 +51,8 @@ function speichern(schluessel, wert) {
 const $ = (sel) => document.querySelector(sel);
 const euro = (x) => x.toLocaleString("de-AT", { style: "currency", currency: "EUR" });
 const zahl = (x, stellen = 0) => x.toLocaleString("de-AT", { maximumFractionDigits: stellen, minimumFractionDigits: stellen });
+const KETTEN = { spar: "Spar", lidl: "Lidl" };
+const WOCHENTAG = (iso) => new Date(iso + "T00:00:00").toLocaleDateString("de-AT", { weekday: "short" });
 const datum = (iso) => (iso ? new Date(iso + "T00:00:00").toLocaleDateString("de-AT", { day: "2-digit", month: "2-digit" }) : "");
 
 function mengeText(a) {
@@ -65,11 +68,16 @@ function aktuelleRegion() {
 }
 
 // ---------- Angebote ----------
-function gefilterteAngebote() {
+function alleAngebote() {
+  // Spar gilt pro Bundesland, Lidl österreichweit
   const r = aktuelleRegion();
-  if (!r) return [];
+  return [...(r?.angebote ?? []), ...(DATEN.lidl?.angebote ?? [])];
+}
+
+function gefilterteAngebote() {
   const q = zustand.suche.trim().toLowerCase();
-  return r.angebote
+  return alleAngebote()
+    .filter((a) => !zustand.kette || a.kette === zustand.kette)
     .filter((a) => !zustand.gruppe || a.gruppe === zustand.gruppe)
     .filter((a) => !q || `${a.name} ${a.kategorie}`.toLowerCase().includes(q))
     .sort(ZIELE[zustand.ziel].sort);
@@ -95,7 +103,10 @@ function karteBauen(a, rang) {
     knopfBild.addEventListener("click", () => bildZeigen(a));
   }
   const z = k.querySelector(".zuordnung");
-  if (a.zuordnung === "geprueft") {
+  if (a.zuordnung === "strukturiert") {
+    z.textContent = "✓ Daten direkt vom Händler";
+    z.className = "zuordnung zuordnung--ok";
+  } else if (a.zuordnung === "geprueft") {
     z.textContent = "✓ Preis passt zum Grundpreis im Flugblatt";
     z.className = "zuordnung zuordnung--ok";
   } else if (a.zuordnung === "unsicher") {
@@ -103,7 +114,26 @@ function karteBauen(a, rang) {
     z.className = "zuordnung zuordnung--warn";
   } else z.remove();
   k.querySelector(".badge--kat").textContent = a.kategorie;
-  k.querySelector(".karte__seite").textContent = `Flugblatt S. ${a.seite}`;
+  const kette = k.querySelector(".badge--kette");
+  kette.textContent = KETTEN[a.kette] ?? a.kette;
+  kette.classList.add(`badge--${a.kette}`);
+  const quelle = k.querySelector(".karte__seite");
+  if (a.url) {
+    const link = document.createElement("a");
+    link.href = a.url;
+    link.target = "_blank";
+    link.rel = "noopener";
+    link.textContent = "lidl.at ↗";
+    quelle.replaceChildren(link);
+  } else quelle.textContent = `Flugblatt S. ${a.seite}`;
+  const gueltig = k.querySelector(".karte__gueltig");
+  if (a.gueltig_von) {
+    const heute = new Date().toISOString().slice(0, 10);
+    const zukunft = a.gueltig_von > heute;
+    gueltig.textContent = `${zukunft ? "⏳ erst ab" : "gültig"} ${WOCHENTAG(a.gueltig_von)} ${datum(a.gueltig_von)}` +
+      (a.gueltig_bis ? ` – ${WOCHENTAG(a.gueltig_bis)} ${datum(a.gueltig_bis)}` : "");
+    gueltig.classList.toggle("karte__gueltig--zukunft", zukunft);
+  } else gueltig.remove();
   k.querySelector(".karte__name").textContent = a.name;
   k.querySelector(".karte__menge").textContent = mengeText(a);
   k.querySelector(".preis").textContent = euro(a.preis);
@@ -111,7 +141,7 @@ function karteBauen(a, rang) {
 
   const bed = [];
   if (a.ab_menge) bed.push(`gilt ab ${a.ab_menge} Stück${a.normalpreis ? ` (1 Stk. ${euro(a.normalpreis)})` : ""}`);
-  if (a.zusatzpreis) bed.push(`Aktionstag: ${euro(a.zusatzpreis)}`);
+  if (a.zusatzpreis) bed.push(`${a.zusatz_text || "Aktionstag"}: ${euro(a.zusatzpreis)}`);
   k.querySelector(".karte__bedingung").textContent = bed.join(" · ");
 
   const akt = k.querySelector(".karte__aktionen");
@@ -174,12 +204,27 @@ function listeSetzen(a, anzahl) {
 }
 
 function listeZeichnen() {
-  const eintraege = Object.values(zustand.liste);
+  const eintraege = Object.values(zustand.liste).sort((x, y) =>
+    (x.angebot.kette ?? "spar").localeCompare(y.angebot.kette ?? "spar"));
   const ul = $("#listeEintraege");
   ul.replaceChildren();
   let preis = 0, protein = 0, kcal = 0, kh = 0, fett = 0, ohneMenge = 0;
+  let letzteKette = null;
 
   for (const { angebot: a, anzahl } of eintraege) {
+    const kette = a.kette ?? "spar";
+    if (kette !== letzteKette) {
+      const teil = eintraege
+        .filter((e) => (e.angebot.kette ?? "spar") === kette)
+        .reduce((s, e) => s + stueckpreis(e.angebot, e.anzahl) * e.anzahl, 0);
+      const kopf = document.createElement("li");
+      kopf.className = "liste__gruppe";
+      kopf.innerHTML = `<span class="badge badge--kette badge--${kette}"></span><span></span>`;
+      kopf.firstElementChild.textContent = KETTEN[kette] ?? kette;
+      kopf.lastElementChild.textContent = euro(teil);
+      ul.append(kopf);
+      letzteKette = kette;
+    }
     const sp = stueckpreis(a, anzahl);
     preis += sp * anzahl;
     if (a.gramm) {
@@ -227,13 +272,17 @@ function listeZeichnen() {
 }
 
 function listeAlsText() {
-  const zeilen = Object.values(zustand.liste).map(({ angebot: a, anzahl }) => {
-    const sp = stueckpreis(a, anzahl);
-    return `☐ ${anzahl}× ${a.name}${a.menge ? ` (${mengeText(a)})` : ""} – ${euro(sp * anzahl)}`;
-  });
-  const summe = Object.values(zustand.liste).reduce((s, { angebot: a, anzahl }) => s + stueckpreis(a, anzahl) * anzahl, 0);
-  const r = aktuelleRegion();
-  return [`Einkaufsliste Spar${r ? ` (${r.name})` : ""}`, ...zeilen, `Gesamt: ${euro(summe)}`].join("\n");
+  const eintraege = Object.values(zustand.liste);
+  const zeilen = ["Einkaufsliste"];
+  for (const kette of [...new Set(eintraege.map((e) => e.angebot.kette ?? "spar"))].sort()) {
+    zeilen.push("", `${KETTEN[kette] ?? kette}:`);
+    for (const { angebot: a, anzahl } of eintraege.filter((e) => (e.angebot.kette ?? "spar") === kette)) {
+      const sp = stueckpreis(a, anzahl);
+      zeilen.push(`☐ ${anzahl}× ${a.name}${a.menge ? ` (${mengeText(a)})` : ""} – ${euro(sp * anzahl)}`);
+    }
+  }
+  const summe = eintraege.reduce((s, { angebot: a, anzahl }) => s + stueckpreis(a, anzahl) * anzahl, 0);
+  return [...zeilen, "", `Gesamt: ${euro(summe)}`].join("\n");
 }
 
 // ---------- Mobil: Liste ein-/ausblenden ----------
@@ -246,27 +295,41 @@ function listeOeffnen(offen) {
 // ---------- Kopfzeile, Region ----------
 function kopfAktualisieren() {
   const r = aktuelleRegion();
-  if (!r) {
+  if (!r && !DATEN.lidl) {
     $("#gueltigkeit").textContent = "Keine Daten – zuerst `python -m aktionen.export` ausführen";
     return;
   }
-  const g = r.gueltig_von ? `gültig ${datum(r.gueltig_von)}–${datum(r.gueltig_bis)}` : "";
-  $("#gueltigkeit").textContent = `Spar ${r.name} · ${g} · ${r.angebote.length} von ${r.anzahl_angebote} Angeboten fitnessrelevant`;
+  const teile = [];
+  if (r) teile.push(`Spar ${r.name}${r.gueltig_von ? ` ${datum(r.gueltig_von)}–${datum(r.gueltig_bis)}` : ""}`);
+  if (DATEN.lidl) teile.push("Lidl");
+  const anzahl = alleAngebote().length;
+  $("#gueltigkeit").textContent = `${teile.join(" + ")} · ${anzahl} Fitness-Angebote`;
   const link = $("#flugblattLink");
   if (r.flugblatt_url) link.href = r.flugblatt_url;
   $("#stand").textContent = DATEN.erstellt ? `Datenstand: ${new Date(DATEN.erstellt).toLocaleString("de-AT")}` : "";
 }
 
 function einstellungenSpeichern() {
-  speichern(SPEICHER_EINST, { region: zustand.region, ziel: zustand.ziel, gruppe: zustand.gruppe });
+  speichern(SPEICHER_EINST, { region: zustand.region, ziel: zustand.ziel, gruppe: zustand.gruppe, kette: zustand.kette });
 }
 
 function zielSetzen(ziel) {
   zustand.ziel = ziel;
   document.querySelectorAll("[data-ziel]").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.ziel === ziel)));
 }
+function ketteSetzen(kette) {
+  zustand.kette = kette;
+  document.querySelectorAll("[data-kette]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.kette === kette)));
+}
 function gruppeSetzen(gruppe) {
   zustand.gruppe = gruppe;
+  document.querySelectorAll("[data-kette]").forEach((b) =>
+    b.addEventListener("click", () => {
+      ketteSetzen(b.dataset.kette);
+      einstellungenSpeichern();
+      angeboteZeichnen();
+    })
+  );
   document.querySelectorAll("[data-gruppe]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.gruppe === gruppe)));
 }
 
@@ -281,6 +344,7 @@ function start() {
   sel.value = zustand.region ?? "";
   zielSetzen(ZIELE[einst.ziel] ? einst.ziel : "protein");
   gruppeSetzen(einst.gruppe ?? "");
+  ketteSetzen(KETTEN[einst.kette] ? einst.kette : "");
 
   sel.addEventListener("change", () => {
     zustand.region = sel.value;

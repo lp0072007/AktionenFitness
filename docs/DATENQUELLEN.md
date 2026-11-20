@@ -147,6 +147,33 @@ Flugblatt-Liste. `flugblatt.interspar.at` und `cdn.ipaper.io` sind **offen**.
    Open Food Facts liefert für Flugblatt-Produkte keine EAN, und die Suche war beim Test überlastet (503),
    deshalb wird es für den Normalbetrieb nicht verwendet.
 
+## Lidl ✅
+
+Getestet 20.11.2026, von Cloud- und Heim-IP aus ohne Sperre erreichbar.
+
+**Quelle: Angebotsseiten auf lidl.at.** Auf der Startseite stehen Links wie `/c/store/aktion/a10107111` oder
+`/c/store/frische-angebote/a10107118`. Die Nummern ändern sich wöchentlich, deshalb werden sie jedes Mal von der Startseite gelesen.
+Jedes Produkt steckt als JSON im HTML-Attribut `data-grid-data`:
+
+| Feld | Beispiel |
+|---|---|
+| `fullTitle` | „Nixe Thunfischfilets“ |
+| `category` | `Food`, `F+V` (Obst & Gemüse), `NonFood` |
+| `price.price` / `price.oldPrice` | 1.11 / 1.69 |
+| `price.packaging.text` | „Je 4x 185 g“, „Je kg“, „Bei 2 Stk. je 400 g (Einzeln = 8.99)“ |
+| `price.basePrice.text` | „1 kg = 6.47“ |
+| `price.discount.discountText` | „-34%“ |
+| `lidlPlus[].price.price` | Lidl-Plus-Preis |
+| `storeStartDate` / `storeEndDate` | Unix-Zeit (Gültigkeit, oft nur Mo–Mi oder Do–Sa) |
+| `image`, `canonicalUrl` | Produktbild, Produktseite |
+| `regions` | `[1, 2, 3]` = ganz Österreich |
+
+Ergebnis KW 47: 140 Lebensmittel-Aktionen, davon 10 fitnessrelevant.
+
+**Flugblatt-Schnittstelle** (`endpoints.leaflets.schwarz/v4/flyer?flyer_identifier=…&region_id=0&region_code=0`,
+Übersicht `v4/overview?client_locale=lidl%2Fde-AT&region_id=0&store_id=0`) liefert Seiten mit Bildern, PDF-Link
+und Hotspots. Strukturierte `products` gibt es dort aber **nur für Non-Food** (113 von 119), deshalb wird sie nicht genutzt.
+
 ## Weitere Ketten (für später, laut heissepreise)
 
 | Kette | Endpunkt (intern, ungeprüft) |

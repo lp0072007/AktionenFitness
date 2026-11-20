@@ -9,12 +9,17 @@
 from __future__ import annotations
 
 import argparse
+import io
 import json
 import sys
 from datetime import datetime
 from pathlib import Path
 
+import httpx
+from PIL import Image
+
 from .ausschnitte import ausschnitte_speichern
+from .stores import lidl
 from .fitness import DATEN_ORDNER, FitnessTreffer, fitness_angebote
 from .flugblatt_pdf import FlugblattAngebot, analysiere_seite
 from .spar_flugblatt import REGIONEN, aktuelles_flugblatt, pdf_herunterladen
@@ -45,7 +50,7 @@ def treffer_als_dict(t: FitnessTreffer, kette: str, region: str, i: int, bild: s
     a, k = t.angebot, t.kategorie
     zuordnung = {True: "geprueft", False: "unsicher", None: "unbekannt"}[a.grundpreis_ok]
     return {
-        "id": f"{kette}-{region}-{a.seite}-{i}",
+        "id": f"lidl-{a.produkt_id}" if kette == "lidl" and a.produkt_id else f"{kette}-{region}-{a.seite}-{i}",
         "kette": kette,
         "name": a.name,
         "beschreibung": a.beschreibung,
@@ -54,6 +59,10 @@ def treffer_als_dict(t: FitnessTreffer, kette: str, region: str, i: int, bild: s
         "normalpreis": a.normalpreis,
         "ab_menge": a.ab_menge,
         "zusatzpreis": a.zusatzpreis,
+        "zusatz_text": a.zusatz_text,     # z. B. "Lidl Plus"; bei Spar: Aktionstag / App-Gutschein
+        "gueltig_von": a.gueltig_von.isoformat() if a.gueltig_von else None,
+        "gueltig_bis": a.gueltig_bis.isoformat() if a.gueltig_bis else None,
+        "url": a.url,
         "aktion": a.aktion,
         "menge": a.menge,
         "einheit": a.einheit,
@@ -66,8 +75,43 @@ def treffer_als_dict(t: FitnessTreffer, kette: str, region: str, i: int, bild: s
         "protein_pro_euro_zusatz": t.protein_pro_euro_zusatz,
         "kcal_pro_euro": t.kcal_pro_euro,
         "protein_pro_100kcal": t.protein_pro_100kcal,
-        "zuordnung": zuordnung,   # geprueft = Preis passt zum Grundpreis im Flugblatt
+        "zuordnung": "strukturiert" if kette == "lidl" else zuordnung,  # geprueft = Preis passt zum Grundpreis
         "bild": bild,             # Ausschnitt aus dem Flugblatt, relativ zu web/
+    }
+
+
+def lidl_exportieren(bilder_ordner: Path | None = None) -> dict:
+    """Lidl-Angebote (österreichweit). Produktbilder werden lokal verkleinert gespeichert."""
+    angebote = lidl.aktuelle_angebote()
+    treffer = fitness_angebote(angebote)
+    bilder: dict[int, str] = {}
+    if bilder_ordner is not None:
+        ordner = bilder_ordner / "lidl"
+        ordner.mkdir(parents=True, exist_ok=True)
+        web = bilder_ordner.parent.parent
+        with httpx.Client(headers={"User-Agent": lidl.UA}, timeout=60, follow_redirects=True) as c:
+            for t in treffer:
+                a = t.angebot
+                if not a.bild_url:
+                    continue
+                ziel = ordner / f"{a.produkt_id}.jpg"
+                if not ziel.exists():
+                    try:
+                        r = c.get(a.bild_url)
+                        r.raise_for_status()
+                        bild = Image.open(io.BytesIO(r.content))
+                        weiss = Image.new("RGB", bild.size, "white")  # PNG mit Transparenz auf Weiß
+                        weiss.paste(bild, mask=bild.convert("RGBA").split()[-1])
+                        weiss.thumbnail((480, 480))
+                        weiss.save(ziel, "JPEG", quality=82, optimize=True)
+                    except Exception as e:  # noqa: BLE001
+                        print(f"  Lidl-Bild {a.produkt_id}: {e}", file=sys.stderr)
+                        continue
+                bilder[id(t)] = ziel.relative_to(web).as_posix()
+    print(f"  lidl: {len(angebote)} Lebensmittel-Aktionen, {len(treffer)} fitnessrelevant", file=sys.stderr)
+    return {
+        "anzahl_angebote": len(angebote),
+        "angebote": [treffer_als_dict(t, "lidl", "at", i, bilder.get(id(t))) for i, t in enumerate(treffer)],
     }
 
 
@@ -110,19 +154,26 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--pdf", help="nur mit genau einer --region")
     p.add_argument("--ziel", type=Path, default=WEB_DATEN)
     p.add_argument("--ohne-bilder", action="store_true", help="keine Flugblatt-Ausschnitte erzeugen")
+    p.add_argument("--ohne-lidl", action="store_true", help="nur Spar")
     args = p.parse_args(argv)
 
     regionen = sorted(REGIONEN) if args.alle else (args.region or STANDARD_REGIONEN)
     if args.pdf and len(regionen) != 1:
         p.error("--pdf geht nur mit genau einer --region")
 
-    daten = {"erstellt": datetime.now().isoformat(timespec="minutes"), "regionen": []}
+    # Struktur: regionen[] = Spar pro Bundesland, lidl = österreichweit (gilt für alle Regionen)
+    daten = {"erstellt": datetime.now().isoformat(timespec="minutes"), "regionen": [], "lidl": None}
+    bilder = None if args.ohne_bilder else args.ziel.parent / BILDER_UNTERORDNER
     for r in regionen:
         try:
-            bilder = None if args.ohne_bilder else args.ziel.parent / BILDER_UNTERORDNER
             daten["regionen"].append(region_exportieren(r, args.pdf, bilder))
         except Exception as e:  # noqa: BLE001
             print(f"  {r}: übersprungen ({e})", file=sys.stderr)
+    if not args.ohne_lidl:
+        try:
+            daten["lidl"] = lidl_exportieren(bilder)
+        except Exception as e:  # noqa: BLE001
+            print(f"  lidl: übersprungen ({e})", file=sys.stderr)
 
     args.ziel.parent.mkdir(parents=True, exist_ok=True)
     text = json.dumps(daten, ensure_ascii=False, indent=1)
@@ -130,8 +181,9 @@ def main(argv: list[str] | None = None) -> int:
     # Zusätzlich als JS, damit index.html auch per Doppelklick (file://) funktioniert, wo fetch() blockiert ist
     args.ziel.with_suffix(".js").write_text(f"window.ANGEBOTE = {text};\n", encoding="utf-8")
     n = sum(len(r["angebote"]) for r in daten["regionen"])
-    print(f"{args.ziel}: {len(daten['regionen'])} Regionen, {n} Fitness-Angebote", file=sys.stderr)
-    return 0 if daten["regionen"] else 1
+    n_lidl = len(daten["lidl"]["angebote"]) if daten["lidl"] else 0
+    print(f"{args.ziel}: Spar {len(daten['regionen'])} Regionen / {n} Fitness-Angebote, Lidl {n_lidl}", file=sys.stderr)
+    return 0 if daten["regionen"] or daten["lidl"] else 1
 
 
 if __name__ == "__main__":
