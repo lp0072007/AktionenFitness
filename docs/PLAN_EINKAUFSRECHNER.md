@@ -32,12 +32,31 @@ sagen, was in Aktion ist und wie viel man dabei spart (sofern der Händler den N
 
 | # | Aufgabe | Status |
 |---|---|---|
-| 0.1 | Billa-Gesamtsortiment abrufen: Anzahl, Dauer, Datenmenge | ☐ |
-| 0.2 | Penny-Gesamtsortiment, gleiche Prüfung | ☐ |
-| 0.3 | Hofer-Dauersortiment auf hofer.at untersuchen | ☐ |
-| 0.4 | Lidl: welcher Teil des Sortiments ist online? | ☐ |
+| 0.1 | Billa-Gesamtsortiment abrufen: Anzahl, Dauer, Datenmenge | ☑ |
+| 0.2 | Penny-Gesamtsortiment, gleiche Prüfung | ☑ |
+| 0.3 | Hofer-Dauersortiment auf hofer.at untersuchen | ☑ |
+| 0.4 | Lidl: welcher Teil des Sortiments ist online? | ☑ |
 | 0.5 | Spar-Alternative (später): heisse-preise.io-Rohdaten (Aktualität, Lizenz, Abdeckung) | ☐ |
-| 0.6 | Architektur-Entscheidung: alles im Browser oder Backend (Python-API + SQLite) | ☐ |
+| 0.6 | Architektur-Entscheidung: alles im Browser oder Backend (Python-API + SQLite) | ☑ |
+
+### Ergebnisse (20.11.2026)
+
+| Kette | Gesamtsortiment online? | Befund |
+|---|---|---|
+| **Billa** | ✅ ja | Gleiche API wie bei den Aktionen, nur ohne `inPromotion=true`. Lebensmittel-Kategorien: Obst & Gemüse 315, Brot & Gebäck 565, Kühlwaren 1.273, Fleisch/Wurst/Fisch 748, Tiefkühl 780, Vorratsschrank 2.574, Schnelle Küche 590, Getränke 2.317, Rein pflanzlich 2.202 (überschneidet sich). **≈ 9.000–11.000 Produkte**, ca. 0,2 s pro Seite → ein paar Minuten pro Abruf. Normalpreis in `price.regular.value`, Grundpreis in `perStandardizedQuantity`. |
+| **dm** | ✅ ja (Drogerie-Lebensmittel) | Such-API liefert das ganze Sortiment, aber Rate-Limit (429) → langsam, nur gezielte Suchbegriffe sinnvoll. |
+| **Hofer** | ◐ teilweise | `/produkte` hat 23 Kategorien (Milchprodukte, Brot, Fleisch mit Unterkategorien, Fisch, Saison …), 60 Produkte pro Seite (`?page=N`), der vorhandene Parser funktioniert. Milchprodukte + Brot = 194 Produkte. **Fehlt:** Getränke, Vorrat (Nudeln, Reis, Haferflocken …). „Dauerhaft günstiger“ hat nur 38 Produkte. |
+| **Penny** | ❌ nein | Online nur die aktuellen Angebote (~590 in 12 Kategorien, alle mit Gültigkeit). |
+| **Lidl** | ❌ nein | Website zeigt nur Aktionen und Saisonware (Suche „Haferflocken“ → 0 Treffer, Kategorie „Lebensmittel“ = Aktionsartikel mit Gültigkeit). |
+| **Spar** | ❌ (vorerst) | Onlineshop hinter Cloudflare. Später evtl. über heisse-preise.io (0.5). |
+
+**Folgerung:** Ein echter Gesamtpreis ist nur bei **Billa** (und dm) machbar, bei Hofer für einen Teil der Liste.
+Für Lidl, Penny und Spar zählen weiterhin nur Aktionen. Die Ergebnisseite muss deshalb pro Geschäft anzeigen,
+wie viele Produkte der Liste überhaupt bepreist werden konnten („Billa: 12/12, Hofer: 7/12“).
+
+**0.6 Architektur:** Python-Abruf + **SQLite** (`data/preise.db`, mit Preisverlauf) als Quelle. Für die Website wird daraus
+weiterhin eine statische Datei erzeugt (kompakter Katalog, ~1–2 MB gzip), damit GitHub Pages reicht. Ein eigener Server
+ist erst nötig, wenn der Katalog zu groß für den Browser wird.
 
 ## Phase 1: Produktkatalog
 
