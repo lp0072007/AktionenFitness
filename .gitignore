@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+.pytest_cache/
+
+# Lokale Daten
+data/*
+!data/.gitkeep
+
+# Node (web)
+node_modules/
+.next/
+
+# Sonstiges
+.env
+.DS_Store
+.idea/
+.vscode/

@@ -1,0 +1,32 @@
+[
+  {
+    "masterValues": {
+      "product-number": "2020001234567",
+      "title": "SPAR",
+      "name": "Magertopfen",
+      "short-description": "Magertopfen",
+      "short-description-3": "250 g",
+      "price": 0.99,
+      "price-per-unit": "€3,96/kg",
+      "item-type": "Product",
+      "biolevel": ""
+    }
+  },
+  {
+    "masterValues": {
+      "product-number": "2020007654321",
+      "title": "SPAR Natur*pur",
+      "name": "Bio Hühnerbrustfilet",
+      "price": "18,99",
+      "price-per-unit": "€18,99/kg",
+      "item-type": "WeightProduct",
+      "biolevel": "Bio"
+    }
+  },
+  {
+    "masterValues": {
+      "title": "kaputt",
+      "name": "Eintrag ohne Produktnummer"
+    }
+  }
+]
