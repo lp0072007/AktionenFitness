@@ -50,8 +50,8 @@ function speichern(schluessel, wert) {
 const $ = (sel) => document.querySelector(sel);
 const euro = (x) => x.toLocaleString("de-AT", { style: "currency", currency: "EUR" });
 const zahl = (x, stellen = 0) => x.toLocaleString("de-AT", { maximumFractionDigits: stellen, minimumFractionDigits: stellen });
-const KETTEN = { spar: "Spar", lidl: "Lidl", hofer: "Hofer" };
-const LANDESWEIT = ["lidl", "hofer"]; // gelten in ganz Österreich
+const KETTEN = { spar: "Spar", lidl: "Lidl", hofer: "Hofer", penny: "Penny" };
+const LANDESWEIT = ["lidl", "hofer", "penny"]; // gelten in ganz Österreich
 const WOCHENTAG = (iso) => new Date(iso + "T00:00:00").toLocaleDateString("de-AT", { weekday: "short" });
 const datum = (iso) => (iso ? new Date(iso + "T00:00:00").toLocaleDateString("de-AT", { day: "2-digit", month: "2-digit" }) : "");
 

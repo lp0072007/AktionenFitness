@@ -174,9 +174,10 @@ Ergebnis KW 47: 140 Lebensmittel-Aktionen, davon 10 fitnessrelevant.
 Übersicht `v4/overview?client_locale=lidl%2Fde-AT&region_id=0&store_id=0`) liefert Seiten mit Bildern, PDF-Link
 und Hotspots. Strukturierte `products` gibt es dort aber **nur für Non-Food** (113 von 119), deshalb wird sie nicht genutzt.
 
-## Hofer ✅ (nur von Heim-IP)
+## Hofer ✅
 
-`www.hofer.at` sperrt Rechenzentrums-IPs (Akamai „Access Denied“, 403). Von einer Heim-IP aus geht es (getestet 20.11.2026).
+`www.hofer.at` sperrt Anfragen mit **vorgetäuschter Browser-Kennung** (Akamai „Access Denied“, 403). Mit der ehrlichen
+Programm-Kennung (`AktionenFitness/0.1`) geht es von Heim- und Cloud-IP aus (getestet 20.11.2026).
 
 - Übersicht `https://www.hofer.at/angebote` verlinkt pro Starttag eine Seite `/angebote/2026-11-19`
   (Abschnitte „ANGEBOTE AB MONTAG, 16.11.“ usw.).
@@ -189,6 +190,19 @@ und Hotspots. Strukturierte `products` gibt es dort aber **nur für Non-Food** (
   oder per „Mehr anzeigen“ nachgeladen werden (`asl.api.hofer.at` = Hofers API, im HTML als `API_AZURE_BASE_URL`).
 - Flugblatt: `katalog.hofer.at` (Publitas). Von überall erreichbar, Hotspots enthalten aber nur Links, keine Produkte.
   PDF unter `config.downloadPdfUrl` (view.publitas.com), das wäre ein möglicher Plan B wie bei Spar.
+
+## Penny ✅
+
+Rewe-Plattform (wie Billa), von Heim- und Cloud-IP erreichbar (20.11.2026).
+
+    GET https://www.penny.at/api/product-discovery/categories/alle-angebote-99000000/products?page=0&pageSize=100
+
+`{"total": 591, "results": [...]}`: `name`, `brand.name`, `amount` + `volumeLabelShort` (g/kg/ml/liter/stk),
+`weightArticle` (Kilo-Ware), `price.regular.value` (Cent), `price.regular.promotionText`/`promotionQuantity`
+(„ab 2 Becher“), `price.crossed` (Streichpreis), `price.discountPercentage`, `price.validityStart/End`, `images[]`,
+`slug` (→ /produkte/{slug}), `parentCategories` (Kühlwaren, Haushalt, Non-Food …).
+Die Seite /angebote enthält dieselben Daten zusätzlich als `__NUXT_DATA__` (nur die ersten 30).
+Parser: `aktionen/stores/penny.py`. KW 47: 440 Lebensmittel-Aktionen (ohne Haushalt/Non-Food/Pflege/Haustier), 30 fitnessrelevant.
 
 ## Weitere Ketten (für später, laut heissepreise)
 
