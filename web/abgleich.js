@@ -295,7 +295,13 @@
     const aus = optionen.ausgeschlossen || new Set();
     const nutzbar = angebote.filter((a) => !aus.has(a.id));
     const eintraege = liste.map((e) => {
-      const treffer = finde(e, nutzbar, optionen.tag);
+      let treffer = finde(e, nutzbar, optionen.tag);
+      // Fest gewähltes Angebot ("+ Liste" auf einer Karte): steht immer an erster Stelle
+      if (e.fest) {
+        const a = nutzbar.find((x) => x.id === e.fest.id) || e.fest;
+        treffer = [{ angebot: a, punkte: 1, fest: true, kosten: kosten(e, a), grundpreis: grundpreis(a) },
+          ...treffer.filter((t) => t.angebot.id !== a.id)];
+      }
       const bestProKette = {};
       for (const t of treffer) if (!bestProKette[t.angebot.kette]) bestProKette[t.angebot.kette] = t;
       return { eintrag: e, treffer, bestProKette };
@@ -319,6 +325,7 @@
     const ohneAktion = [];
     for (const e of eintraege) {
       if (!e.treffer.length) { ohneAktion.push(e.eintrag); continue; }
+      if (e.treffer[0].fest) { (aufteilung[e.treffer[0].angebot.kette] ||= []).push({ eintrag: e.eintrag, treffer: e.treffer[0] }); continue; }
       const spitze = e.treffer[0].punkte;
       const gut = e.treffer.filter((t) => t.punkte >= spitze * 0.8);
       const wahl = gut.reduce((m, t) => (effektiv(e.eintrag, t) < effektiv(e.eintrag, m) ? t : m));

@@ -143,3 +143,14 @@ test("Milch findet Milch, nicht Käse mit Milch im Namen", () => {
   assert.deepEqual(ids("Gouda"), ["4"]);
   assert.deepEqual(ids("Topfen Creme"), ["5"]);
 });
+
+test("Fest gewähltes Angebot (+ Liste) wird immer genommen", () => {
+  const ang = [
+    { id: "a", kette: "spar", name: "Vollmilch", preis: 0.99, menge: 1000, einheit: "ml" },
+    { id: "b", kette: "lidl", name: "Vollmilch", preis: 1.49, menge: 1000, einheit: "ml" },
+  ];
+  const e = { ...A.parseZeile("Vollmilch"), fest: ang[1], anzahl: 2 };
+  const r = A.auswerten([e], ang);
+  assert.deepEqual(Object.keys(r.aufteilung), ["lidl"]);
+  assert.equal(r.aufteilung.lidl[0].treffer.kosten.preis, 2.98);
+});

@@ -46,12 +46,13 @@ Logik: `abgleich.js`, Tests: `node --test` im Ordner `web`.
 
 ## Funktionen
 
-- Bildausschnitt aus dem Flugblatt auf jeder Karte (antippen zum Vergrößern)
-- Hinweis „✓ Preis passt zum Grundpreis“, wenn die Zuordnung per Grundpreis bestätigt ist
-- Sortierung nach Kilo-/Literpreis (günstigstes zuerst), Gültigkeit auf jeder Karte
-- Region wählen, Suche, Filter nach Geschäft und Lebensmittelgruppe
-- Einkaufsliste mit Mengen, Gesamtpreis und Makros. Mengenaktionen („ab 2 Stück“) werden richtig berechnet.
-  Die Liste wird im Browser gespeichert (localStorage) und lässt sich als Text kopieren.
+- **Startseite:** Aktionen durchstöbern, umschaltbar zwischen „💪 Fitness“ (Auswahl mit Nährwerten) und „🏷️ Alle Aktionen“.
+  Suche, Filter nach Geschäft (und Lebensmittelgruppe), Sortierung nach Kilopreis, Rabatt oder Preis, „Mehr anzeigen“.
+- **Einkaufsliste als Seitenleiste** (🛒 oben rechts): fährt von rechts herein, Hintergrund wird dunkler, am Handy
+  ganzer Bildschirm; schließen mit ✕, Esc oder Klick daneben. Produkte eintippen + Enter oder „+ Liste“ auf einer Karte.
+  Jeder Punkt wird automatisch mit allen Aktionen abgeglichen; darunter steht, wo was in Aktion ist und was es zusammen kostet.
+  Direktlink: `index.html#liste`. Die Liste ist dieselbe wie auf `einkauf.html` (gemeinsam: `liste.js`).
+- Bildausschnitt aus dem Flugblatt auf jeder Karte (antippen zum Vergrößern), Gültigkeit auf jeder Karte
 - Hell/Dunkel nach Systemeinstellung, für Handy optimiert
 
 ## Hosting (später)

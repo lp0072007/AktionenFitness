@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>AktionenFitness</title>
-  <meta name="description" content="Die besten Fitness-Angebote aus den Supermarkt-Flugblättern: Protein pro Euro, Makros und Einkaufsliste.">
+  <meta name="description" content="Aktionen aus Spar, Lidl, Hofer, Penny und Billa durchstöbern, Fitness-Angebote nach Kilopreis, Einkaufsliste mit automatischem Abgleich.">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
   <link rel="stylesheet" href="style.css">
 </head>
@@ -15,92 +15,114 @@
         <span class="marke__logo" aria-hidden="true">💪</span>
         <div>
           <h1>AktionenFitness</h1>
-          <p class="marke__sub" id="gueltigkeit">Fitness-Angebote der Woche</p>
+          <p class="marke__sub" id="gueltigkeit">Aktionen der Woche</p>
         </div>
       </div>
-      <a class="zurueck" href="einkauf.html">🧾 Liste abgleichen</a>
-      <button class="liste-knopf" id="listeOeffnen" aria-controls="einkaufsliste" aria-expanded="false">
+      <button class="liste-knopf" id="listeOeffnen" aria-controls="schublade" aria-expanded="false">
         🛒<span class="liste-knopf__text"> Einkaufsliste</span> <span class="zaehler" id="listeZaehler">0</span>
       </button>
     </div>
   </header>
 
-  <main class="layout">
-    <section class="inhalt">
-      <div class="filter" role="search">
-        <label class="feld">
-          <span>Region</span>
-          <select id="region"></select>
-        </label>
+  <main class="seite">
+    <section class="steuerung" aria-label="Filter">
+      <div class="steuerung__zeile">
+        <div class="segment" role="tablist" aria-label="Ansicht">
+          <button role="tab" data-ansicht="fitness" aria-selected="true">💪 Fitness</button>
+          <button role="tab" data-ansicht="alle" aria-selected="false">🏷️ Alle Aktionen</button>
+        </div>
         <label class="feld feld--suche">
-          <span>Suche</span>
-          <input id="suche" type="search" placeholder="z. B. Topfen, Reis, Hendl …" autocomplete="off">
+          <span class="sr">Suche</span>
+          <input id="suche" type="search" placeholder="🔍 Suchen, z. B. Topfen, Reis, Hendl …" autocomplete="off">
+        </label>
+        <label class="feld">
+          <span class="sr">Region</span>
+          <select id="region" title="Region (für Spar)"></select>
+        </label>
+        <label class="feld">
+          <span class="sr">Sortierung</span>
+          <select id="sortierung" title="Sortierung">
+            <option value="kilopreis">Kilopreis ↑</option>
+            <option value="rabatt">Rabatt ↓</option>
+            <option value="preis">Preis ↑</option>
+          </select>
         </label>
       </div>
-
-      <div class="leiste">
-        <div class="chips" id="ketten" aria-label="Geschäft">
-          <button class="chip" data-kette="" aria-pressed="true">Alle Geschäfte</button>
-          <button class="chip" data-kette="spar" aria-pressed="false">Spar</button>
-          <button class="chip" data-kette="lidl" aria-pressed="false">Lidl</button>
-          <button class="chip" data-kette="hofer" aria-pressed="false">Hofer</button>
-          <button class="chip" data-kette="penny" aria-pressed="false">Penny</button>
-          <button class="chip" data-kette="billa" aria-pressed="false">Billa</button>
-          <button class="chip" data-kette="dm" aria-pressed="false">dm</button>
-        </div>
-        <div class="chips" id="gruppen" aria-label="Lebensmittelgruppe">
-          <button class="chip" data-gruppe="" aria-pressed="true">Alle</button>
-          <button class="chip" data-gruppe="Protein" aria-pressed="false">🥩 Protein</button>
-          <button class="chip" data-gruppe="Kohlenhydrate" aria-pressed="false">🍚 Kohlenhydrate</button>
-          <button class="chip" data-gruppe="Fette" aria-pressed="false">🥜 Fette</button>
-        </div>
+      <div class="chips" id="ketten" aria-label="Geschäft">
+        <button class="chip" data-kette="" aria-pressed="true">Alle Geschäfte</button>
+        <button class="chip" data-kette="spar" aria-pressed="false">Spar</button>
+        <button class="chip" data-kette="lidl" aria-pressed="false">Lidl</button>
+        <button class="chip" data-kette="hofer" aria-pressed="false">Hofer</button>
+        <button class="chip" data-kette="penny" aria-pressed="false">Penny</button>
+        <button class="chip" data-kette="billa" aria-pressed="false">Billa</button>
+        <button class="chip" data-kette="dm" aria-pressed="false">dm</button>
       </div>
-
-      <p class="ziel-info" id="zielInfo"></p>
-      <div class="karten" id="karten" aria-live="polite"></div>
-      <p class="leer" id="leer" hidden>Keine passenden Angebote gefunden.</p>
-
-      <footer class="fuss">
-        <p>Nährwerte sind typische Richtwerte je Produktart, keine Etikettenangaben. Spar-Preise automatisch aus dem
-          Flugblatt gelesen – vor dem Einkauf im <a id="flugblattLink" href="#" target="_blank" rel="noopener">Original-Flugblatt</a> prüfen.
-          Lidl-, Hofer-, Penny- und Billa-Angebote stammen von den Websites der Händler und gelten österreichweit. dm: Dauerpreise zum Vergleich.</p>
-        <p id="stand"></p>
-      </footer>
+      <div class="chips" id="gruppen" aria-label="Lebensmittelgruppe">
+        <button class="chip" data-gruppe="" aria-pressed="true">Alle</button>
+        <button class="chip" data-gruppe="Protein" aria-pressed="false">🥩 Protein</button>
+        <button class="chip" data-gruppe="Kohlenhydrate" aria-pressed="false">🍚 Kohlenhydrate</button>
+        <button class="chip" data-gruppe="Fette" aria-pressed="false">🥜 Fette</button>
+      </div>
     </section>
 
-    <aside class="liste" id="einkaufsliste" aria-label="Einkaufsliste">
-      <div class="liste__kopf">
-        <h2>Einkaufsliste</h2>
-        <button class="icon-knopf" id="listeSchliessen" aria-label="Einkaufsliste schließen">✕</button>
-      </div>
-      <ul class="liste__eintraege" id="listeEintraege"></ul>
-      <p class="liste__leer" id="listeLeer">Noch nichts drauf. Tippe bei einem Angebot auf <b>+ Liste</b>.</p>
-      <div class="summen" id="summen" hidden>
-        <div class="summe summe--gross"><span>Gesamt</span><strong id="sumPreis">0,00 €</strong></div>
-        <div class="makros">
-          <div><strong id="sumProtein">0</strong><span>g Protein</span></div>
-          <div><strong id="sumKcal">0</strong><span>kcal</span></div>
-          <div><strong id="sumKh">0</strong><span>g KH</span></div>
-          <div><strong id="sumFett">0</strong><span>g Fett</span></div>
-        </div>
-        <p class="hinweis" id="sumHinweis"></p>
-        <div class="liste__aktionen">
-          <button class="knopf" id="listeKopieren">📋 Als Text kopieren</button>
-          <button class="knopf knopf--leise" id="listeLeeren">Leeren</button>
-        </div>
-      </div>
-    </aside>
+    <p class="ziel-info" id="zielInfo"></p>
+    <div class="karten" id="karten" aria-live="polite"></div>
+    <p class="leer" id="leer" hidden>Keine passenden Angebote gefunden.</p>
+    <div class="mehr"><button class="knopf knopf--leise" id="mehr" hidden>Mehr anzeigen</button></div>
+
+    <footer class="fuss">
+      <p>Nährwerte sind typische Richtwerte je Produktart, keine Etikettenangaben. Spar-Preise automatisch aus dem
+        Flugblatt gelesen – vor dem Einkauf im <a id="flugblattLink" href="#" target="_blank" rel="noopener">Original-Flugblatt</a> prüfen.
+        Lidl-, Hofer-, Penny- und Billa-Angebote stammen von den Websites der Händler und gelten österreichweit. dm: Dauerpreise zum Vergleich.</p>
+      <p id="stand"></p>
+    </footer>
   </main>
-  <div class="schleier" id="schleier" hidden></div>
+
+  <!-- Einkaufsliste als Seitenleiste (Handy: ganzer Bildschirm) -->
+  <div class="schleier" id="schleier"></div>
+  <aside class="schublade" id="schublade" role="dialog" aria-modal="true" aria-labelledby="schubladeTitel" inert>
+    <div class="schublade__kopf">
+      <h2 id="schubladeTitel">🛒 Einkaufsliste</h2>
+      <span class="schublade__zaehler" id="erledigtZaehler"></span>
+      <button class="x-knopf" id="listeSchliessen" aria-label="Einkaufsliste schließen">✕</button>
+    </div>
+    <div class="schublade__inhalt">
+      <form class="sb-neu" id="neuForm" autocomplete="off">
+        <input id="neu" type="text" enterkeyhint="enter" aria-label="Produkt hinzufügen"
+          placeholder="Produkt eintippen, z. B. 2x Milch …">
+        <button class="knopf" type="submit" aria-label="Hinzufügen">＋</button>
+      </form>
+      <p class="ek-hinweis">Eintippen und <b>Enter</b> – oder bei einem Angebot auf <b>+ Liste</b>. Jedes Produkt wird
+        automatisch mit allen Aktionen abgeglichen.</p>
+
+      <div class="ek-vorschau">
+        <ul id="vorschau"></ul>
+        <p class="liste__leer" id="listeLeer">Noch leer. Tippe oben ein Produkt ein.</p>
+      </div>
+
+      <div class="sb-ergebnis" id="sbErgebnis" hidden></div>
+
+      <div class="ek-vorschau__aktionen" id="listeAktionen" hidden>
+        <button type="button" class="knopf knopf--leise" id="listeKopieren">📋 Kopieren</button>
+        <button type="button" class="knopf knopf--leise" id="hakenWeg">Häkchen entfernen</button>
+        <button type="button" class="knopf knopf--leise" id="erledigteWeg">Abgehakte löschen</button>
+        <button type="button" class="knopf knopf--leise" id="allesWeg">Liste leeren</button>
+      </div>
+    </div>
+    <div class="schublade__fuss">
+      <a class="knopf schublade__vergleich" href="einkauf.html">📊 Genauer Vergleich aller Geschäfte</a>
+    </div>
+  </aside>
+
   <dialog class="gross" id="grossBild" aria-label="Flugblatt-Ausschnitt">
-    <form method="dialog"><button class="icon-knopf gross__zu" aria-label="Schließen">✕</button></form>
+    <form method="dialog"><button class="x-knopf" aria-label="Schließen">✕</button></form>
     <img alt="">
     <p class="gross__text"></p>
   </dialog>
 
   <template id="kartenVorlage">
     <article class="karte">
-      <button class="karte__bild" hidden aria-label="Ausschnitt aus dem Flugblatt vergrößern">
+      <button class="karte__bild" hidden aria-label="Bild vergrößern">
         <img alt="" loading="lazy">
       </button>
       <div class="karte__oben">
@@ -127,6 +149,9 @@
   </template>
 
   <script src="data/angebote.js"></script>
+  <script src="data/aktionen.js"></script>
+  <script src="abgleich.js"></script>
+  <script src="liste.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

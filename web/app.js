@@ -1,9 +1,12 @@
-// AktionenFitness – Website ohne Framework.
-// Daten: data/angebote.js (window.ANGEBOTE), erzeugt mit `python -m aktionen.export`.
+// AktionenFitness – Startseite ohne Framework.
+// Daten: data/angebote.js (window.ANGEBOTE, Fitness-Auswahl) und data/aktionen.js (window.AKTIONEN, alle Aktionen),
+// erzeugt mit `python -m aktionen.export`. Einkaufsliste: liste.js (Seitenleiste), Abgleich: abgleich.js.
 
 const DATEN = window.ANGEBOTE || { regionen: [] };
-const SPEICHER_LISTE = "aktionenfitness.liste.v1";
+const ALLE = window.AKTIONEN || { regionen: {}, ketten: {} };
+const L = window.Einkaufsliste;
 const SPEICHER_EINST = "aktionenfitness.einstellungen.v1";
+const SEITE = 60; // Karten pro "Mehr anzeigen"
 
 // Kilopreis (bzw. Literpreis) aus Preis und Menge. Bei Mengenaktionen zählt der Aktionspreis.
 function grundpreis(a, preis = a.preis) {
@@ -15,45 +18,57 @@ function grundpreis(a, preis = a.preis) {
   return null;
 }
 
-// Sortierung: Kilo-/Literpreis aufsteigend, dann Stückpreise, Angebote ohne Menge ans Ende
-function sortiereNachKilopreis(a, b) {
-  const rang = (g) => (!g ? 2 : g.einheit === "Stück" ? 1 : 0);
-  const ga = grundpreis(a), gb = grundpreis(b);
-  return rang(ga) - rang(gb) || (ga?.wert ?? 0) - (gb?.wert ?? 0);
+// Rabatt in Prozent: aus Normalpreis oder aus einem "-25%"-Hinweis des Händlers
+function rabatt(a) {
+  for (const t of a.aktion ?? []) {
+    const m = /-\s*(\d+)\s*%/.exec(t);
+    if (m) return Number(m[1]);
+    const g = /(\d+)\s*\+\s*(\d+)\s*gratis/i.exec(t); // "3+3 GRATIS" = 50 %
+    if (g) return (Number(g[2]) / (Number(g[1]) + Number(g[2]))) * 100;
+  }
+  // Mengenaktionen ("ab 6 Stück") nicht mit dem Einzelpreis vergleichen – das wäre zu hoch
+  if (a.normalpreis && a.normalpreis > a.preis && !a.ab_menge) return (1 - a.preis / a.normalpreis) * 100;
+  return 0;
 }
+
+const SORTIERUNG = {
+  // Kilo-/Literpreis aufsteigend, dann Stückpreise, Angebote ohne Menge ans Ende
+  kilopreis(a, b) {
+    const rang = (g) => (!g ? 2 : g.einheit === "Stück" ? 1 : 0);
+    const ga = grundpreis(a), gb = grundpreis(b);
+    return rang(ga) - rang(gb) || (ga?.wert ?? 0) - (gb?.wert ?? 0);
+  },
+  rabatt: (a, b) => rabatt(b) - rabatt(a),
+  preis: (a, b) => a.preis - b.preis,
+};
 
 // ---------- Zustand ----------
 const zustand = {
+  ansicht: "fitness", // "fitness" | "alle"
   region: null,
   gruppe: "",
-  kette: "", // "" = alle, "spar", "lidl"
+  kette: "",
   suche: "",
-  liste: {}, // id -> { angebot, anzahl }
+  sortierung: "kilopreis",
+  sichtbar: SEITE,
 };
 
 function laden(schluessel, standard) {
-  try {
-    return JSON.parse(localStorage.getItem(schluessel)) ?? standard;
-  } catch {
-    return standard;
-  }
+  try { return JSON.parse(localStorage.getItem(schluessel)) ?? standard; } catch { return standard; }
 }
 function speichern(schluessel, wert) {
-  try {
-    localStorage.setItem(schluessel, JSON.stringify(wert));
-  } catch {
-    /* privater Modus o. ä. – dann eben ohne Speichern */
-  }
+  try { localStorage.setItem(schluessel, JSON.stringify(wert)); } catch { /* privater Modus */ }
 }
 
 // ---------- Hilfen ----------
 const $ = (sel) => document.querySelector(sel);
 const euro = (x) => x.toLocaleString("de-AT", { style: "currency", currency: "EUR" });
 const zahl = (x, stellen = 0) => x.toLocaleString("de-AT", { maximumFractionDigits: stellen, minimumFractionDigits: stellen });
-const KETTEN = { spar: "Spar", lidl: "Lidl", hofer: "Hofer", penny: "Penny", billa: "Billa", dm: "dm" };
+const KETTEN = L.KETTEN;
 const LANDESWEIT = ["lidl", "hofer", "penny", "billa", "dm"]; // gelten in ganz Österreich
 const WOCHENTAG = (iso) => new Date(iso + "T00:00:00").toLocaleDateString("de-AT", { weekday: "short" });
 const datum = (iso) => (iso ? new Date(iso + "T00:00:00").toLocaleDateString("de-AT", { day: "2-digit", month: "2-digit" }) : "");
+const heuteIso = () => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
 
 function mengeText(a) {
   if (a.pro_kg) return "Preis per kg";
@@ -68,55 +83,74 @@ function aktuelleRegion() {
 }
 
 // ---------- Angebote ----------
-function alleAngebote() {
-  // Spar gilt pro Bundesland, Lidl österreichweit
+function fitnessAngebote() {
   const r = aktuelleRegion();
   return [...(r?.angebote ?? []), ...LANDESWEIT.flatMap((k) => DATEN[k]?.angebote ?? [])];
 }
 
+// Bilder der Fitness-Angebote (Flugblatt-Ausschnitte) auch in "Alle Aktionen" verwenden
+let _bilder;
+function bildFuer(a) {
+  _bilder ??= new Map(fitnessAngebote().concat(DATEN.regionen.flatMap((r) => r.angebote)).filter((x) => x.bild).map((x) => [x.id, x.bild]));
+  return a.bild || _bilder.get(a.id);
+}
+
+// Alle Aktionen (für "Alle Aktionen" und den Abgleich der Einkaufsliste)
+function alleAktionen() {
+  const region = ALLE.regionen[zustand.region] ?? Object.values(ALLE.regionen)[0];
+  return [...(region?.angebote ?? []), ...Object.values(ALLE.ketten).flat()];
+}
+
+function angeboteDerAnsicht() {
+  return zustand.ansicht === "alle" ? alleAktionen() : fitnessAngebote();
+}
+
 function gefilterteAngebote() {
   const q = zustand.suche.trim().toLowerCase();
-  return alleAngebote()
+  return angeboteDerAnsicht()
     .filter((a) => !zustand.kette || a.kette === zustand.kette)
-    .filter((a) => !zustand.gruppe || a.gruppe === zustand.gruppe)
-    .filter((a) => !q || `${a.name} ${a.kategorie}`.toLowerCase().includes(q))
-    .sort(sortiereNachKilopreis);
+    .filter((a) => zustand.ansicht === "alle" || !zustand.gruppe || a.gruppe === zustand.gruppe)
+    .filter((a) => !q || `${a.name} ${a.kategorie ?? ""} ${a.beschreibung ?? ""}`.toLowerCase().includes(q))
+    .sort(SORTIERUNG[zustand.sortierung] ?? SORTIERUNG.kilopreis);
 }
 
 function karteBauen(a, rang) {
   const k = $("#kartenVorlage").content.firstElementChild.cloneNode(true);
   k.dataset.id = a.id;
-  if (rang <= 3) {
+  if (rang <= 3 && zustand.sortierung === "kilopreis" && zustand.ansicht === "fitness") {
     const r = document.createElement("span");
     r.className = "rang";
     r.textContent = rang;
     r.title = `Platz ${rang}`;
     k.prepend(r);
   }
-  if (a.bild) {
+  const bild = bildFuer(a);
+  if (bild) {
     const knopfBild = k.querySelector(".karte__bild");
     const img = knopfBild.querySelector("img");
-    img.src = a.bild;
-    img.alt = `Flugblatt-Ausschnitt: ${a.name}`;
+    img.src = bild;
+    img.alt = a.name;
     img.addEventListener("error", () => (knopfBild.hidden = true)); // Bilder fehlen, wenn ohne Export geklont
     knopfBild.hidden = false;
-    knopfBild.addEventListener("click", () => bildZeigen(a));
+    knopfBild.addEventListener("click", () => bildZeigen(a, bild));
   }
   const z = k.querySelector(".zuordnung");
-  if (a.zuordnung === "strukturiert") {
-    z.textContent = "✓ Daten direkt vom Händler";
-    z.className = "zuordnung zuordnung--ok";
-  } else if (a.zuordnung === "geprueft") {
+  if (a.zuordnung === "geprueft") {
     z.textContent = "✓ Preis passt zum Grundpreis im Flugblatt";
     z.className = "zuordnung zuordnung--ok";
   } else if (a.zuordnung === "unsicher") {
     z.textContent = "⚠ Zuordnung unsicher – bitte im Flugblatt prüfen";
     z.className = "zuordnung zuordnung--warn";
   } else z.remove();
-  k.querySelector(".badge--kat").textContent = a.kategorie;
+
+  // Kategorie: Fitness-Gruppe ("Skyr") bzw. letzte Stufe der Händler-Kategorie ("Joghurt & Desserts")
+  const kat = k.querySelector(".badge--kat");
+  const katText = zustand.ansicht === "fitness" ? a.kategorie : a.kategorie?.split(">").pop().trim();
+  if (katText) kat.textContent = katText; else kat.remove();
   const kette = k.querySelector(".badge--kette");
   kette.textContent = KETTEN[a.kette] ?? a.kette;
   kette.classList.add(`badge--${a.kette}`);
+
   const quelle = k.querySelector(".karte__seite");
   if (a.url) {
     const link = document.createElement("a");
@@ -125,23 +159,23 @@ function karteBauen(a, rang) {
     link.rel = "noopener";
     link.textContent = `${new URL(a.url).hostname.replace(/^www\./, "")} ↗`;
     quelle.replaceChildren(link);
-  } else quelle.textContent = `Flugblatt S. ${a.seite}`;
-  // Gültigkeit: Lidl pro Angebot, Spar = Zeitraum des Flugblatts der Region
+  } else if (a.seite) quelle.textContent = `Flugblatt S. ${a.seite}`;
+
+  // Gültigkeit: pro Angebot, Spar = Zeitraum des Flugblatts der Region
   const gueltig = k.querySelector(".karte__gueltig");
   const region = aktuelleRegion();
   const von = a.gueltig_von ?? (a.kette === "spar" ? region?.gueltig_von : null);
   const bis = a.gueltig_bis ?? (a.kette === "spar" ? region?.gueltig_bis : null);
+  const stand = DATEN.erstellt ? new Date(DATEN.erstellt).toLocaleDateString("de-AT") : "–";
   if (von) {
-    const heute = new Date().toISOString().slice(0, 10);
-    const zukunft = von > heute;
+    const zukunft = von > heuteIso();
     gueltig.textContent = `${zukunft ? "⏳ erst ab" : "📅 gültig"} ${WOCHENTAG(von)} ${datum(von)}` +
       (bis ? ` – ${WOCHENTAG(bis)} ${datum(bis)}` : "");
     gueltig.classList.toggle("karte__gueltig--zukunft", zukunft);
-  } else if (a.kette === "dm") {
-    gueltig.textContent = `💶 dm-Dauerpreis (Stand ${DATEN.erstellt ? new Date(DATEN.erstellt).toLocaleDateString("de-AT") : "–"})`;
-  } else if (a.kette === "billa") {
-    gueltig.textContent = `📅 aktuell im BILLA-Shop (Stand ${DATEN.erstellt ? new Date(DATEN.erstellt).toLocaleDateString("de-AT") : "–"})`;
-  } else gueltig.textContent = "📅 Gültigkeit siehe Flugblatt";
+  } else if (a.kette === "dm") gueltig.textContent = `💶 dm-Dauerpreis (Stand ${stand})`;
+  else if (a.kette === "billa") gueltig.textContent = `📅 aktuell im BILLA-Shop (Stand ${stand})`;
+  else gueltig.textContent = "📅 Gültigkeit siehe Flugblatt";
+
   k.querySelector(".karte__name").textContent = a.name;
   k.querySelector(".karte__menge").textContent = mengeText(a);
   k.querySelector(".preis").textContent = euro(a.preis);
@@ -153,7 +187,7 @@ function karteBauen(a, rang) {
   k.querySelector(".karte__bedingung").textContent = bed.join(" · ");
 
   const akt = k.querySelector(".karte__aktionen");
-  for (const t of a.aktion) {
+  for (const t of a.aktion ?? []) {
     const b = document.createElement("span");
     b.className = "badge badge--aktion";
     b.textContent = t;
@@ -171,144 +205,114 @@ function karteBauen(a, rang) {
     const gz = a.zusatzpreis ? grundpreis(a, a.zusatzpreis) : null;
     if (gz) extra.push(`${a.zusatz_text || "Aktionstag"}: ${euro(gz.wert)} / ${gz.einheit}`);
     kp.querySelector(".kilopreis__extra").textContent = extra.join(" · ");
-  } else {
-    kp.querySelector(".kilopreis__wert").textContent = "–";
-    kp.querySelector(".kilopreis__label").textContent = "Kilopreis unbekannt (keine Mengenangabe)";
-  }
+  } else kp.remove();
 
   const knopf = k.querySelector(".karte__knopf");
   knopfAktualisieren(knopf, a.id);
-  knopf.addEventListener("click", () => {
-    const n = zustand.liste[a.id]?.anzahl ?? 0;
-    // Bei Mengenaktionen gleich die nötige Stückzahl vorschlagen
-    listeSetzen(a, n ? n + 1 : a.ab_menge || 1);
-  });
+  knopf.addEventListener("click", () => L.angebotHinzufuegen(a));
   return k;
 }
 
 function knopfAktualisieren(knopf, id) {
-  const n = zustand.liste[id]?.anzahl;
+  const n = L.anzahlVon(id);
   knopf.textContent = n ? `✓ ${n} auf der Liste` : "+ Liste";
   knopf.classList.toggle("ist-drauf", !!n);
 }
 
 function angeboteZeichnen() {
   const liste = gefilterteAngebote();
-  const ziel = $("#karten");
-  ziel.replaceChildren(...liste.map((a, i) => karteBauen(a, i + 1)));
+  const gezeigt = liste.slice(0, zustand.sichtbar);
+  $("#karten").replaceChildren(...gezeigt.map((a, i) => karteBauen(a, i + 1)));
   $("#leer").hidden = liste.length > 0;
-  $("#zielInfo").textContent = `${liste.length} Angebote · sortiert nach Kilopreis – günstigstes zuerst`;
+  const rest = liste.length - gezeigt.length;
+  $("#mehr").hidden = rest <= 0;
+  $("#mehr").textContent = `Mehr anzeigen (${zahl(rest)} weitere)`;
+  const art = zustand.ansicht === "alle" ? "Aktionen" : "Fitness-Angebote";
+  const sortText = { kilopreis: "nach Kilopreis – günstigstes zuerst", rabatt: "nach Rabatt – höchster zuerst", preis: "nach Preis" };
+  $("#zielInfo").textContent = `${zahl(liste.length)} ${art} · sortiert ${sortText[zustand.sortierung]}`;
 }
 
-function bildZeigen(a) {
+function bildZeigen(a, bild) {
   const d = $("#grossBild");
-  d.querySelector("img").src = a.bild;
-  d.querySelector("img").alt = `Flugblatt-Ausschnitt: ${a.name}`;
-  d.querySelector(".gross__text").textContent = `${a.name} – Flugblatt Seite ${a.seite}`;
+  d.querySelector("img").src = bild;
+  d.querySelector("img").alt = a.name;
+  d.querySelector(".gross__text").textContent = a.seite ? `${a.name} – Flugblatt Seite ${a.seite}` : a.name;
   d.showModal();
 }
 
-// ---------- Einkaufsliste ----------
-function stueckpreis(a, anzahl) {
-  // Mengenaktion ("ab 2 Stück je 1,19") gilt erst ab der Mindestmenge
-  if (a.ab_menge && anzahl < a.ab_menge && a.normalpreis) return a.normalpreis;
-  return a.preis;
-}
-
-function listeSetzen(a, anzahl) {
-  if (anzahl <= 0) delete zustand.liste[a.id];
-  else zustand.liste[a.id] = { angebot: a, anzahl };
-  speichern(SPEICHER_LISTE, zustand.liste);
-  listeZeichnen();
-  document.querySelectorAll(`.karte[data-id="${CSS.escape(a.id)}"] .karte__knopf`).forEach((k) => knopfAktualisieren(k, a.id));
-}
-
-function listeZeichnen() {
-  const eintraege = Object.values(zustand.liste).sort((x, y) =>
-    (x.angebot.kette ?? "spar").localeCompare(y.angebot.kette ?? "spar"));
-  const ul = $("#listeEintraege");
-  ul.replaceChildren();
-  let preis = 0, protein = 0, kcal = 0, kh = 0, fett = 0, ohneMenge = 0;
-  let letzteKette = null;
-
-  for (const { angebot: a, anzahl } of eintraege) {
-    const kette = a.kette ?? "spar";
-    if (kette !== letzteKette) {
-      const teil = eintraege
-        .filter((e) => (e.angebot.kette ?? "spar") === kette)
-        .reduce((s, e) => s + stueckpreis(e.angebot, e.anzahl) * e.anzahl, 0);
-      const kopf = document.createElement("li");
-      kopf.className = "liste__gruppe";
-      kopf.innerHTML = `<span class="badge badge--kette badge--${kette}"></span><span></span>`;
-      kopf.firstElementChild.textContent = KETTEN[kette] ?? kette;
-      kopf.lastElementChild.textContent = euro(teil);
-      ul.append(kopf);
-      letzteKette = kette;
-    }
-    const sp = stueckpreis(a, anzahl);
-    preis += sp * anzahl;
-    if (a.gramm) {
-      const f = (a.gramm / 100) * anzahl;
-      protein += a.naehrwerte.protein * f;
-      kcal += a.naehrwerte.kcal * f;
-      kh += a.naehrwerte.kohlenhydrate * f;
-      fett += a.naehrwerte.fett * f;
-    } else ohneMenge++;
-
-    const li = document.createElement("li");
-    li.className = "eintrag";
-    const fehlt = a.ab_menge && anzahl < a.ab_menge;
-    li.innerHTML = `
-      <span class="eintrag__name"></span>
-      <span class="eintrag__preis"></span>
-      <span class="eintrag__info${fehlt ? " warn" : ""}"></span>
-      <span class="stepper">
-        <button aria-label="Weniger">−</button><span></span><button aria-label="Mehr">+</button>
-      </span>`;
-    li.querySelector(".eintrag__name").textContent = a.name;
-    li.querySelector(".eintrag__preis").textContent = euro(sp * anzahl);
-    li.querySelector(".eintrag__info").textContent = fehlt
-      ? `Aktion erst ab ${a.ab_menge} Stück – jetzt ${euro(sp)}/Stk.`
-      : `${a.pro_kg ? `${anzahl} kg` : `${anzahl} × ${mengeText(a) || "Stück"}`} · ${euro(sp)}${a.pro_kg ? "/kg" : ""}`;
-    li.querySelector(".stepper span").textContent = anzahl;
-    const [minus, plus] = li.querySelectorAll(".stepper button");
-    minus.addEventListener("click", () => listeSetzen(a, anzahl - 1));
-    plus.addEventListener("click", () => listeSetzen(a, anzahl + 1));
-    ul.append(li);
-  }
-
-  const leer = eintraege.length === 0;
-  $("#listeLeer").hidden = !leer;
-  $("#summen").hidden = leer;
-  $("#listeZaehler").textContent = eintraege.length;
-  $("#sumPreis").textContent = euro(preis);
-  $("#sumProtein").textContent = zahl(protein);
-  $("#sumKcal").textContent = zahl(kcal);
-  $("#sumKh").textContent = zahl(kh);
-  $("#sumFett").textContent = zahl(fett);
-  $("#sumHinweis").textContent =
-    (ohneMenge ? `${ohneMenge} Produkt(e) ohne Mengenangabe nicht in den Makros.` : "");
-}
-
-function listeAlsText() {
-  const eintraege = Object.values(zustand.liste);
-  const zeilen = ["Einkaufsliste"];
-  for (const kette of [...new Set(eintraege.map((e) => e.angebot.kette ?? "spar"))].sort()) {
-    zeilen.push("", `${KETTEN[kette] ?? kette}:`);
-    for (const { angebot: a, anzahl } of eintraege.filter((e) => (e.angebot.kette ?? "spar") === kette)) {
-      const sp = stueckpreis(a, anzahl);
-      zeilen.push(`☐ ${anzahl}× ${a.name}${a.menge ? ` (${mengeText(a)})` : ""} – ${euro(sp * anzahl)}`);
-    }
-  }
-  const summe = eintraege.reduce((s, { angebot: a, anzahl }) => s + stueckpreis(a, anzahl) * anzahl, 0);
-  return [...zeilen, "", `Gesamt: ${euro(summe)}`].join("\n");
-}
-
-// ---------- Mobil: Liste ein-/ausblenden ----------
+// ---------- Einkaufsliste (Seitenleiste) ----------
+let letzterFokus = null;
 function listeOeffnen(offen) {
-  $("#einkaufsliste").classList.toggle("offen", offen);
-  $("#schleier").hidden = !offen;
+  const s = $("#schublade");
+  s.classList.toggle("offen", offen);
+  s.inert = !offen;
+  $("#schleier").classList.toggle("offen", offen);
+  document.body.classList.toggle("schublade-offen", offen);
   $("#listeOeffnen").setAttribute("aria-expanded", String(offen));
+  if (offen) {
+    letzterFokus = document.activeElement;
+    listeZeichnen();
+    setTimeout(() => $("#neu").focus({ preventScroll: true }), 50);
+  } else letzterFokus?.focus?.();
+}
+
+let letztesErgebnis = null;
+function listeZeichnen() {
+  const zeilen = L.zeilen;
+  $("#listeZaehler").textContent = zeilen.length;
+  document.querySelectorAll(".karte").forEach((k) => knopfAktualisieren(k.querySelector(".karte__knopf"), k.dataset.id));
+  if (!$("#schublade").classList.contains("offen")) return; // Abgleich nur rechnen, wenn man ihn sieht
+
+  const angebote = alleAktionen();
+  const ergebnis = L.auswerten(angebote, { tag: heuteIso() });
+  letztesErgebnis = ergebnis;
+  const erledigt = zeilen.filter((z) => z.erledigt).length;
+  $("#erledigtZaehler").textContent = zeilen.length ? `${erledigt} / ${zeilen.length} erledigt` : "";
+  $("#hakenWeg").hidden = $("#erledigteWeg").hidden = erledigt === 0;
+  $("#listeLeer").hidden = zeilen.length > 0;
+  $("#listeAktionen").hidden = zeilen.length === 0;
+  L.zeichnen($("#vorschau"), ergebnis, { angebote, tag: heuteIso(), mitDaten: !!ALLE.erstellt });
+  ergebnisZeichnen(ergebnis);
+}
+
+// Kurzfassung unter der Liste: wo einkaufen, was kostet es zusammen
+function ergebnisZeichnen({ paare, r }) {
+  const box = $("#sbErgebnis");
+  box.hidden = paare.length === 0;
+  if (!paare.length) return;
+  box.replaceChildren();
+  const h = document.createElement("h3");
+  if (!ALLE.erstellt) {
+    h.textContent = "⚠ Keine Aktionsdaten – zuerst python -m aktionen.export ausführen";
+    box.append(h);
+    return;
+  }
+  const gruppen = Object.entries(r.aufteilung).sort((a, b) => b[1].length - a[1].length);
+  const summe = gruppen.reduce((s, [, xs]) => s + xs.reduce((t, x) => t + x.treffer.kosten.preis, 0), 0);
+  h.textContent = gruppen.length
+    ? `${paare.length - r.ohneAktion.length} von ${paare.length} in Aktion · ${euro(summe)}`
+    : "Nichts von deiner Liste ist gerade in Aktion";
+  box.append(h);
+  if (gruppen.length) {
+    const ul = document.createElement("ul");
+    for (const [k, xs] of gruppen) {
+      const li = document.createElement("li");
+      const teil = xs.reduce((t, x) => t + x.treffer.kosten.preis, 0);
+      const txt = document.createElement("span");
+      txt.textContent = `${xs.length} Produkt${xs.length === 1 ? "" : "e"}`;
+      const preis = document.createElement("strong");
+      preis.textContent = euro(teil);
+      li.append(L.badge(k), txt, preis);
+      ul.append(li);
+    }
+    box.append(ul);
+  }
+  if (r.rangliste[0] && gruppen.length > 1) {
+    const p = document.createElement("p");
+    const b = r.rangliste[0];
+    p.textContent = `Nur ein Geschäft? Am meisten in Aktion bei ${KETTEN[b.kette]} (${b.anzahl} von ${paare.length}).`;
+    box.append(p);
+  }
 }
 
 // ---------- Kopfzeile, Region ----------
@@ -321,89 +325,107 @@ function kopfAktualisieren() {
   const teile = [];
   if (r) teile.push(`Spar ${r.name}${r.gueltig_von ? ` ${datum(r.gueltig_von)}–${datum(r.gueltig_bis)}` : ""}`);
   for (const k of LANDESWEIT) if (DATEN[k]) teile.push(KETTEN[k]);
-  const anzahl = alleAngebote().length;
-  $("#gueltigkeit").textContent = `${teile.join(" + ")} · ${anzahl} Fitness-Angebote`;
-  const link = $("#flugblattLink");
-  if (r.flugblatt_url) link.href = r.flugblatt_url;
+  $("#gueltigkeit").textContent = teile.join(" + ");
+  if (r?.flugblatt_url) $("#flugblattLink").href = r.flugblatt_url;
   $("#stand").textContent = DATEN.erstellt ? `Datenstand: ${new Date(DATEN.erstellt).toLocaleString("de-AT")}` : "";
 }
 
 function einstellungenSpeichern() {
-  speichern(SPEICHER_EINST, { region: zustand.region, gruppe: zustand.gruppe, kette: zustand.kette });
+  const { ansicht, region, gruppe, kette, sortierung } = zustand;
+  speichern(SPEICHER_EINST, { ansicht, region, gruppe, kette, sortierung });
 }
 
-function ketteSetzen(kette) {
-  zustand.kette = kette;
-  document.querySelectorAll("[data-kette]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.kette === kette)));
+function auswahlSetzen(attr, wert) {
+  document.querySelectorAll(`[data-${attr}]`).forEach((b) => b.setAttribute("aria-pressed", String(b.dataset[attr] === wert)));
 }
-function gruppeSetzen(gruppe) {
-  zustand.gruppe = gruppe;
-  document.querySelectorAll("[data-kette]").forEach((b) =>
-    b.addEventListener("click", () => {
-      ketteSetzen(b.dataset.kette);
-      einstellungenSpeichern();
-      angeboteZeichnen();
-    })
-  );
-  document.querySelectorAll("[data-gruppe]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.gruppe === gruppe)));
+function ansichtSetzen(ansicht) {
+  zustand.ansicht = ansicht;
+  document.querySelectorAll("[data-ansicht]").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.ansicht === ansicht)));
+  $("#gruppen").hidden = ansicht !== "fitness";
+}
+
+function neuZeichnen() {
+  zustand.sichtbar = SEITE;
+  einstellungenSpeichern();
+  angeboteZeichnen();
 }
 
 // ---------- Start ----------
 function start() {
   const einst = laden(SPEICHER_EINST, {});
-  zustand.liste = laden(SPEICHER_LISTE, {});
-
   const sel = $("#region");
-  for (const r of DATEN.regionen) sel.add(new Option(r.name, r.region));
+  for (const r of DATEN.regionen) sel.add(new Option(`Spar: ${r.name}`, r.region));
   zustand.region = DATEN.regionen.some((r) => r.region === einst.region) ? einst.region : DATEN.regionen[0]?.region;
   sel.value = zustand.region ?? "";
-  gruppeSetzen(einst.gruppe ?? "");
-  ketteSetzen(KETTEN[einst.kette] ? einst.kette : "");
+  sel.hidden = DATEN.regionen.length < 2;
+  zustand.gruppe = einst.gruppe ?? "";
+  zustand.kette = KETTEN[einst.kette] ? einst.kette : "";
+  zustand.sortierung = SORTIERUNG[einst.sortierung] ? einst.sortierung : "kilopreis";
+  $("#sortierung").value = zustand.sortierung;
+  auswahlSetzen("gruppe", zustand.gruppe);
+  auswahlSetzen("kette", zustand.kette);
+  ansichtSetzen(einst.ansicht === "alle" && ALLE.erstellt ? "alle" : "fitness");
 
-  sel.addEventListener("change", () => {
-    zustand.region = sel.value;
-    einstellungenSpeichern();
-    kopfAktualisieren();
-    angeboteZeichnen();
-  });
+  sel.addEventListener("change", () => { zustand.region = sel.value; kopfAktualisieren(); neuZeichnen(); listeZeichnen(); });
+  $("#sortierung").addEventListener("change", (e) => { zustand.sortierung = e.target.value; neuZeichnen(); });
+  let timer;
   $("#suche").addEventListener("input", (e) => {
-    zustand.suche = e.target.value;
-    angeboteZeichnen();
+    clearTimeout(timer);
+    timer = setTimeout(() => { zustand.suche = e.target.value; zustand.sichtbar = SEITE; angeboteZeichnen(); }, 150);
   });
-  document.querySelectorAll("[data-gruppe]").forEach((b) =>
-    b.addEventListener("click", () => {
-      gruppeSetzen(b.dataset.gruppe);
-      einstellungenSpeichern();
-      angeboteZeichnen();
-    })
-  );
+  document.querySelectorAll("[data-ansicht]").forEach((b) => b.addEventListener("click", () => { ansichtSetzen(b.dataset.ansicht); neuZeichnen(); }));
+  document.querySelectorAll("[data-kette]").forEach((b) => b.addEventListener("click", () => {
+    zustand.kette = b.dataset.kette; auswahlSetzen("kette", zustand.kette); neuZeichnen();
+  }));
+  document.querySelectorAll("[data-gruppe]").forEach((b) => b.addEventListener("click", () => {
+    zustand.gruppe = b.dataset.gruppe; auswahlSetzen("gruppe", zustand.gruppe); neuZeichnen();
+  }));
+  $("#mehr").addEventListener("click", () => { zustand.sichtbar += SEITE; angeboteZeichnen(); });
   $("#grossBild").addEventListener("click", (e) => {
     if (e.target === e.currentTarget) e.currentTarget.close(); // Klick neben das Bild schließt
   });
+
+  // Seitenleiste
   $("#listeOeffnen").addEventListener("click", () => listeOeffnen(true));
   $("#listeSchliessen").addEventListener("click", () => listeOeffnen(false));
   $("#schleier").addEventListener("click", () => listeOeffnen(false));
-  $("#listeLeeren").addEventListener("click", () => {
-    if (!confirm("Einkaufsliste wirklich leeren?")) return;
-    zustand.liste = {};
-    speichern(SPEICHER_LISTE, zustand.liste);
-    listeZeichnen();
-    angeboteZeichnen();
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && $("#schublade").classList.contains("offen") && !$("#grossBild").open) listeOeffnen(false);
   });
+  const feld = $("#neu");
+  $("#neuForm").addEventListener("submit", (ev) => {
+    ev.preventDefault();
+    if (L.hinzufuegen(feld.value)) feld.value = "";
+    feld.focus();
+  });
+  feld.addEventListener("paste", (ev) => { // mehrere Zeilen einfügen -> mehrere Punkte
+    const text = ev.clipboardData?.getData("text") ?? "";
+    if (!/\n/.test(text)) return;
+    ev.preventDefault();
+    L.hinzufuegen(text);
+  });
+  $("#hakenWeg").addEventListener("click", L.hakenWeg);
+  $("#erledigteWeg").addEventListener("click", L.erledigteWeg);
+  $("#allesWeg").addEventListener("click", () => { if (confirm("Ganze Einkaufsliste löschen?")) L.leeren(); });
   $("#listeKopieren").addEventListener("click", async (e) => {
     const knopf = e.currentTarget;
+    const text = L.alsText(letztesErgebnis ?? L.auswerten(alleAktionen(), { tag: heuteIso() }));
     try {
-      await navigator.clipboard.writeText(listeAlsText());
+      await navigator.clipboard.writeText(text);
       knopf.textContent = "✓ Kopiert";
     } catch {
-      prompt("Zum Kopieren markieren:", listeAlsText());
+      prompt("Zum Kopieren markieren:", text);
     }
-    setTimeout(() => (knopf.textContent = "📋 Als Text kopieren"), 1500);
+    setTimeout(() => (knopf.textContent = "📋 Kopieren"), 1500);
   });
+  L.beiAenderung(listeZeichnen);
 
   kopfAktualisieren();
   angeboteZeichnen();
   listeZeichnen();
+  const perLink = () => { if (location.hash === "#liste") listeOeffnen(true); };
+  window.addEventListener("hashchange", perLink);
+  perLink();
 }
 
 start();
