@@ -85,6 +85,8 @@ a { color: var(--akzent); }
 .chips[hidden] { display: none; }
 .mehr { display: flex; justify-content: center; margin: 18px 0 0; }
 .mehr .knopf { padding: 10px 22px; }
+.mehr__info { color: var(--text-leise); font-size: 13px; }
+.mehr__info:empty { display: none; }
 
 /* Filter */
 .filter { display: flex; gap: 12px; flex-wrap: wrap; }

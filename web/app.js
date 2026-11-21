@@ -219,17 +219,35 @@ function knopfAktualisieren(knopf, id) {
   knopf.classList.toggle("ist-drauf", !!n);
 }
 
+// Gefilterte Liste merken, damit beim Nachladen nicht alles neu gezeichnet werden muss
+let aktuelleListe = [];
+
 function angeboteZeichnen() {
-  const liste = gefilterteAngebote();
-  const gezeigt = liste.slice(0, zustand.sichtbar);
+  aktuelleListe = gefilterteAngebote();
+  const gezeigt = aktuelleListe.slice(0, zustand.sichtbar);
   $("#karten").replaceChildren(...gezeigt.map((a, i) => karteBauen(a, i + 1)));
-  $("#leer").hidden = liste.length > 0;
-  const rest = liste.length - gezeigt.length;
-  $("#mehr").hidden = rest <= 0;
-  $("#mehr").textContent = `Mehr anzeigen (${zahl(rest)} weitere)`;
+  $("#leer").hidden = aktuelleListe.length > 0;
+  mehrAktualisieren();
   const art = zustand.ansicht === "alle" ? "Aktionen" : "Fitness-Angebote";
   const sortText = { kilopreis: "nach Kilopreis – günstigstes zuerst", rabatt: "nach Rabatt – höchster zuerst", preis: "nach Preis" };
-  $("#zielInfo").textContent = `${zahl(liste.length)} ${art} · sortiert ${sortText[zustand.sortierung]}`;
+  $("#zielInfo").textContent = `${zahl(aktuelleListe.length)} ${art} · sortiert ${sortText[zustand.sortierung]}`;
+}
+
+// Nächste Karten unten anhängen (beim Scrollen automatisch, sonst per Knopf)
+function nachladen() {
+  const schon = $("#karten").children.length;
+  if (schon >= aktuelleListe.length) return;
+  zustand.sichtbar = schon + SEITE;
+  const neu = aktuelleListe.slice(schon, zustand.sichtbar);
+  $("#karten").append(...neu.map((a, i) => karteBauen(a, schon + i + 1)));
+  mehrAktualisieren();
+}
+
+function mehrAktualisieren() {
+  const rest = aktuelleListe.length - $("#karten").children.length;
+  $("#mehr").hidden = rest <= 0;
+  $("#mehr").textContent = `Mehr anzeigen (${zahl(rest)} weitere)`;
+  $("#mehrInfo").textContent = rest > 0 ? "" : aktuelleListe.length > SEITE ? `Alle ${zahl(aktuelleListe.length)} angezeigt` : "";
 }
 
 function bildZeigen(a, bild) {
@@ -380,7 +398,13 @@ function start() {
   document.querySelectorAll("[data-gruppe]").forEach((b) => b.addEventListener("click", () => {
     zustand.gruppe = b.dataset.gruppe; auswahlSetzen("gruppe", zustand.gruppe); neuZeichnen();
   }));
-  $("#mehr").addEventListener("click", () => { zustand.sichtbar += SEITE; angeboteZeichnen(); });
+  $("#mehr").addEventListener("click", nachladen);
+  // Automatisch nachladen, sobald man sich dem Ende nähert (ca. 1,5 Bildschirme vorher)
+  if ("IntersectionObserver" in window) {
+    new IntersectionObserver((eintraege) => {
+      if (eintraege.some((e) => e.isIntersecting)) nachladen();
+    }, { rootMargin: "0px 0px 150% 0px" }).observe($("#mehrMarke"));
+  }
   $("#grossBild").addEventListener("click", (e) => {
     if (e.target === e.currentTarget) e.currentTarget.close(); // Klick neben das Bild schließt
   });
