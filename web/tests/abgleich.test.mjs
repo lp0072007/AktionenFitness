@@ -154,3 +154,18 @@ test("Fest gewähltes Angebot (+ Liste) wird immer genommen", () => {
   assert.deepEqual(Object.keys(r.aufteilung), ["lidl"]);
   assert.equal(r.aufteilung.lidl[0].treffer.kosten.preis, 2.98);
 });
+
+test("Vollmilch, H-Milch, Bergbauernmilch und Milch gehören zusammen", () => {
+  const ang = [
+    { id: "1", kette: "spar", name: "SalzburgMilch Premium Bergbauern H-Milch 3,5% Fett", preis: 0.89 },
+    { id: "2", kette: "penny", name: "Schärdinger Formil Haltbare Vollmilch", preis: 0.89 },
+    { id: "3", kette: "penny", name: "Schärdinger Bergbauernmilch", preis: 1.29 },
+    { id: "4", kette: "penny", name: "Salzburg Milch Premium Käse-Selektion", preis: 3 },
+    { id: "5", kette: "penny", name: "Maresi Kaffeemilch", preis: 1.5 },
+    { id: "6", kette: "lidl", name: "Kokosmilch", preis: 1.5 },
+  ];
+  const ids = (q) => A.finde(A.parseZeile(q), ang).map((t) => t.angebot.id).sort();
+  assert.deepEqual(ids("Milch"), ["1", "2", "3"]);
+  assert.deepEqual(ids("Vollmilch"), ["1", "2", "3"]);
+  assert.deepEqual(ids("Frischmilch"), ["1", "2", "3"]);
+});

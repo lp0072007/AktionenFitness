@@ -166,12 +166,27 @@
   const MODIFIKATOREN = ["mager", "light", "griechisch", "natur", "bio", "fettarm", "halbfett",
     "laktosefrei", "protein", "high"];
 
+  // Sorten, die für ein Produkt praktisch dasselbe sind: "Vollmilch" ~ "H-Milch 3,5 %" ~ "Bergbauernmilch"
+  const KOPF_SORTEN = {
+    milch: ["voll", "frisch", "h", "haltbar", "haltbare", "heu", "berg", "bergbauern", "alpen", "land", "weide", "fettarm",
+      "leicht", "teilentrahmt", "mager", "bio", "roh", "esl", "vollfrisch"],
+    joghurt: ["natur", "voll", "mager", "fettarm", "bio", "berg", "bergbauern", "heu"],
+    topfen: ["mager", "speise", "halbfett", "bio", "heu"],
+    eier: ["freiland", "bodenhaltung", "bio", "frisch"],
+  };
+
   function besterTreffer(s, namensWoerter) {
     let best = 0;
     for (const w of namensWoerter) best = Math.max(best, wortTreffer(s, w));
     if (best < 0.8) {
       const mod = MODIFIKATOREN.find((m) => s.startsWith(m) && s.length - m.length >= 4);
       if (mod) for (const w of namensWoerter) best = Math.max(best, 0.8 * wortTreffer(s.slice(mod.length), w));
+    }
+    if (best < 0.9) {
+      for (const [kopf, sorten] of Object.entries(KOPF_SORTEN)) {
+        if (!s.endsWith(kopf) || !sorten.includes(s.slice(0, -kopf.length))) continue;
+        for (const w of namensWoerter) best = Math.max(best, 0.9 * wortTreffer(kopf, w));
+      }
     }
     return best;
   }
@@ -222,11 +237,12 @@
     "schokolade", "creme", "topfen", "rahm", "obers", "kakao", "wurst", "schinken", "salami", "aufstrich", "kefir",
     "buttermilch", "molke"];
   function istProduktart(w) {
-    return PRODUKTARTEN.some((m) => w === m || (m.length >= 4 && w.endsWith(m)));
+    // auch am Wortanfang: "Käse-Selektion" wird zu "kaseselektion"
+    return PRODUKTARTEN.some((m) => w === m || (m.length >= 4 && (w.endsWith(m) || w.startsWith(m))));
   }
   // Ersatzprodukte: Präfix + Suchwort ist etwas anderes ("Hafermilch" ist keine Milch)
   const ERSATZ_PRAEFIX = ["kokosnuss", "kokos", "hafer", "mandel", "soja", "reis", "karfiol", "schoko", "erdnuss", "kakao",
-    "butter", "dinkel", "erbsen", "vanille", "erdbeer", "uberraschungs", "nougat"];
+    "butter", "dinkel", "erbsen", "vanille", "erdbeer", "uberraschungs", "nougat", "kaffee", "kokosnuss", "milchreis"];
   // Händler-Kategorien für verarbeitete Produkte (Billa/Penny liefern sie mit)
   const KATEGORIE_VERARBEITET = /\beis\b|eiscreme|pizza|tiefkuhlgerichte|fertiggerichte|susses|knabber|dessert|snack/; // \b: nicht "Fleisch"
 
