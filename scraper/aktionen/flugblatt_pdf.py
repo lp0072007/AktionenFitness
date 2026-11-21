@@ -88,6 +88,8 @@ class FlugblattAngebot:
     einheit: str | None = None
     pro_kg: bool = False               # Preis gilt per kg (Theke, Gewichtsware)
     bbox: tuple[float, float, float, float] | None = None  # x0, top, x1, bottom aller zugehörigen Texte (PDF-Punkte)
+    name_bbox: tuple[float, float, float, float] | None = None   # nur der Produktname (Anker für den Bildausschnitt)
+    preis_bbox: tuple[float, float, float, float] | None = None  # nur der Hauptpreis
     grundpreis_ok: bool | None = None  # True: Preis passt zu "(= per kg …)", False: passt nicht, None: kein Grundpreis
     # Nur bei Ketten mit strukturierten Daten (z. B. Lidl):
     zusatz_text: str | None = None     # Bedeutung des Zusatzpreises, z. B. "Lidl Plus"
@@ -312,6 +314,8 @@ def analysiere_seite(woerter: list[dict], seite: int, s: Schriften = SPAR_SCHRIF
         )
         for b in (t, p, *_beschreibung_boxen(t, boxen, s, titel)):
             angebot._erweitern(b)
+        angebot.name_bbox = (t.x0, t.top, t.x1, t.bottom)
+        angebot.preis_bbox = (p.x0, p.top, p.x1, p.bottom)
         angebote[id(p)] = angebot
 
     # 3. Bedingungen ("statt 7,99", "1 Becher 1,99 ab 2 Becher je") → Preis darunter

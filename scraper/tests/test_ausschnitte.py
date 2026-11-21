@@ -39,3 +39,32 @@ def test_maximal_230_punkte_ueber_dem_text():
     a = angebot((552, 837, 800, 960))
     r = ausschnitt_bereich(a, [Rechteck(560, 500, 790, 830)], *SEITE)
     assert r.top == 837 - 230 - 6
+
+
+def _mit_name(name, name_bbox, preis_bbox=None):
+    a = FlugblattAngebot(seite=1, name=name, preis=1.0, bbox=name_bbox, name_bbox=name_bbox, preis_bbox=preis_bbox)
+    return a
+
+
+def test_foto_neben_dem_text_wird_gefunden():
+    # Text rechts, Foto links daneben auf gleicher Höhe (typisch bei Spar)
+    a = _mit_name("Olivenöl", (300, 400, 420, 420), (300, 430, 380, 470))
+    foto = Rechteck(150, 360, 290, 480)
+    r = ausschnitt_bereich(a, [foto], 800, 1000, [a])
+    assert r.x0 <= 150 and r.x1 >= 420
+
+
+def test_fremder_name_bleibt_draussen_und_fremdes_foto_wird_nicht_genommen():
+    a = _mit_name("Wodka", (300, 400, 400, 415))
+    b = _mit_name("Mineralwasser", (430, 400, 540, 415))
+    foto_b = Rechteck(420, 300, 560, 395)  # über dem Nachbarn
+    r = ausschnitt_bereich(a, [foto_b], 800, 1000, [a, b])
+    assert r.x1 < 430 + 2  # Name des Nachbarn nicht im Ausschnitt
+
+
+def test_weit_entfernte_beschreibung_zaehlt_nicht():
+    # bbox reicht durch falsche Zuordnung bis weit nach unten; Anker ist der Name
+    a = FlugblattAngebot(seite=1, name="Traktor", preis=1.0, bbox=(100, 300, 300, 600),
+                         name_bbox=(100, 300, 300, 315), preis_bbox=(220, 250, 300, 290))
+    r = ausschnitt_bereich(a, [], 800, 1000, [a])
+    assert r.bottom < 400

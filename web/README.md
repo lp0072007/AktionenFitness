@@ -35,6 +35,8 @@ Diese Bilder sind **nicht im Git** (Bildrechte beim Händler). Nach dem Klonen e
 `python -m aktionen.export` ausführen, sonst zeigt die Website die Karten ohne Bild.
 Seit Neuem für **alle** Spar-Aktionen (nicht nur Fitness), damit „Alle Aktionen“ überall Bilder hat: ca. +10 s und
 ~10 MB pro Region. `--nur-fitness-bilder` schneidet nur die Fitness-Produkte aus, `--ohne-bilder` schaltet es ganz ab.
+Der Ausschnitt richtet sich nach dem Produktnamen (Foto darüber oder daneben, fremde Namen bleiben draußen).
+Qualität messen: `python -m aktionen.ausschnitte_pruefen ../data/spar_wien_kw47.pdf -v` (KW 47: 20 % → 7 % schlechte).
 
 ## Einkaufsliste abgleichen (`einkauf.html`)
 
