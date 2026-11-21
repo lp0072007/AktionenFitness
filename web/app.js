@@ -380,26 +380,36 @@ function mehrAktualisieren() {
 // Am Seitenende "kräftig weiterscrollen" (Mausrad) bzw. weiter nach oben wischen (Handy) lädt die nächsten Karten.
 // So bleibt das Seitenende mit Impressum erreichbar, man muss aber nicht unbedingt auf den Knopf tippen.
 function weiterZiehenEinrichten() {
-  const SCHWELLE = 260; // so viel "Zug" über das Ende hinaus (Pixel) lädt nach
-  let zug = 0, ruhe;
+  // Bewusst schwergängig: ein schneller Wisch, der nur zufällig unten ankommt, lädt nichts nach.
+  const SCHWELLE_RAD = 900;   // Mausrad/Touchpad: so viel Scrollen über das Ende hinaus
+  const SCHWELLE_WISCH = 420; // Handy: so weit mit dem Finger weiterziehen
+  const PAUSE = 600;          // erst zählen, wenn man schon so lange (ms) am Ende ist
+  const MAX_SCHRITT = 40;     // Schwung (Trägheit) zählt pro Ereignis höchstens so viel
+  let zug = 0, ruhe, schwelle = SCHWELLE_RAD, endeSeit = null;
   const amEnde = () => window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4;
-  const anzeigen = () => $("#mehrZug").style.setProperty("--zug", Math.min(1, zug / SCHWELLE));
+  const anzeigen = () => $("#mehrZug").style.setProperty("--zug", Math.min(1, zug / schwelle));
   const zuruecksetzen = () => { zug = 0; anzeigen(); };
-  const ziehen = (px) => {
+  window.addEventListener("scroll", () => {
+    if (amEnde()) endeSeit ??= Date.now(); else { endeSeit = null; zuruecksetzen(); }
+  }, { passive: true });
+  const ziehen = (px, grenze) => {
     if ($("#mehr").hidden || !amEnde()) return zuruecksetzen();
-    zug += px;
+    endeSeit ??= Date.now();
+    if (Date.now() - endeSeit < PAUSE) return;   // gerade erst unten angekommen
+    schwelle = grenze;
+    zug += Math.min(px, MAX_SCHRITT);
     anzeigen();
     clearTimeout(ruhe);
-    ruhe = setTimeout(zuruecksetzen, 700); // kurz loslassen setzt zurück
-    if (zug >= SCHWELLE) { zuruecksetzen(); nachladen(); }
+    ruhe = setTimeout(zuruecksetzen, 400); // kurz loslassen setzt zurück
+    if (zug >= schwelle) { zuruecksetzen(); endeSeit = null; nachladen(); }
   };
-  window.addEventListener("wheel", (e) => { if (e.deltaY > 0) ziehen(e.deltaY); }, { passive: true });
+  window.addEventListener("wheel", (e) => { if (e.deltaY > 0) ziehen(e.deltaY, SCHWELLE_RAD); }, { passive: true });
   let startY = null;
   window.addEventListener("touchstart", (e) => { startY = amEnde() ? e.touches[0].clientY : null; }, { passive: true });
   window.addEventListener("touchmove", (e) => {
     if (startY === null) return;
     const y = e.touches[0].clientY;
-    if (startY - y > 0) ziehen(startY - y);
+    if (startY - y > 0) ziehen(startY - y, SCHWELLE_WISCH);
     startY = y;
   }, { passive: true });
   window.addEventListener("touchend", () => { startY = null; }, { passive: true });
