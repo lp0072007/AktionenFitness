@@ -186,7 +186,10 @@ a { color: var(--akzent); }
 .kennzahl dt { font-size: 11px; color: var(--text-leise); }
 .kennzahl dd { margin: 0; font-weight: 700; font-size: 15px; }
 .kennzahl--haupt dd { color: var(--akzent); font-size: 17px; }
-.karte__knopf { margin-top: auto; }
+.karte__fuss { margin-top: auto; display: flex; gap: 6px; }
+.karte__fuss .karte__knopf { flex: 1; }
+.karte__merken { width: 44px; font-size: 18px; padding: 0; line-height: 1; }
+.karte__merken.ist-gemerkt { color: #d49b00; }
 
 .knopf {
   border: 0; border-radius: 10px; padding: 9px 12px; cursor: pointer; font-weight: 600;
@@ -332,3 +335,26 @@ body.schublade-offen { overflow: hidden; }
 .verlauf__kurve { flex: none; overflow: visible; }
 .verlauf__kurve polyline { fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linejoin: round; stroke-linecap: round; opacity: .8; }
 .verlauf__kurve circle { fill: currentColor; }
+
+/* Merkliste */
+.merk { margin-top: 12px; background: var(--flaeche); border: 1px solid var(--rand); border-radius: var(--radius);
+  box-shadow: var(--schatten); padding: 10px 12px; }
+.merk[hidden] { display: none; }
+.merk__kopf { display: flex; align-items: center; gap: 10px; }
+.merk__kopf h2 { margin: 0; font-size: 16px; white-space: nowrap; }
+.merk__info { color: var(--text-leise); font-size: 13px; margin-right: auto; }
+.merk__bearbeiten { padding: 4px 10px; font-size: 13px; }
+.merk__chips { display: flex; gap: 6px; overflow-x: auto; padding: 8px 0 2px; scrollbar-width: thin; }
+.merk-chip { flex: none; display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--akzent);
+  background: var(--akzent-weich); color: var(--text); border-radius: 999px; padding: 5px 10px; cursor: pointer;
+  font-size: 14px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.merk-chip__name { font-weight: 600; max-width: 180px; overflow: hidden; text-overflow: ellipsis; }
+.merk-chip--aus { border-color: var(--rand); background: var(--flaeche-2); color: var(--text-leise); }
+.merk-dialog { border: 0; padding: 0; border-radius: var(--radius); width: min(460px, 94vw); background: var(--bg);
+  color: var(--text); box-shadow: 0 10px 40px rgb(0 0 0 / .35); }
+.merk-dialog::backdrop { background: rgb(0 0 0 / .5); }
+.merk-dialog__inhalt { padding: 14px 16px 18px; display: flex; flex-direction: column; gap: 10px; }
+.merk-dialog__liste { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; max-height: 50vh; overflow: auto; }
+.merk-dialog__liste li { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 10px;
+  background: var(--flaeche); border: 1px solid var(--rand); border-radius: 10px; }
+.merk-dialog .schublade__kopf form { margin: 0; }

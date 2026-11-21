@@ -1,0 +1,19 @@
+{
+  "name": "AktionenFitness",
+  "short_name": "Aktionen",
+  "description": "Supermarkt-Aktionen für Fitness und Einkaufsliste mit automatischem Abgleich",
+  "lang": "de-AT",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f6f3",
+  "theme_color": "#1f8a4c",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Einkaufsliste", "url": "./index.html#liste" }
+  ]
+}

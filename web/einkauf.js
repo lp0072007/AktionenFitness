@@ -295,3 +295,8 @@ function start() {
 }
 
 start();
+
+// Offline-Fähigkeit und "Zum Startbildschirm hinzufügen" (nur über http/https, nicht per Doppelklick)
+if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+  navigator.serviceWorker.register("sw.js").catch(() => { /* ohne Offline-Modus weiter */ });
+}

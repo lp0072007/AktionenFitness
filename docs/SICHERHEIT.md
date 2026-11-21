@@ -19,7 +19,7 @@ In jeder HTML-Seite als `<meta>`:
 
 ```
 default-src 'none'; script-src 'self' file:; style-src 'self' file:;
-img-src 'self' file: https: data:; connect-src 'self'; base-uri 'none'; object-src 'none'
+img-src 'self' file: https: data:; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; object-src 'none'
 ```
 
 `file:` ist nur dabei, damit die Seite auch per Doppelklick (ohne Server) funktioniert.

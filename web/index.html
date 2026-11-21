@@ -3,11 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' file:; style-src 'self' file:; img-src 'self' file: https: data:; connect-src 'self'; base-uri 'none'; object-src 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' file:; style-src 'self' file:; img-src 'self' file: https: data:; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; object-src 'none'">
   <meta name="referrer" content="no-referrer">
   <title>AktionenFitness</title>
   <meta name="description" content="Aktionen aus Spar, Lidl, Hofer, Penny und Billa durchstöbern, Fitness-Angebote nach Kilopreis, Einkaufsliste mit automatischem Abgleich.">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#1f8a4c">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -59,6 +62,15 @@
         <button class="chip" data-kette="billa" aria-pressed="false">Billa</button>
         <button class="chip" data-kette="dm" aria-pressed="false">dm</button>
       </div>
+    </section>
+
+    <section class="merk" id="merk" aria-labelledby="merkTitel">
+      <div class="merk__kopf">
+        <h2 id="merkTitel">⭐ Merkliste</h2>
+        <span class="merk__info" id="merkInfo"></span>
+        <button class="knopf knopf--leise merk__bearbeiten" id="merkBearbeiten">Bearbeiten</button>
+      </div>
+      <div class="merk__chips" id="merkChips"></div>
     </section>
 
     <p class="ziel-info" id="zielInfo"></p>
@@ -121,6 +133,22 @@
     </div>
   </aside>
 
+  <dialog class="merk-dialog" id="merkDialog" aria-labelledby="merkDialogTitel">
+    <div class="schublade__kopf">
+      <h2 id="merkDialogTitel">⭐ Merkliste</h2>
+      <form method="dialog"><button class="x-knopf" aria-label="Schließen">✕</button></form>
+    </div>
+    <div class="merk-dialog__inhalt">
+      <p class="ek-hinweis">Produkte, die du regelmäßig kaufst. Oben auf der Startseite siehst du dann sofort, was davon
+        gerade in Aktion ist. Tipp: auf einer Karte ☆ antippen merkt sich genau dieses Produkt.</p>
+      <form class="sb-neu" id="merkForm" autocomplete="off">
+        <input id="merkNeu" type="text" aria-label="Produkt merken" placeholder="z. B. Skyr, Hendlfilet, Haferflocken …">
+        <button class="knopf" type="submit" aria-label="Hinzufügen">＋</button>
+      </form>
+      <ul class="merk-dialog__liste" id="merkListe"></ul>
+    </div>
+  </dialog>
+
   <dialog class="gross" id="grossBild" aria-label="Flugblatt-Ausschnitt">
     <form method="dialog"><button class="x-knopf" aria-label="Schließen">✕</button></form>
     <img alt="">
@@ -152,7 +180,10 @@
         <span class="kilopreis__extra"></span>
       </div>
       <p class="zuordnung"></p>
-      <button class="knopf karte__knopf">+ Liste</button>
+      <div class="karte__fuss">
+        <button class="knopf karte__knopf">+ Liste</button>
+        <button class="knopf knopf--leise karte__merken" aria-pressed="false" aria-label="Merken">☆</button>
+      </div>
     </article>
   </template>
 

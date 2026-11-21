@@ -63,6 +63,11 @@ Fällt beim Einkaufen ein Fehltreffer auf, als neuen Fall eintragen.
   Die Karten zeigen dann eine Mini-Kurve und z. B. „🔥 Tiefster Preis seit 10.10.“ oder „📉 Am 24.10. schon 0,99 €“.
   Der Verlauf füllt sich mit jedem Export (am besten jede Woche). Abfragen: `python -m aktionen.verlauf skyr`.
 - Bildausschnitt aus dem Flugblatt auf jeder Karte (antippen zum Vergrößern), Gültigkeit auf jeder Karte
+- **Merkliste (⭐):** Produkte, die du regelmäßig kaufst – per ☆ auf einer Karte oder „Bearbeiten“. Oben auf der
+  Startseite steht dann, was davon gerade wo in Aktion ist; antippen zeigt die passenden Angebote.
+- **App fürs Handy (PWA):** über http(s) geöffnet lässt sich die Seite installieren und funktioniert offline
+  (`manifest.webmanifest`, `sw.js`). Per Doppelklick (file://) gibt es keinen Offline-Modus.
+- **Online stellen:** siehe `docs/ONLINE_STELLEN.md` (GitHub Pages + automatischer Abruf Mo/Do).
 - Hell/Dunkel nach Systemeinstellung, für Handy optimiert
 
 ## Kopieren für die Notizen-App
@@ -75,6 +80,6 @@ ohne Aktion) werden als `* 12x Eier`-Liste kopiert. Bei mehreren Geschäften mit
 `impressum.html` und `datenschutz.html` sind Vorlagen: vor dem Veröffentlichen die [Platzhalter] ausfüllen.
 Sicherheitsmaßnahmen: `docs/SICHERHEIT.md`.
 
-## Hosting (später)
+## Hosting
 
-Weil alles statisch ist, reicht z. B. GitHub Pages: Ordner `web/` veröffentlichen.
+Weil alles statisch ist, reicht GitHub Pages. Anleitung: `docs/ONLINE_STELLEN.md`.

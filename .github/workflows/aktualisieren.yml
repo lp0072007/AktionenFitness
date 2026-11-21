@@ -1,0 +1,84 @@
+# Aktionen automatisch abrufen und die Website auf GitHub Pages veröffentlichen.
+# Einrichtung: docs/ONLINE_STELLEN.md
+#
+# Läuft Montag und Donnerstag früh (neue Flugblätter) und auf Knopfdruck (Actions -> "Aktionen aktualisieren" -> Run).
+# Der Preisverlauf (SQLite) wird im Branch "daten" aufbewahrt, damit er von Lauf zu Lauf wächst.
+name: Aktionen aktualisieren
+
+on:
+  schedule:
+    - cron: "17 4 * * 1,4"   # Mo + Do 04:17 UTC (= 05:17 / 06:17 in Österreich)
+  workflow_dispatch:
+
+permissions:
+  contents: write   # Preisverlauf in den Branch "daten" schreiben
+  pages: write
+  id-token: write
+
+concurrency:
+  group: aktualisieren
+  cancel-in-progress: false
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: scraper/pyproject.toml
+
+      - name: Abhängigkeiten
+        run: pip install -e "scraper[pdf,dev]"
+
+      - name: Tests
+        run: |
+          cd scraper && python -m pytest -q
+          cd ../web && node --test
+
+      - name: Preisverlauf holen (Branch "daten")
+        run: |
+          mkdir -p data
+          if git fetch --depth=1 origin daten; then
+            git show FETCH_HEAD:preisverlauf.db > data/preisverlauf.db || rm -f data/preisverlauf.db
+          fi
+
+      - name: Export
+        env:
+          # Flugblatt-Ausschnitte von Spar nur veröffentlichen, wenn die Bildrechte geklärt sind:
+          # Repository-Variable FLUGBLATT_BILDER = "ja" setzen (Settings -> Secrets and variables -> Actions -> Variables)
+          FLUGBLATT_BILDER: ${{ vars.FLUGBLATT_BILDER }}
+        run: |
+          cd scraper
+          if [ "$FLUGBLATT_BILDER" = "ja" ]; then OPT=""; else OPT="--ohne-bilder"; fi
+          python -m aktionen.export $OPT
+
+      - name: Preisverlauf sichern (Branch "daten")
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # In einem eigenen Ordner, damit der Website-Ordner unberührt bleibt
+          mkdir /tmp/daten && cp data/preisverlauf.db /tmp/daten/ && cd /tmp/daten
+          git init -q && git checkout -q -b daten
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add preisverlauf.db && git commit -qm "Preisverlauf $(date -u +%F)"
+          git push -qf "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" daten
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: web
+
+  veroeffentlichen:
+    needs: export
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4

@@ -91,7 +91,9 @@ function fitnessAngebote() {
 // Bilder der Fitness-Angebote (Flugblatt-Ausschnitte) auch in "Alle Aktionen" verwenden
 let _bilder;
 function bildFuer(a) {
-  _bilder ??= new Map(fitnessAngebote().concat(DATEN.regionen.flatMap((r) => r.angebote)).filter((x) => x.bild).map((x) => [x.id, x.bild]));
+  // Fitness-Angebote ohne eigenes Bild (Export --ohne-bilder) bekommen das Händlerbild aus "Alle Aktionen"
+  _bilder ??= new Map([...Object.values(ALLE.regionen).flatMap((r) => r.angebote), ...Object.values(ALLE.ketten).flat(),
+    ...fitnessAngebote(), ...DATEN.regionen.flatMap((r) => r.angebote)].filter((x) => x.bild).map((x) => [x.id, x.bild]));
   return a.bild || _bilder.get(a.id);
 }
 
@@ -211,7 +213,85 @@ function karteBauen(a, rang) {
   const knopf = k.querySelector(".karte__knopf");
   knopfAktualisieren(knopf, a.id);
   knopf.addEventListener("click", () => L.angebotHinzufuegen(a));
+  const stern = k.querySelector(".karte__merken");
+  sternAktualisieren(stern, a.name);
+  stern.addEventListener("click", () => {
+    merkUmschalten(a.name);
+    document.querySelectorAll(".karte").forEach((x) => sternAktualisieren(x.querySelector(".karte__merken"), x.querySelector(".karte__name").textContent));
+  });
   return k;
+}
+
+// ---------- Merkliste: Produkte, die man regelmäßig kauft ----------
+const SPEICHER_MERK = "aktionenfitness.merkliste.v1";
+let merkliste = laden(SPEICHER_MERK, []);
+if (!Array.isArray(merkliste)) merkliste = [];
+const gemerkt = (name) => merkliste.some((m) => m.toLowerCase() === name.toLowerCase());
+
+function merkSpeichern() { speichern(SPEICHER_MERK, merkliste); merkZeichnen(); merkDialogZeichnen(); }
+function merkUmschalten(name) {
+  merkliste = gemerkt(name) ? merkliste.filter((m) => m.toLowerCase() !== name.toLowerCase()) : [...merkliste, name];
+  merkSpeichern();
+}
+function sternAktualisieren(knopf, name) {
+  const an = gemerkt(name);
+  knopf.textContent = an ? "★" : "☆";
+  knopf.setAttribute("aria-pressed", String(an));
+  knopf.setAttribute("aria-label", an ? `${name} nicht mehr merken` : `${name} merken`);
+  knopf.classList.toggle("ist-gemerkt", an);
+}
+
+// Oben auf der Startseite: was von der Merkliste gerade in Aktion ist (günstigster passender Treffer)
+function merkZeichnen() {
+  const box = $("#merk");
+  box.hidden = merkliste.length === 0;
+  if (box.hidden) return;
+  const eintraege = merkliste.map((m) => window.Abgleich.parseZeile(m)).filter(Boolean);
+  const r = window.Abgleich.auswerten(eintraege, alleAktionen(), { tag: heuteIso() });
+  const wahl = new Map();
+  for (const xs of Object.values(r.aufteilung)) for (const x of xs) wahl.set(x.eintrag, x.treffer);
+  const inAktion = eintraege.filter((e) => wahl.has(e));
+  $("#merkInfo").textContent = `${inAktion.length} von ${eintraege.length} gerade in Aktion`;
+  $("#merkChips").replaceChildren(...[...inAktion, ...eintraege.filter((e) => !wahl.has(e))].map((e) => {
+    const t = wahl.get(e);
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "merk-chip" + (t ? "" : " merk-chip--aus");
+    const name = document.createElement("span");
+    name.className = "merk-chip__name";
+    name.textContent = e.name;
+    b.append(name);
+    if (t) {
+      b.append(L.badge(t.angebot.kette), document.createTextNode(` ${euro(t.angebot.preis)}`));
+      b.title = t.angebot.name;
+    } else b.append(document.createTextNode(" – keine Aktion"));
+    b.addEventListener("click", () => { // passende Angebote anzeigen
+      ansichtSetzen("alle");
+      $("#suche").value = e.name;
+      zustand.suche = e.name;
+      zustand.kette = ""; auswahlSetzen("kette", "");
+      neuZeichnen();
+      $("#zielInfo").scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    return b;
+  }));
+}
+
+function merkDialogZeichnen() {
+  $("#merkListe").replaceChildren(...merkliste.map((m) => {
+    const li = document.createElement("li");
+    const t = document.createElement("span");
+    t.textContent = m;
+    const weg = document.createElement("button");
+    weg.type = "button";
+    weg.className = "icon-knopf ek-vorschau__weg";
+    weg.textContent = "✕";
+    weg.setAttribute("aria-label", `${m} entfernen`);
+    weg.addEventListener("click", () => merkUmschalten(m));
+    li.append(t, weg);
+    return li;
+  }));
+  document.querySelectorAll(".karte").forEach((x) => sternAktualisieren(x.querySelector(".karte__merken"), x.querySelector(".karte__name").textContent));
 }
 
 // ---------- Preisverlauf (data/verlauf.js, aus python -m aktionen.export) ----------
@@ -461,7 +541,7 @@ function start() {
   auswahlSetzen("kette", zustand.kette);
   ansichtSetzen(einst.ansicht === "alle" && ALLE.erstellt ? "alle" : "fitness");
 
-  sel.addEventListener("change", () => { zustand.region = sel.value; kopfAktualisieren(); neuZeichnen(); listeZeichnen(); });
+  sel.addEventListener("change", () => { zustand.region = sel.value; kopfAktualisieren(); neuZeichnen(); listeZeichnen(); merkZeichnen(); });
   $("#sortierung").addEventListener("change", (e) => { zustand.sortierung = e.target.value; neuZeichnen(); });
   let timer;
   $("#suche").addEventListener("input", (e) => {
@@ -520,7 +600,17 @@ function start() {
   for (const id of ["#kopierOhne", "#kopierErledigt"]) $(id).addEventListener("change", () => letztesErgebnis && kopierenZeichnen(letztesErgebnis));
   L.beiAenderung(listeZeichnen);
 
+  $("#merkBearbeiten").addEventListener("click", () => { merkDialogZeichnen(); $("#merkDialog").showModal(); });
+  $("#merkDialog").addEventListener("click", (e) => { if (e.target === e.currentTarget) e.currentTarget.close(); });
+  $("#merkForm").addEventListener("submit", (ev) => {
+    ev.preventDefault();
+    const neu = window.Abgleich.parseListe($("#merkNeu").value).map((e) => e.text).filter((t) => !gemerkt(t));
+    if (neu.length) { merkliste.push(...neu); merkSpeichern(); }
+    $("#merkNeu").value = "";
+  });
+
   kopfAktualisieren();
+  merkZeichnen();
   angeboteZeichnen();
   listeZeichnen();
   const perLink = () => { if (location.hash === "#liste") listeOeffnen(true); };
@@ -529,3 +619,8 @@ function start() {
 }
 
 start();
+
+// Offline-Fähigkeit und "Zum Startbildschirm hinzufügen" (nur über http/https, nicht per Doppelklick)
+if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+  navigator.serviceWorker.register("sw.js").catch(() => { /* ohne Offline-Modus weiter */ });
+}
