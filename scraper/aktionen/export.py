@@ -168,7 +168,9 @@ def kette_exportieren(kette: str, bilder_ordner: Path | None = None) -> dict:
     }
 
 
-def region_exportieren(region: str, pdf: str | None = None, bilder_ordner: Path | None = None) -> dict:
+def region_exportieren(region: str, pdf: str | None = None, bilder_ordner: Path | None = None,
+                       alle_bilder: bool = True) -> dict:
+    """Spar-Region aus dem Flugblatt. alle_bilder: Ausschnitt für jede Aktion (sonst nur für Fitness-Produkte)."""
     fb = None
     if pdf is None:
         fb = aktuelles_flugblatt(region)
@@ -179,7 +181,7 @@ def region_exportieren(region: str, pdf: str | None = None, bilder_ordner: Path 
     bilder: dict[int, str] = {}
     if bilder_ordner is not None:
         index = {id(a): i for i, a in enumerate(angebote)}
-        nur = {index[id(t.angebot)] for t in treffer}
+        nur = None if alle_bilder else {index[id(t.angebot)] for t in treffer}
         dateien = ausschnitte_speichern(pdf, angebote, bilder_ordner / region, f"spar-{region}", nur,
                                         fortschritt=Fortschritt("Ausschnitte"))
         web = bilder_ordner.parent.parent  # .../web
@@ -214,6 +216,8 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--pdf", help="nur mit genau einer --region")
     p.add_argument("--ziel", type=Path, default=WEB_DATEN)
     p.add_argument("--ohne-bilder", action="store_true", help="keine Flugblatt-Ausschnitte erzeugen")
+    p.add_argument("--nur-fitness-bilder", action="store_true",
+                   help="Spar: Ausschnitte nur für Fitness-Produkte (schneller, weniger Speicher)")
     p.add_argument("--ohne-lidl", action="store_true")
     p.add_argument("--ohne-hofer", action="store_true")
     p.add_argument("--ohne-penny", action="store_true")
@@ -230,11 +234,12 @@ def main(argv: list[str] | None = None) -> int:
     bilder = None if args.ohne_bilder else args.ziel.parent / BILDER_UNTERORDNER
     ketten = [k for k in WEITERE_KETTEN if not getattr(args, f"ohne_{k}")]
     # Aufwand grob: Spar-Region (PDF + Auswertung) ≈ 2,5 × Kette, Billa ≈ 1,5 × (viele Angebote), dm ≈ 4 ×
-    gesamt = Gesamt([2.5] * len(regionen) + [{"billa": 1.5, "dm": 4.0}.get(k, 1.0) for k in ketten])  # dm: 3 s Pausen
+    spar = 2.5 if args.nur_fitness_bilder or args.ohne_bilder else 3.0  # alle Ausschnitte: ca. +10 s je Region
+    gesamt = Gesamt([spar] * len(regionen) + [{"billa": 1.5, "dm": 4.0}.get(k, 1.0) for k in ketten])  # dm: 3 s Pausen
     for r in regionen:
         gesamt.schritt(f"Spar {REGION_NAMEN.get(r, r)}")
         try:
-            daten["regionen"].append(region_exportieren(r, args.pdf, bilder))
+            daten["regionen"].append(region_exportieren(r, args.pdf, bilder, alle_bilder=not args.nur_fitness_bilder))
         except Exception as e:  # noqa: BLE001
             print(f"\n    übersprungen ({e})", file=sys.stderr)
     for kette in ketten:

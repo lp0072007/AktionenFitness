@@ -31,9 +31,10 @@ funktioniert auch beim Öffnen per Doppelklick, wo der Browser `fetch()` auf lok
 ## Flugblatt-Ausschnitte
 
 Der Export schneidet für jedes Angebot den passenden Bereich aus dem Flugblatt aus (`web/data/bilder/`).
-Diese Bilder sind **nicht im Git** (Bildrechte beim Händler, ca. 1 MB pro Region). Nach dem Klonen einmal
+Diese Bilder sind **nicht im Git** (Bildrechte beim Händler). Nach dem Klonen einmal
 `python -m aktionen.export` ausführen, sonst zeigt die Website die Karten ohne Bild.
-Mit `--ohne-bilder` lässt sich das abschalten.
+Seit Neuem für **alle** Spar-Aktionen (nicht nur Fitness), damit „Alle Aktionen“ überall Bilder hat: ca. +10 s und
+~10 MB pro Region. `--nur-fitness-bilder` schneidet nur die Fitness-Produkte aus, `--ohne-bilder` schaltet es ganz ab.
 
 ## Einkaufsliste abgleichen (`einkauf.html`)
 
