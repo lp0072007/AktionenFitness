@@ -89,11 +89,13 @@ function trefferZeile(t, eintrag) {
     berechnen();
   });
   const img = li.querySelector("img");
-  if (a.bild) { img.src = a.bild; img.addEventListener("error", () => img.removeAttribute("src")); }
+  const bild = L.sichereUrl(a.bild);
+  if (bild) { img.src = bild; img.addEventListener("error", () => img.removeAttribute("src")); }
   li.querySelector(".badge").replaceWith(badge(a.kette));
   const name = li.querySelector(".ek-treffer__name");
   name.textContent = a.name;
-  if (a.url) name.href = a.url; else name.removeAttribute("href");
+  const url = L.sichereUrl(a.url);
+  if (url) name.href = url; else name.removeAttribute("href");
 
   const info = [mengeText(a)];
   if (t.grundpreis) info.push(`${euro(t.grundpreis.wert)}/${t.grundpreis.einheit}`);

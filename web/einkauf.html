@@ -3,6 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' file:; style-src 'self' file:; img-src 'self' file: https: data:; connect-src 'self'; base-uri 'none'; object-src 'none'">
+  <meta name="referrer" content="no-referrer">
   <title>Einkaufsliste abgleichen</title>
   <meta name="description" content="Einkaufsliste eingeben und mit den aktuellen Aktionen von Spar, Lidl, Hofer, Penny und Billa abgleichen.">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧾</text></svg>">
@@ -75,6 +77,9 @@
       </div>
     </section>
   </main>
+  <footer class="fuss fuss--einkauf">
+    <p class="fuss__links"><a href="impressum.html">Impressum</a> · <a href="datenschutz.html">Datenschutz</a></p>
+  </footer>
 
   <template id="trefferVorlage">
     <li class="ek-treffer">
@@ -82,7 +87,7 @@
       <img class="ek-treffer__bild" alt="" loading="lazy">
       <div class="ek-treffer__text">
         <span class="badge badge--kette"></span>
-        <a class="ek-treffer__name" target="_blank" rel="noopener"></a>
+        <a class="ek-treffer__name" target="_blank" rel="noopener noreferrer"></a>
         <span class="ek-treffer__info"></span>
       </div>
       <div class="ek-treffer__preis"></div>

@@ -305,3 +305,22 @@ body.schublade-offen { overflow: hidden; }
 .ek-stepper { display: flex; flex-direction: column; gap: 2px; align-self: center; }
 .ek-stepper button { width: 26px; height: 20px; padding: 0; border-radius: 6px; border: 1px solid var(--rand);
   background: var(--flaeche-2); cursor: pointer; line-height: 1; font-size: 14px; }
+
+/* Kopieren für die Notizen-App */
+.sb-kopieren { background: var(--flaeche); border: 1px solid var(--rand); border-radius: 12px; padding: 12px 14px;
+  display: flex; flex-direction: column; gap: 8px; }
+.sb-kopieren h3 { margin: 0; font-size: 15px; }
+.sb-option { display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer; }
+.sb-option input { width: 18px; height: 18px; accent-color: var(--akzent); }
+.sb-vorschau { margin: 0; padding: 10px 12px; background: var(--flaeche-2); border-radius: 10px; max-height: 220px; overflow: auto;
+  font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+.knopf:disabled { opacity: .5; cursor: not-allowed; }
+
+/* Impressum, Datenschutz */
+.text-seite { max-width: 760px; margin: 0 auto; padding: 20px 16px 48px; line-height: 1.6; }
+.text-seite h2 { font-size: 18px; margin: 28px 0 8px; }
+.text-seite code { background: var(--flaeche-2); padding: 1px 5px; border-radius: 5px; }
+.platzhalter-hinweis { background: color-mix(in srgb, var(--warn) 12%, var(--flaeche)); border: 1px solid var(--warn);
+  border-radius: 10px; padding: 10px 12px; }
+.fuss__links a { color: var(--text-leise); }
+.fuss--einkauf { max-width: 1280px; margin: 28px auto 0; padding: 12px 16px 24px; }

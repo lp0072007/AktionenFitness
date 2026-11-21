@@ -124,7 +124,7 @@ function karteBauen(a, rang) {
     r.title = `Platz ${rang}`;
     k.prepend(r);
   }
-  const bild = bildFuer(a);
+  const bild = L.sichereUrl(bildFuer(a));
   if (bild) {
     const knopfBild = k.querySelector(".karte__bild");
     const img = knopfBild.querySelector("img");
@@ -152,12 +152,13 @@ function karteBauen(a, rang) {
   kette.classList.add(`badge--${a.kette}`);
 
   const quelle = k.querySelector(".karte__seite");
-  if (a.url) {
+  const url = L.sichereUrl(a.url);
+  if (url) {
     const link = document.createElement("a");
-    link.href = a.url;
+    link.href = url;
     link.target = "_blank";
-    link.rel = "noopener";
-    link.textContent = `${new URL(a.url).hostname.replace(/^www\./, "")} ↗`;
+    link.rel = "noopener noreferrer";
+    link.textContent = `${new URL(url).hostname.replace(/^www\./, "")} ↗`;
     quelle.replaceChildren(link);
   } else if (a.seite) quelle.textContent = `Flugblatt S. ${a.seite}`;
 
@@ -291,6 +292,40 @@ function listeZeichnen() {
   $("#listeAktionen").hidden = zeilen.length === 0;
   L.zeichnen($("#vorschau"), ergebnis, { angebote, tag: heuteIso(), mitDaten: !!ALLE.erstellt });
   ergebnisZeichnen(ergebnis);
+  kopierenZeichnen(ergebnis);
+}
+
+// ---------- Kopieren für die Notizen-App ----------
+const kopierWahl = new Set(); // gewählte Geschäfte, leer = alle
+function kopierOptionen() {
+  return { ketten: kopierWahl, ohneAktion: $("#kopierOhne").checked, erledigte: $("#kopierErledigt").checked };
+}
+function kopierenZeichnen(ergebnis) {
+  const box = $("#sbKopieren");
+  box.hidden = ergebnis.paare.length === 0;
+  if (box.hidden) return;
+  const anzahl = {};
+  for (const [k, xs] of Object.entries(ergebnis.r.aufteilung)) anzahl[k] = xs.length;
+  for (const k of [...kopierWahl]) if (!anzahl[k]) kopierWahl.delete(k); // Geschäft nicht mehr dabei
+  const chip = (kette, text) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "chip";
+    b.textContent = text;
+    b.setAttribute("aria-pressed", String(kette ? kopierWahl.has(kette) : kopierWahl.size === 0));
+    b.addEventListener("click", () => {
+      if (!kette) kopierWahl.clear();
+      else if (kopierWahl.has(kette)) kopierWahl.delete(kette);
+      else kopierWahl.add(kette);
+      kopierenZeichnen(ergebnis);
+    });
+    return b;
+  };
+  $("#kopierKetten").replaceChildren(chip("", "Alle"),
+    ...Object.keys(anzahl).sort((a, b) => anzahl[b] - anzahl[a]).map((k) => chip(k, `${KETTEN[k] ?? k} (${anzahl[k]})`)));
+  const text = L.alsNotiz(ergebnis, kopierOptionen());
+  $("#kopierVorschau").textContent = text || "– nichts ausgewählt –";
+  $("#listeKopieren").disabled = !text;
 }
 
 // Kurzfassung unter der Liste: wo einkaufen, was kostet es zusammen
@@ -344,7 +379,8 @@ function kopfAktualisieren() {
   if (r) teile.push(`Spar ${r.name}${r.gueltig_von ? ` ${datum(r.gueltig_von)}–${datum(r.gueltig_bis)}` : ""}`);
   for (const k of LANDESWEIT) if (DATEN[k]) teile.push(KETTEN[k]);
   $("#gueltigkeit").textContent = teile.join(" + ");
-  if (r?.flugblatt_url) $("#flugblattLink").href = r.flugblatt_url;
+  const fb = L.sichereUrl(r?.flugblatt_url);
+  if (fb) $("#flugblattLink").href = fb;
   $("#stand").textContent = DATEN.erstellt ? `Datenstand: ${new Date(DATEN.erstellt).toLocaleString("de-AT")}` : "";
 }
 
@@ -433,7 +469,8 @@ function start() {
   $("#allesWeg").addEventListener("click", () => { if (confirm("Ganze Einkaufsliste löschen?")) L.leeren(); });
   $("#listeKopieren").addEventListener("click", async (e) => {
     const knopf = e.currentTarget;
-    const text = L.alsText(letztesErgebnis ?? L.auswerten(alleAktionen(), { tag: heuteIso() }));
+    const text = L.alsNotiz(letztesErgebnis ?? L.auswerten(alleAktionen(), { tag: heuteIso() }), kopierOptionen());
+    if (!text) return;
     try {
       await navigator.clipboard.writeText(text);
       knopf.textContent = "✓ Kopiert";
@@ -442,6 +479,7 @@ function start() {
     }
     setTimeout(() => (knopf.textContent = "📋 Kopieren"), 1500);
   });
+  for (const id of ["#kopierOhne", "#kopierErledigt"]) $(id).addEventListener("change", () => letztesErgebnis && kopierenZeichnen(letztesErgebnis));
   L.beiAenderung(listeZeichnen);
 
   kopfAktualisieren();

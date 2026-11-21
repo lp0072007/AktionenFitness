@@ -228,7 +228,7 @@
     "torte", "tortina", "pudding", "dessert", "chicken", "nugget", "nuggets", "cremissimo", "magnum", "sauce", "sugo",
     "aufstrich", "schnitte", "rulade", "nikolo", "krampus", "adventkalender", "intermezzo", "bonbon", "keks", "kekse",
     "wurfel", "noodles", "suppe", "laibchen", "nudelgericht", "fertiggericht", "tasche", "taschen", "tascherl", "sandwich",
-    "sticks", "stick", "roulade", "likor", "praline", "pralinen", "lebkuchen", "stollen"];
+    "sticks", "stick", "roulade", "likor", "praline", "pralinen", "lebkuchen", "stollen", "beilage", "ciambella"];
   function istVerarbeitet(w) {
     return VERARBEITET.some((m) => w === m || (m.length >= 4 && w.endsWith(m)));
   }

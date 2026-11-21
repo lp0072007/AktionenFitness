@@ -57,6 +57,16 @@ Logik: `abgleich.js`, Tests: `node --test` im Ordner `web`.
 - Bildausschnitt aus dem Flugblatt auf jeder Karte (antippen zum Vergrößern), Gültigkeit auf jeder Karte
 - Hell/Dunkel nach Systemeinstellung, für Handy optimiert
 
+## Kopieren für die Notizen-App
+
+In der Seitenleiste unter „📋 Liste für die Notizen-App“ Geschäft(e) wählen → nur deren Produkte (optional plus Produkte
+ohne Aktion) werden als `* 12x Eier`-Liste kopiert. Bei mehreren Geschäften mit Überschrift pro Geschäft.
+
+## Impressum, Datenschutz, Sicherheit
+
+`impressum.html` und `datenschutz.html` sind Vorlagen: vor dem Veröffentlichen die [Platzhalter] ausfüllen.
+Sicherheitsmaßnahmen: `docs/SICHERHEIT.md`.
+
 ## Hosting (später)
 
 Weil alles statisch ist, reicht z. B. GitHub Pages: Ordner `web/` veröffentlichen.

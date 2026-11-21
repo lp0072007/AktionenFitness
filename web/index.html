@@ -3,6 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' file:; style-src 'self' file:; img-src 'self' file: https: data:; connect-src 'self'; base-uri 'none'; object-src 'none'">
+  <meta name="referrer" content="no-referrer">
   <title>AktionenFitness</title>
   <meta name="description" content="Aktionen aus Spar, Lidl, Hofer, Penny und Billa durchstöbern, Fitness-Angebote nach Kilopreis, Einkaufsliste mit automatischem Abgleich.">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
@@ -73,9 +75,10 @@
 
     <footer class="fuss">
       <p>Nährwerte sind typische Richtwerte je Produktart, keine Etikettenangaben. Spar-Preise automatisch aus dem
-        Flugblatt gelesen – vor dem Einkauf im <a id="flugblattLink" href="#" target="_blank" rel="noopener">Original-Flugblatt</a> prüfen.
+        Flugblatt gelesen – vor dem Einkauf im <a id="flugblattLink" href="#" target="_blank" rel="noopener noreferrer">Original-Flugblatt</a> prüfen.
         Lidl-, Hofer-, Penny- und Billa-Angebote stammen von den Websites der Händler und gelten österreichweit. dm: Dauerpreise zum Vergleich.</p>
       <p id="stand"></p>
+      <p class="fuss__links"><a href="impressum.html">Impressum</a> · <a href="datenschutz.html">Datenschutz</a></p>
     </footer>
   </main>
 
@@ -103,8 +106,17 @@
 
       <div class="sb-ergebnis" id="sbErgebnis" hidden></div>
 
+      <section class="sb-kopieren" id="sbKopieren" hidden aria-labelledby="kopierTitel">
+        <h3 id="kopierTitel">📋 Liste für die Notizen-App</h3>
+        <p class="ek-hinweis">Wo gehst du einkaufen? Dann kommt nur das auf die Liste.</p>
+        <div class="chips" id="kopierKetten" aria-label="Geschäfte für die Liste"></div>
+        <label class="sb-option"><input type="checkbox" id="kopierOhne" checked> Produkte ohne Aktion dazu</label>
+        <label class="sb-option"><input type="checkbox" id="kopierErledigt"> Abgehakte auch</label>
+        <pre class="sb-vorschau" id="kopierVorschau" aria-label="Vorschau"></pre>
+        <button type="button" class="knopf" id="listeKopieren">📋 Kopieren</button>
+      </section>
+
       <div class="ek-vorschau__aktionen" id="listeAktionen" hidden>
-        <button type="button" class="knopf knopf--leise" id="listeKopieren">📋 Kopieren</button>
         <button type="button" class="knopf knopf--leise" id="hakenWeg">Häkchen entfernen</button>
         <button type="button" class="knopf knopf--leise" id="erledigteWeg">Abgehakte löschen</button>
         <button type="button" class="knopf knopf--leise" id="allesWeg">Liste leeren</button>

@@ -194,6 +194,44 @@
     }));
   }
 
+  // Nur sichere Links/Bilder aus den Daten übernehmen: https/http oder relative Pfade (data/bilder/…),
+  // niemals "javascript:" o. ä.
+  function sichereUrl(url) {
+    if (typeof url !== "string" || !url) return null;
+    try {
+      const u = new URL(url, global.location?.href ?? "https://example.invalid/");
+      if (u.protocol === "https:" || u.protocol === "http:") return u.href;
+      if (u.protocol === "file:" && !/^[a-z][a-z0-9+.-]*:/i.test(url)) return url; // relativer Pfad bei Doppelklick-Öffnen
+    } catch { /* ungültig */ }
+    return null;
+  }
+
+  // Für die Notizen-App: "* 12x Eier", "* 1kg Karotten" – nur für die gewählten Geschäfte.
+  // optionen: { ketten: Set (leer = alle), ohneAktion: true, erledigte: false }
+  function alsNotiz({ paare, wahl }, optionen = {}) {
+    const ketten = optionen.ketten ?? new Set();
+    const gruppen = new Map();
+    for (const { zeile, eintrag: e } of paare) {
+      if (zeile.erledigt && !optionen.erledigte) continue;
+      const t = wahl.get(e);
+      let gruppe;
+      if (t) {
+        if (ketten.size && !ketten.has(t.angebot.kette)) continue;
+        gruppe = KETTEN[t.angebot.kette] ?? t.angebot.kette;
+      } else {
+        if (optionen.ohneAktion === false) continue;
+        gruppe = "Sonstiges";
+      }
+      const text = zeile.angebot ? `${zeile.anzahl > 1 ? `${zeile.anzahl}x ` : ""}${zeile.angebot.name}` : zeile.text;
+      if (!gruppen.has(gruppe)) gruppen.set(gruppe, []);
+      gruppen.get(gruppe).push(`* ${text.replace(/\s+/g, " ").trim()}`);
+    }
+    // Ein Geschäft (plus Sonstiges): einfache Liste ohne Überschriften
+    const mitAktion = [...gruppen.keys()].filter((g) => g !== "Sonstiges");
+    if (mitAktion.length <= 1) return [...gruppen.values()].flat().join("\n");
+    return [...gruppen].map(([g, xs]) => `${g}:\n${xs.join("\n")}`).join("\n\n");
+  }
+
   // Als Text zum Teilen/Kopieren, nach Geschäft gruppiert
   function alsText({ paare, wahl }) {
     const gruppen = new Map();
@@ -219,7 +257,7 @@
   global.Einkaufsliste = {
     get zeilen() { return zeilen; },
     hinzufuegen, angebotHinzufuegen, anzahlVon, setzeAnzahl, entfernen, abhaken, hakenWeg, erledigteWeg, leeren,
-    auswerten, zeichnen, alsText, badge, KETTEN,
+    auswerten, zeichnen, alsText, alsNotiz, sichereUrl, badge, KETTEN,
     beiAenderung(f) { hoerer.add(f); },
   };
 })(typeof window !== "undefined" ? window : globalThis);
