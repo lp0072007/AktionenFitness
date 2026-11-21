@@ -19,7 +19,7 @@ from .models import Naehrwerte
 @dataclass(frozen=True)
 class Kategorie:
     name: str
-    gruppe: str                  # "Protein", "Kohlenhydrate", "Fette"
+    gruppe: str                  # "Protein", "Kohlenhydrate", "Fette", "Extras"
     stichwoerter: tuple[str, ...]  # Regex, auf den kleingeschriebenen Produktnamen
     kcal: float
     protein: float
@@ -88,6 +88,10 @@ KATEGORIEN: tuple[Kategorie, ...] = (
               ausschluss=(r"schoko", r"nougat", r"krokant")),
     Kategorie("Erdnussbutter", "Fette", (r"erdnussbutter", r"erdnussmus", r"peanut butter"), 600, 25, 14, 50),
     Kategorie("Olivenöl", "Fette", (r"olivenöl",), 820, 0, 0, 91),
+    # Zuckerfreier Sirup zum Aufspritzen ("flavour your life", Mautner Markhof 0 %): Geschmack fast ohne Kalorien
+    Kategorie("Zero-Sirup", "Extras", (r"\bfyl\b", r"flavou?r your life", r"flav ?drops",
+                                        r"(zero|0 ?%|zuckerfrei|ohne zucker)[^,·]*sirup", r"sirup[^,·]*(zero|0 ?%|zuckerfrei|ohne zucker)"),
+              3, 0, 0.5, 0),
 )
 
 # Was nie fitnessrelevant ist, auch wenn ein Stichwort passt
@@ -230,7 +234,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--pdf", help="Bereits heruntergeladenes Flugblatt-PDF verwenden")
     p.add_argument("--ziel", default="protein", choices=sorted(ZIELE),
                    help="protein = Protein pro €, diaet = eiweißreich zuerst, aufbau = kcal pro €")
-    p.add_argument("--gruppe", choices=["Protein", "Kohlenhydrate", "Fette"], help="Nur eine Lebensmittelgruppe")
+    p.add_argument("--gruppe", choices=["Protein", "Kohlenhydrate", "Fette", "Extras"], help="Nur eine Lebensmittelgruppe")
     args = p.parse_args(argv)
 
     if args.pdf:

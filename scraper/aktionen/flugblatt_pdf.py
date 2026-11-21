@@ -382,6 +382,10 @@ def aktion_normalisieren(teile: list[str]) -> list[str]:
 _GRUNDPREIS_RE = re.compile(r"\(=\s*per\s+(kg|Liter)\s+([\d,/–\-\s]+?)\)")
 
 
+# "1 Flasche reicht für 12 Liter Fertiggetränk", "ergibt 6 l": das ist nicht die Packungsgröße
+_ERGIBT_RE = re.compile(r"(?:reicht\s+für|ergibt|für\s+ca\.?)\s*\d+(?:,\d+)?\s*(?:Liter|l|ml)\b", re.IGNORECASE)
+
+
 def erwartete_preise(beschreibung: str) -> list[float]:
     """Aus Menge und Grundpreis die zu erwartenden Preise berechnen.
 
@@ -397,7 +401,7 @@ def erwartete_preise(beschreibung: str) -> list[float]:
 
 def _alle_mengen(text: str) -> list[float]:
     """Alle Mengenvarianten in g/ml: '215-/200-g-Becher' -> [215, 200], '20 x 0,5-Liter' -> [10000]."""
-    m = _MENGE_RE.search(text)
+    m = _MENGE_RE.search(_ERGIBT_RE.sub(" ", text))
     if not m:
         return []
     faktor = {"kg": 1000, "g": 1, "ml": 1, "Liter": 1000, "l": 1000}[m.group(3)]
@@ -416,6 +420,7 @@ def _stueck_aus_text(text: str) -> tuple[float, str] | None:
 
 
 def _menge_aus_text(text: str) -> tuple[float, str] | None:
+    text = _ERGIBT_RE.sub(" ", text)
     if re.search(r"\bper 100\s?g\b", text) and not re.search(r"\d-g-", text):
         return 100.0, "g"   # Thekenware "In Bedienung per 100 g": Preis gilt für 100 g
     m = _MENGE_RE.search(text)

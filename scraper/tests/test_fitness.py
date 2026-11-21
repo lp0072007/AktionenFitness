@@ -104,3 +104,16 @@ def test_thunfisch_in_oel_ueber_beschreibung():
 def test_billa_fehlerkennungen(name, kategorie):
     k = kategorie_fuer(name)
     assert (k.name if k else None) == kategorie
+
+
+def test_zero_sirup_ist_fitnessrelevant():
+    from aktionen.fitness import kategorie_fuer
+    for name in ["fyl Sirup Holunderblüte", "flavour your life Himbeere", "Mautner Markhof 0% Himbeer Sirup",
+                 "Zero Sirup Cola"]:
+        assert kategorie_fuer(name).name == "Zero-Sirup", name
+    assert kategorie_fuer("Mautner Markhof Holunderblüten Sirup") is None  # mit Zucker
+
+
+def test_reicht_fuer_ist_keine_packungsgroesse():
+    from aktionen.flugblatt_pdf import _menge_aus_text
+    assert _menge_aus_text("1 Flasche reicht für 12 Liter Fertiggetränke, 48-ml-EINWEG-Flasche (= per Liter 72,70)") == (48, "ml")

@@ -46,7 +46,6 @@ const SORTIERUNG = {
 const zustand = {
   ansicht: "fitness", // "fitness" | "alle"
   region: null,
-  gruppe: "",
   kette: "",
   suche: "",
   sortierung: "kilopreis",
@@ -109,7 +108,6 @@ function gefilterteAngebote() {
   const q = zustand.suche.trim().toLowerCase();
   return angeboteDerAnsicht()
     .filter((a) => !zustand.kette || a.kette === zustand.kette)
-    .filter((a) => zustand.ansicht === "alle" || !zustand.gruppe || a.gruppe === zustand.gruppe)
     .filter((a) => !q || `${a.name} ${a.kategorie ?? ""} ${a.beschreibung ?? ""}`.toLowerCase().includes(q))
     .sort(SORTIERUNG[zustand.sortierung] ?? SORTIERUNG.kilopreis);
 }
@@ -385,8 +383,8 @@ function kopfAktualisieren() {
 }
 
 function einstellungenSpeichern() {
-  const { ansicht, region, gruppe, kette, sortierung } = zustand;
-  speichern(SPEICHER_EINST, { ansicht, region, gruppe, kette, sortierung });
+  const { ansicht, region, kette, sortierung } = zustand;
+  speichern(SPEICHER_EINST, { ansicht, region, kette, sortierung });
 }
 
 function auswahlSetzen(attr, wert) {
@@ -395,7 +393,6 @@ function auswahlSetzen(attr, wert) {
 function ansichtSetzen(ansicht) {
   zustand.ansicht = ansicht;
   document.querySelectorAll("[data-ansicht]").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.ansicht === ansicht)));
-  $("#gruppen").hidden = ansicht !== "fitness";
 }
 
 function neuZeichnen() {
@@ -412,11 +409,9 @@ function start() {
   zustand.region = DATEN.regionen.some((r) => r.region === einst.region) ? einst.region : DATEN.regionen[0]?.region;
   sel.value = zustand.region ?? "";
   sel.hidden = DATEN.regionen.length < 2;
-  zustand.gruppe = einst.gruppe ?? "";
   zustand.kette = KETTEN[einst.kette] ? einst.kette : "";
   zustand.sortierung = SORTIERUNG[einst.sortierung] ? einst.sortierung : "kilopreis";
   $("#sortierung").value = zustand.sortierung;
-  auswahlSetzen("gruppe", zustand.gruppe);
   auswahlSetzen("kette", zustand.kette);
   ansichtSetzen(einst.ansicht === "alle" && ALLE.erstellt ? "alle" : "fitness");
 
@@ -430,9 +425,6 @@ function start() {
   document.querySelectorAll("[data-ansicht]").forEach((b) => b.addEventListener("click", () => { ansichtSetzen(b.dataset.ansicht); neuZeichnen(); }));
   document.querySelectorAll("[data-kette]").forEach((b) => b.addEventListener("click", () => {
     zustand.kette = b.dataset.kette; auswahlSetzen("kette", zustand.kette); neuZeichnen();
-  }));
-  document.querySelectorAll("[data-gruppe]").forEach((b) => b.addEventListener("click", () => {
-    zustand.gruppe = b.dataset.gruppe; auswahlSetzen("gruppe", zustand.gruppe); neuZeichnen();
   }));
   $("#mehr").addEventListener("click", nachladen);
   // Automatisch nachladen, sobald man sich dem Ende nähert (ca. 1,5 Bildschirme vorher)

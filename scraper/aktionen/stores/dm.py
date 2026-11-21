@@ -31,7 +31,7 @@ SEITENGROESSE = 100
 # Suchbegriffe für fitnessrelevante Produkte bei dm. Ob ein Treffer zählt, entscheidet danach die Fitness-Erkennung.
 SUCHBEGRIFFE = [
     "tofu", "proteinpulver", "whey", "haferflocken", "direktsaft rote bete", "linsen", "kichererbsen",
-    "erdnussmus", "mandeln", "nüsse", "reis", "nudeln", "quinoa", "bohnen",
+    "erdnussmus", "mandeln", "nüsse", "reis", "nudeln", "quinoa", "bohnen", "sirup zuckerfrei",
 ]
 _PREIS_RE = re.compile(r"(\d+(?:\.\d{3})*),(\d{2})")
 

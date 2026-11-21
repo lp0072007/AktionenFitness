@@ -48,7 +48,7 @@ Logik: `abgleich.js`, Tests: `node --test` im Ordner `web`.
 ## Funktionen
 
 - **Startseite:** Aktionen durchstöbern, umschaltbar zwischen „💪 Fitness“ (Auswahl mit Nährwerten) und „🏷️ Alle Aktionen“.
-  Suche, Filter nach Geschäft (und Lebensmittelgruppe), Sortierung nach Kilopreis, Rabatt oder Preis. Beim Scrollen
+  Suche, Filter nach Geschäft, Sortierung nach Kilopreis, Rabatt oder Preis. Beim Scrollen
   werden automatisch die nächsten 60 Karten nachgeladen; Bilder laden erst, wenn man hinscrollt.
 - **Einkaufsliste als Seitenleiste** (🛒 oben rechts): fährt von rechts herein, Hintergrund wird dunkler, am Handy
   ganzer Bildschirm; schließen mit ✕, Esc oder Klick daneben. Produkte eintippen + Enter oder „+ Liste“ auf einer Karte.
