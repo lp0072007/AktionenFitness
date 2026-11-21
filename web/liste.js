@@ -127,6 +127,44 @@
     return teile.join(" ");
   }
 
+  // Symbol "Rechteck mit Pfeil" (öffnen/springen)
+  function pfeilSymbol() {
+    const ns = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(ns, "svg");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("width", "18");
+    svg.setAttribute("height", "18");
+    svg.setAttribute("aria-hidden", "true");
+    for (const d of ["M14 4h6v6", "M20 4l-9 9", "M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"]) {
+      const p = document.createElementNS(ns, "path");
+      p.setAttribute("d", d);
+      svg.append(p);
+    }
+    return svg;
+  }
+
+  // Knopf zur Aktion: Händlerseite (neuer Tab) oder – ohne Händlerseite, z. B. Spar-Flugblatt – ctx.zeigen(angebot)
+  function zurAktion(a, ctx) {
+    const url = sichereUrl(a.url);
+    let el;
+    if (url) {
+      el = document.createElement("a");
+      el.href = url;
+      el.target = "_blank";
+      el.rel = "noopener noreferrer";
+      el.title = `${a.name} bei ${KETTEN[a.kette] ?? a.kette} öffnen`;
+    } else if (ctx.zeigen) {
+      el = document.createElement("button");
+      el.type = "button";
+      el.title = `${a.name} anzeigen`;
+      el.addEventListener("click", () => ctx.zeigen(a));
+    } else return null;
+    el.className = "ek-vorschau__link";
+    el.setAttribute("aria-label", el.title);
+    el.append(pfeilSymbol());
+    return el;
+  }
+
   // Liste in ein <ul> zeichnen: Kreis zum Abhaken, Name + Menge, bestes Angebot, ✕ zum Löschen.
   // ctx: { angebote, tag, mitDaten } – für den Hinweis "ab Do 26.11." bei Aktionen an einem anderen Tag
   function zeichnen(ul, { paare, wahl }, ctx = {}) {
@@ -169,6 +207,9 @@
       const label = document.createElement("label");
       label.append(haken, name, rechts);
       li.append(label);
+      const ziel = t?.angebot ?? (li.classList.contains("spaeter") ? andererTag(e, ctx.angebote || [], ctx.tag)?.treffer.angebot : null);
+      const link = ziel && zurAktion(ziel, ctx);
+      if (link) li.append(link);
 
       if (zeile.angebot) { // fest gewähltes Angebot: Stückzahl mit − / +
         const stepper = document.createElement("span");

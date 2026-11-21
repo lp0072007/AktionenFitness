@@ -454,7 +454,7 @@ function listeZeichnen() {
   $("#hakenWeg").hidden = $("#erledigteWeg").hidden = erledigt === 0;
   $("#listeLeer").hidden = zeilen.length > 0;
   $("#listeAktionen").hidden = zeilen.length === 0;
-  L.zeichnen($("#vorschau"), ergebnis, { angebote, tag: heuteIso(), mitDaten: !!ALLE.erstellt });
+  L.zeichnen($("#vorschau"), ergebnis, { angebote, tag: heuteIso(), mitDaten: !!ALLE.erstellt, zeigen: angebotZeigen });
   ergebnisZeichnen(ergebnis);
   kopierenZeichnen(ergebnis);
 }
@@ -490,6 +490,20 @@ function kopierenZeichnen(ergebnis) {
   const text = L.alsNotiz(ergebnis, kopierOptionen());
   $("#kopierVorschau").textContent = text || "– nichts ausgewählt –";
   $("#listeKopieren").disabled = !text;
+}
+
+// Aus der Liste zu einer Aktion springen (Spar: keine Händlerseite -> Karte auf der Seite zeigen)
+function angebotZeigen(a) {
+  listeOeffnen(false);
+  ansichtSetzen("alle");
+  zustand.kette = a.kette; auswahlSetzen("kette", a.kette);
+  zustand.suche = a.name; $("#suche").value = a.name;
+  neuZeichnen();
+  const karte = document.querySelector(`.karte[data-id="${CSS.escape(a.id)}"]`) ?? document.querySelector(".karte");
+  if (!karte) return;
+  karte.scrollIntoView({ behavior: "smooth", block: "center" });
+  karte.classList.add("karte--markiert");
+  setTimeout(() => karte.classList.remove("karte--markiert"), 2200);
 }
 
 // Kurzfassung unter der Liste: wo einkaufen, was kostet es zusammen

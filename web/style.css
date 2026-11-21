@@ -363,3 +363,12 @@ body.schublade-offen { overflow: hidden; }
 .merk-dialog__liste li { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 10px;
   background: var(--flaeche); border: 1px solid var(--rand); border-radius: 10px; }
 .merk-dialog .schublade__kopf form { margin: 0; }
+
+/* Zur Aktion springen (Rechteck mit Pfeil) in der Einkaufsliste */
+.ek-vorschau__link { flex: none; align-self: center; display: inline-grid; place-items: center; width: 34px; height: 34px;
+  border-radius: 10px; border: 1px solid var(--rand); background: var(--flaeche); color: var(--akzent); cursor: pointer;
+  text-decoration: none; padding: 0; }
+.ek-vorschau__link:hover { background: var(--akzent-weich); border-color: var(--akzent); }
+.ek-vorschau__link:focus-visible { outline: 2px solid var(--akzent); outline-offset: 2px; }
+.ek-vorschau__link svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.karte--markiert { outline: 3px solid var(--akzent); outline-offset: 2px; transition: outline-color .3s; }
