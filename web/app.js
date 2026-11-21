@@ -5,6 +5,7 @@
 const DATEN = window.ANGEBOTE || { regionen: [] };
 const ALLE = window.AKTIONEN || { regionen: {}, ketten: {} };
 const L = window.Einkaufsliste;
+const VERLAUF = window.VERLAUF || { preise: {} };
 const SPEICHER_EINST = "aktionenfitness.einstellungen.v1";
 const SEITE = 60; // Karten pro "Mehr anzeigen"
 
@@ -175,6 +176,7 @@ function karteBauen(a, rang) {
   else if (a.kette === "billa") gueltig.textContent = `📅 aktuell im BILLA-Shop (Stand ${stand})`;
   else gueltig.textContent = "📅 Gültigkeit siehe Flugblatt";
 
+  verlaufZeigen(k.querySelector(".verlauf"), a);
   k.querySelector(".karte__name").textContent = a.name;
   k.querySelector(".karte__menge").textContent = mengeText(a);
   k.querySelector(".preis").textContent = euro(a.preis);
@@ -210,6 +212,50 @@ function karteBauen(a, rang) {
   knopfAktualisieren(knopf, a.id);
   knopf.addEventListener("click", () => L.angebotHinzufuegen(a));
   return k;
+}
+
+// ---------- Preisverlauf (data/verlauf.js, aus python -m aktionen.export) ----------
+const SVG = "http://www.w3.org/2000/svg";
+function minikurve(eintraege) {
+  const preise = eintraege.map((e) => e[1]);
+  const lo = Math.min(...preise), hi = Math.max(...preise), b = 64, h = 18;
+  const pkt = preise.map((p, i) => [
+    preise.length === 1 ? b / 2 : (i * (b - 4)) / (preise.length - 1) + 2,
+    hi === lo ? h / 2 : 2 + ((hi - p) * (h - 4)) / (hi - lo),
+  ]);
+  const svg = document.createElementNS(SVG, "svg");
+  svg.setAttribute("viewBox", `0 0 ${b} ${h}`);
+  svg.setAttribute("width", b);
+  svg.setAttribute("height", h);
+  svg.setAttribute("aria-hidden", "true");
+  svg.classList.add("verlauf__kurve");
+  const linie = document.createElementNS(SVG, "polyline");
+  linie.setAttribute("points", pkt.map((p) => p.join(",")).join(" "));
+  const punkt = document.createElementNS(SVG, "circle");
+  punkt.setAttribute("cx", pkt.at(-1)[0]);
+  punkt.setAttribute("cy", pkt.at(-1)[1]);
+  punkt.setAttribute("r", 2.2);
+  svg.append(linie, punkt);
+  return svg;
+}
+
+function verlaufZeigen(el, a) {
+  const eintraege = VERLAUF.preise[a.vk || a.id];
+  const frueher = eintraege?.filter(([d]) => d < (VERLAUF.stand ?? heuteIso())) ?? [];
+  if (!frueher.length) return el.remove();
+  const tief = frueher.reduce((m, e) => (e[1] < m[1] ? e : m));
+  const seit = datum(eintraege[0][0]);
+  if (a.preis < tief[1] - 0.005) {
+    el.textContent = `🔥 Tiefster Preis seit ${seit}`;
+    el.classList.add("verlauf--tief");
+  } else if (a.preis <= tief[1] + 0.005) {
+    el.textContent = `👍 So günstig wie am ${datum(tief[0])}`;
+  } else {
+    el.textContent = `📉 Am ${datum(tief[0])} schon ${euro(tief[1])}`;
+    el.classList.add("verlauf--teurer");
+  }
+  el.title = eintraege.map(([d, p]) => `${datum(d)}: ${euro(p)}`).join("\n");
+  el.prepend(minikurve([...frueher, [VERLAUF.stand, a.preis]]), " ");
 }
 
 function knopfAktualisieren(knopf, id) {

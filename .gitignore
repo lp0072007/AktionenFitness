@@ -24,4 +24,5 @@ node_modules/
 web/data/angebote.json
 web/data/angebote.js
 web/data/aktionen.js
+web/data/verlauf.js
 web/data/bilder/

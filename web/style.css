@@ -324,3 +324,11 @@ body.schublade-offen { overflow: hidden; }
   border-radius: 10px; padding: 10px 12px; }
 .fuss__links a { color: var(--text-leise); }
 .fuss--einkauf { max-width: 1280px; margin: 28px auto 0; padding: 12px 16px 24px; }
+
+/* Preisverlauf auf den Karten */
+.verlauf { margin: 0; font-size: 12px; color: var(--text-leise); display: flex; align-items: center; gap: 6px; }
+.verlauf--tief { color: var(--akzent); font-weight: 700; }
+.verlauf--teurer { color: var(--warn); }
+.verlauf__kurve { flex: none; overflow: visible; }
+.verlauf__kurve polyline { fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linejoin: round; stroke-linecap: round; opacity: .8; }
+.verlauf__kurve circle { fill: currentColor; }

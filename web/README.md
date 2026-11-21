@@ -59,6 +59,9 @@ Fällt beim Einkaufen ein Fehltreffer auf, als neuen Fall eintragen.
   ganzer Bildschirm; schließen mit ✕, Esc oder Klick daneben. Produkte eintippen + Enter oder „+ Liste“ auf einer Karte.
   Jeder Punkt wird automatisch mit allen Aktionen abgeglichen; darunter steht, wo was in Aktion ist und was es zusammen kostet.
   Direktlink: `index.html#liste`. Die Liste ist dieselbe wie auf `einkauf.html` (gemeinsam: `liste.js`).
+- **Preisverlauf:** Jeder Export speichert alle Preise mit Datum (`data/preisverlauf.db`, SQLite, nicht im Git).
+  Die Karten zeigen dann eine Mini-Kurve und z. B. „🔥 Tiefster Preis seit 10.10.“ oder „📉 Am 24.10. schon 0,99 €“.
+  Der Verlauf füllt sich mit jedem Export (am besten jede Woche). Abfragen: `python -m aktionen.verlauf skyr`.
 - Bildausschnitt aus dem Flugblatt auf jeder Karte (antippen zum Vergrößern), Gültigkeit auf jeder Karte
 - Hell/Dunkel nach Systemeinstellung, für Handy optimiert
 

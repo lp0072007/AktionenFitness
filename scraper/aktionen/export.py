@@ -20,6 +20,7 @@ from pathlib import Path
 import httpx
 from PIL import Image
 
+from . import verlauf
 from .ausschnitte import ausschnitte_speichern
 from .fortschritt import Fortschritt, Gesamt
 from .stores import billa, dm, hofer, lidl, penny
@@ -223,6 +224,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--ohne-penny", action="store_true")
     p.add_argument("--ohne-billa", action="store_true")
     p.add_argument("--ohne-dm", action="store_true")
+    p.add_argument("--ohne-verlauf", action="store_true", help="Preise nicht im Preisverlauf speichern")
     args = p.parse_args(argv)
 
     regionen = sorted(REGIONEN) if args.alle else (args.region or STANDARD_REGIONEN)
@@ -257,6 +259,25 @@ def main(argv: list[str] | None = None) -> int:
         "regionen": {r["region"]: {"name": r["name"], "angebote": r.pop("alle", [])} for r in daten["regionen"]},
         "ketten": {k: daten[k].pop("alle", []) for k in WEITERE_KETTEN if daten[k]},
     }
+    # Preisverlauf: alle Aktionen (und dm-Dauerpreise) mit Datum speichern, Spar bekommt einen stabilen Schlüssel
+    alle_dicts = [d for r in aktionen["regionen"].values() for d in r["angebote"]] + \
+        [d for l in aktionen["ketten"].values() for d in l] + (daten["dm"]["angebote"] if daten.get("dm") else [])
+    fitness_dicts = [d for r in daten["regionen"] for d in r["angebote"]] + \
+        [d for k in WEITERE_KETTEN if daten[k] for d in daten[k]["angebote"]]
+    for d in alle_dicts + fitness_dicts:
+        if d["kette"] == "spar":
+            d["vk"] = verlauf.schluessel(d)
+    if not args.ohne_verlauf:
+        heute = daten["erstellt"][:10]
+        conn = verlauf.oeffnen()
+        n = verlauf.speichern(conn, alle_dicts, heute)
+        web_verlauf = verlauf.fuer_website(conn, [verlauf.schluessel(d) for d in alle_dicts + fitness_dicts], heute)
+        conn.close()
+        (args.ziel.parent / "verlauf.js").write_text(
+            "window.VERLAUF = " + json.dumps(web_verlauf, ensure_ascii=False, separators=(",", ":")) + ";\n",
+            encoding="utf-8")
+        print(f"    Preisverlauf: {n} Preise gespeichert, {len(web_verlauf['preise'])} Produkte mit Verlauf",
+              file=sys.stderr)
     (args.ziel.parent / "aktionen.js").write_text(
         "window.AKTIONEN = " + json.dumps(aktionen, ensure_ascii=False, separators=(",", ":")) + ";\n", encoding="utf-8")
     text = json.dumps(daten, ensure_ascii=False, indent=1)

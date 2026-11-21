@@ -64,7 +64,7 @@ ist erst nötig, wenn der Katalog zu groß für den Browser wird.
 | # | Aufgabe | Status |
 |---|---|---|
 | 1.1 | Modell `Produkt`: Kette, ID, Name, Marke, Menge, Einheit, Normalpreis, Aktionspreis, Bedingung, Gültigkeit, Kategoriepfad, EAN, Stand | ☐ |
-| 1.2 | SQLite-Datenbank `data/preise.db` statt JSON, mit Preisverlauf | ☐ |
+| 1.2 | SQLite-Datenbank mit Preisverlauf (`data/preisverlauf.db`, `aktionen/verlauf.py`), Anzeige auf den Karten | ◐ Aktionen ☑, Gesamtsortiment folgt |
 | 1.3 | Katalog-Scraper pro Kette (Billa, Penny, dm, Hofer, Lidl) | ☐ |
 | 1.4 | Aktionen mit Katalog verknüpfen (Produkt-ID; Spar über Namensabgleich) | ☐ |
 | 1.5 | Zeitplan: Katalog wöchentlich, Aktionen Mo + Do | ☐ |
