@@ -372,7 +372,37 @@ function mehrAktualisieren() {
   const rest = aktuelleListe.length - $("#karten").children.length;
   $("#mehr").hidden = rest <= 0;
   $("#mehr").textContent = `Mehr anzeigen (${zahl(rest)} weitere)`;
-  $("#mehrInfo").textContent = rest > 0 ? "" : aktuelleListe.length > SEITE ? `Alle ${zahl(aktuelleListe.length)} angezeigt` : "";
+  $("#mehrInfo").textContent = rest > 0 ? "oder am Ende weiter nach unten ziehen"
+    : aktuelleListe.length > SEITE ? `Alle ${zahl(aktuelleListe.length)} angezeigt` : "";
+  $("#mehrZug").hidden = rest <= 0;
+}
+
+// Am Seitenende "kräftig weiterscrollen" (Mausrad) bzw. weiter nach oben wischen (Handy) lädt die nächsten Karten.
+// So bleibt das Seitenende mit Impressum erreichbar, man muss aber nicht unbedingt auf den Knopf tippen.
+function weiterZiehenEinrichten() {
+  const SCHWELLE = 260; // so viel "Zug" über das Ende hinaus (Pixel) lädt nach
+  let zug = 0, ruhe;
+  const amEnde = () => window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4;
+  const anzeigen = () => $("#mehrZug").style.setProperty("--zug", Math.min(1, zug / SCHWELLE));
+  const zuruecksetzen = () => { zug = 0; anzeigen(); };
+  const ziehen = (px) => {
+    if ($("#mehr").hidden || !amEnde()) return zuruecksetzen();
+    zug += px;
+    anzeigen();
+    clearTimeout(ruhe);
+    ruhe = setTimeout(zuruecksetzen, 700); // kurz loslassen setzt zurück
+    if (zug >= SCHWELLE) { zuruecksetzen(); nachladen(); }
+  };
+  window.addEventListener("wheel", (e) => { if (e.deltaY > 0) ziehen(e.deltaY); }, { passive: true });
+  let startY = null;
+  window.addEventListener("touchstart", (e) => { startY = amEnde() ? e.touches[0].clientY : null; }, { passive: true });
+  window.addEventListener("touchmove", (e) => {
+    if (startY === null) return;
+    const y = e.touches[0].clientY;
+    if (startY - y > 0) ziehen(startY - y);
+    startY = y;
+  }, { passive: true });
+  window.addEventListener("touchend", () => { startY = null; }, { passive: true });
 }
 
 function bildZeigen(a, bild) {
@@ -553,12 +583,7 @@ function start() {
     zustand.kette = b.dataset.kette; auswahlSetzen("kette", zustand.kette); neuZeichnen();
   }));
   $("#mehr").addEventListener("click", nachladen);
-  // Automatisch nachladen, sobald man sich dem Ende nähert (ca. 1,5 Bildschirme vorher)
-  if ("IntersectionObserver" in window) {
-    new IntersectionObserver((eintraege) => {
-      if (eintraege.some((e) => e.isIntersecting)) nachladen();
-    }, { rootMargin: "0px 0px 150% 0px" }).observe($("#mehrMarke"));
-  }
+  weiterZiehenEinrichten();
   $("#grossBild").addEventListener("click", (e) => {
     if (e.target === e.currentTarget) e.currentTarget.close(); // Klick neben das Bild schließt
   });

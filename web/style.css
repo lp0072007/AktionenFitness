@@ -83,8 +83,13 @@ a { color: var(--akzent); }
 .steuerung .chips::-webkit-scrollbar { display: none; }
 .steuerung .chip { flex: none; }
 .chips[hidden] { display: none; }
-.mehr { display: flex; justify-content: center; margin: 18px 0 0; }
-.mehr .knopf { padding: 10px 22px; }
+.mehr { display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 22px 0 0; }
+.mehr .knopf { padding: 11px 26px; }
+/* Fortschritt beim Weiterziehen am Seitenende */
+.mehr__zug { width: min(220px, 60%); height: 4px; border-radius: 999px; background: var(--rand); overflow: hidden; }
+.mehr__zug[hidden] { display: none; }
+.mehr__zug span { display: block; height: 100%; width: calc(var(--zug, 0) * 100%); background: var(--akzent);
+  transition: width .12s ease-out; }
 .mehr__info { color: var(--text-leise); font-size: 13px; }
 .mehr__info:empty { display: none; }
 
