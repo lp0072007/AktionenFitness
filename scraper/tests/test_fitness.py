@@ -117,3 +117,38 @@ def test_zero_sirup_ist_fitnessrelevant():
 def test_reicht_fuer_ist_keine_packungsgroesse():
     from aktionen.flugblatt_pdf import _menge_aus_text
     assert _menge_aus_text("1 Flasche reicht für 12 Liter Fertiggetränke, 48-ml-EINWEG-Flasche (= per Liter 72,70)") == (48, "ml")
+
+
+def test_energy_und_zero_getraenke():
+    from aktionen.fitness import kategorie_fuer
+    assert kategorie_fuer("KONG STRONG Energy Drink Classic").name == "Energy Drink"
+    assert kategorie_fuer("KONG STRONG Energy Drink light").name == "Energy Drink zero"
+    assert kategorie_fuer("Red Bull Sugarfree").name == "Energy Drink zero"
+    assert kategorie_fuer("Coca Cola Zero").name == "Zero-Getränk"
+    assert kategorie_fuer("Almdudler od. Almdudler zuckerfrei").name == "Zero-Getränk"
+    assert kategorie_fuer("Gösser Zero Bier") is None
+    assert kategorie_fuer("Krispel Zero Rot") is None
+
+
+def test_joghurt_und_kefir():
+    from aktionen.fitness import kategorie_fuer
+    assert kategorie_fuer("Alpengut Kefir Natur").name == "Kefir"
+    assert kategorie_fuer("Ich bin Österreich Naturjoghurt").name == "Joghurt"
+    assert kategorie_fuer("Schärdinger Greek Style Mango & Maracuja Joghurt").name == "Griechisches Joghurt"
+    assert kategorie_fuer("Müller Knusperjoghurt") is None
+    assert kategorie_fuer("Schärdinger Joghurttraum") is None
+
+
+def test_obst_und_gemuese_nur_unverarbeitet():
+    from aktionen.flugblatt_pdf import FlugblattAngebot
+    from aktionen.fitness import fitness_angebote, kategorie_fuer
+    assert kategorie_fuer("Apfel rot").name == "Obst"
+    assert kategorie_fuer("WUNDERLINGE Erdäpfel").name == "Erdäpfel"  # nicht Obst
+    assert kategorie_fuer("Knackiger Eissalat").name == "Gemüse"
+    assert kategorie_fuer("Billa immer gut BILLA Nudel Salat nach griechischer Art") is None
+    assert kategorie_fuer("Oswald Schofrulade Himbeere") is None
+    # Händler-Kategorie entscheidet mit: Saft ist kein Obst, TK-Gemüse schon
+    saft = FlugblattAngebot(seite=0, name="Rauch Happy Day Orange Mild", preis=2.0,
+                            kategorie_pfad="Getränke > Alkoholfreie Getränke > Frucht- & Gemüsesäfte")
+    tk = FlugblattAngebot(seite=0, name="Iglo Erbsen", preis=2.0, kategorie_pfad="Tiefkühl > Obst, Gemüse & Kräuter > Gemüse")
+    assert [t.angebot.name for t in fitness_angebote([saft, tk])] == ["Iglo Erbsen"]

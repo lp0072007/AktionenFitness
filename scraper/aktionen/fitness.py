@@ -35,6 +35,16 @@ class Kategorie:
 
 
 # Reihenfolge wichtig: spezifische Kategorien zuerst. Werte pro 100 g (roh bzw. wie verkauft).
+# Verarbeitetes Obst/Gemüse (Saft, Marmelade, Chips …) zählt nicht als Obst/Gemüse
+_VERARBEITET_OG = (r"saft", r"sirup", r"nektar", r"marmelade", r"konfitüre", r"gummi", r"schnüre",
+                                              r"\btee\b", r"essig", r"chips", r"ketchup", r"sauce", r"soße", r"sugo", r"mark\b",
+                                              r"pesto", r"gewürz", r"cubes", r"schnaps", r"brand\b", r"cremissimo",
+                                              r"sorbet", r"eistee", r"limo", r"lattella", r"molke", r"pfanne", r"rahm",
+                                              r"creme", r"laibchen", r"würze", r"fond\b", r"brühe", r"schoko", r"senf",
+                                              r"\bsaurer\b", r"\bmix\b.*nüsse", r"gelee", r"getrocknet", r"jogurt|joghurt",
+                                              r"kefir", r"müsli", r"wein", r"cider", r"secco", r"zeronic", r"granola", r"shots?\b",
+                   r"rulade", r"trü frü", r"nucao", r"krapfen", r"pür+ee", r"glück\b", r"iced tea", r"frucade", r"crème")
+
 KATEGORIEN: tuple[Kategorie, ...] = (
     Kategorie("Proteinpulver", "Protein", (r"\bwhey\b", r"protein[- ]?pulver", r"eiweiß[- ]?pulver", r"proteinshake[- ]?pulver",
                                            r"\bisolat\b", r"casein"), 380, 75, 8, 6, ausschluss=(r"riegel", r"bar\b")),
@@ -92,6 +102,45 @@ KATEGORIEN: tuple[Kategorie, ...] = (
     Kategorie("Zero-Sirup", "Extras", (r"\bfyl\b", r"flavou?r your life", r"flav ?drops",
                                         r"(zero|0 ?%|zuckerfrei|ohne zucker)[^,·]*sirup", r"sirup[^,·]*(zero|0 ?%|zuckerfrei|ohne zucker)"),
               3, 0, 0.5, 0),
+
+    # Getränke: Energy Drinks (zuckerfrei zuerst) und Zero-Getränke
+    Kategorie("Energy Drink zero", "Getränke", (r"(energy|kong strong|red ?bull|monster|power ?horse|rockstar|\bburn\b|"
+                                                 r"flying power|28 black)[^,·]*(zero|sugar ?free|zuckerfrei|ohne zucker|light)",
+                                                 r"(zero|sugar ?free|zuckerfrei)[^,·]*(energy|kong strong|red ?bull|monster)"),
+              3, 0, 0.5, 0),
+    Kategorie("Energy Drink", "Getränke", (r"\benergy\b", r"kong strong", r"red ?bull", r"\bmonster\b", r"power ?horse",
+                                            r"rockstar", r"\bburn\b", r"flying power", r"28 black"), 45, 0, 11, 0,
+              ausschluss=(r"riegel", r"balls?\b", r"gel\b", r"kaugummi")),
+    Kategorie("Zero-Getränk", "Getränke", (r"\bzero\b", r"pepsi max", r"zuckerfrei", r"ohne zucker", r"cola[^,·]*light",
+                                            r"light[^,·]*cola"), 1, 0, 0.1, 0,
+              ausschluss=(r"krispel", r"wein", r"bier", r"radler", r"sekt", r"\brot\b", r"\bweiß\b", r"kaugummi",
+                          r"schokolade", r"bonbon", r"gummi")),
+
+    # Joghurt und Kefir (auch mit Frucht; Desserts und Knusper-Varianten nicht)
+    Kategorie("Kefir", "Milchprodukte", (r"\bkefir", r"buttermilch"), 55, 3.4, 4, 2.5),
+    Kategorie("Griechisches Joghurt", "Milchprodukte", (r"(griech|greek)[^,·]*jo(g)?hurt", r"jo(g)?hurt[^,·]*(griech|greek)"),
+              120, 5, 4, 9, ausschluss=(r"cheesecake", r"karamell", r"knusper", r"schoko")),
+    Kategorie("Joghurt", "Milchprodukte", (r"jo(g)?hurt",), 70, 3.8, 6, 3.5,
+              ausschluss=(r"knusper", r"kitkat", r"schoko", r"cheesecake", r"karamell", r"traum", r"müsli", r"ciambella",
+                          r"butter", r"keks")),
+
+    # Obst und Gemüse (frisch und tiefgekühlt). Verarbeitetes (Saft, Sirup, Marmelade, Chips …) nicht.
+    Kategorie("Obst", "Obst & Gemüse", (r"(?<!erd)äpfel\b", r"\bapfel\b", r"\bbirne", r"\borangen?\b", r"mandarine",
+                                         r"clementine", r"zitrone", r"limette", r"\bkiwi", r"trauben", r"\w*beeren?\b",
+                                         r"ribisel", r"ananas", r"\bmango", r"melone", r"granatapfel", r"pfirsich",
+                                         r"nektarine", r"marille", r"zwetschke", r"kirsche", r"grapefruit", r"papaya",
+                                         r"physalis", r"avocado", r"\bobst\b"), 55, 0.7, 12, 0.3,
+              ausschluss=_VERARBEITET_OG),
+    Kategorie("Gemüse", "Obst & Gemüse", (r"brokkoli", r"broccoli", r"karfiol", r"blumenkohl", r"karotte", r"möhre", r"paprika",
+                                           r"tomate", r"paradeiser", r"gurke", r"zucchini", r"melanzani", r"aubergine",
+                                           r"spinat", r"(eis|häuptel|blatt|kopf|eisberg|vogerl|feld|endivien|radicchio)salat",
+                                           r"rucola", r"kohlrabi", r"\bkraut\b", r"rotkraut", r"weißkraut", r"zwiebel",
+                                           r"knoblauch", r"\blauch\b", r"porree", r"sellerie", r"champignon", r"\bpilze",
+                                           r"schwammerl", r"fisolen", r"grüne bohnen", r"\berbsen\b", r"kürbis(?!kern)",
+                                           r"süßkartoffel", r"rote rüben?\b", r"radieschen", r"spargel", r"kohlsprossen",
+                                           r"rosenkohl", r"pak choi", r"ingwer", r"gemüse"), 25, 1.5, 3.5, 0.3,
+              ausschluss=_VERARBEITET_OG + (r"hendl", r"huhn", r"hähnchen", r"kernöl", r"butter\b", r"baguette", r"röst",
+                                            r"auflauf", r"suppe", r"chicken", r"filet", r"kräcker|cracker")),
 )
 
 # Was nie fitnessrelevant ist, auch wenn ein Stichwort passt
@@ -100,8 +149,10 @@ _GLOBAL_AUSSCHLUSS = re.compile(
     r"\b(wein|bier|likör|sekt|prosecco|wodka|whisky|schokolade|pralinen|keks|playmobil|lego|spielset)\b"
     # Fertiggerichte, Zubereitungen und Snacks: Nährwerte haben nichts mehr mit dem Grundprodukt zu tun
     r"|\beis\b|eiscreme|speiseeis|vanilleeis|schokoeis|fruchteis|baguette|tascherl|puffer|split|basis für|fix für|pizza|toast|sandwich|wrap\b|burger|nugget"
-    r"|knödel|strudel|kuchen|torte|pudding|mousse|dessert|riegel|chips|cracker|smoothie|drink|shake"
-    r"|gratin|kroketten|wedges|lasagne|auflauf|suppe|eintopf|gulasch|risotto|bowl\b|salat\b|aufstrich"
+    r"|knödel|strudel|kuchen|torte|pudding|mousse|dessert|riegel|chips|cracker|smoothie|(?<!energy )drink|shake"
+    r"|gratin|kroketten|wedges|lasagne|auflauf|suppe|eintopf|gulasch|risotto|bowl\b|aufstrich"
+    r"|(nudel|wurst|hering|herings|makrelen|kartoffel|erdäpfel|thunfisch|eier|fleisch|reis|couscous|bulgur|krabben|"
+    r"geflügel|hühner|käse|gurken|schweizer|griechischer|nudel )salat\b|salat nach|salat mit"
     r"|mohnnudeln|germknödel|marillenknödel|palatschinken|schmarrn|chili con|würstchen|bratwurst|curry\b"
 )
 
@@ -109,7 +160,7 @@ _GLOBAL_AUSSCHLUSS = re.compile(
 # Händler-Kategorien (Billa/Penny), deren Produkte nie als Grundnahrungsmittel zählen
 _PFAD_AUSSCHLUSS = re.compile(
     r"tiefkühlgerichte|fertiggerichte|pizza|\beis\b|eiscreme|süßes & salziges|knabber|pesto|aromen|glasuren"
-    r"|pommes|kartoffelprodukte|tiefkühl > obst|snack|dessert|aufstrich|frischkäse|riegel|trinkmahlzeit|baby"
+    r"|pommes|kartoffelprodukte|trockenfrüchte|snack|dessert|aufstrich|frischkäse|riegel|trinkmahlzeit|baby"
     r"|kosmetik|pflege|tiernahrung|katze|hund|kontaktlinse|augen|dusch|\bbad\b|shampoo|haar|haut|creme|lotion"
     r"|zahn|mund|deo|parfum|make-up|nagel|rasur|windel|reinig|wasch|putz|spül|shots?\b",
     re.I,
@@ -173,12 +224,31 @@ def _gramm(a: FlugblattAngebot, k: Kategorie) -> float | None:
     return None
 
 
+# Wenn der Händler eine Kategorie mitliefert (Billa, Penny): Obst/Gemüse nur aus der Obst-/Gemüse-Abteilung
+# (frisch oder tiefgekühlt), Joghurt/Kefir nicht aus Tiefkühl/Mehlspeisen ("Erdbeer-Joghurt-Torte")
+_PFAD_PFLICHT = {
+    "Obst & Gemüse": re.compile(r"obst|gemüse|salate|kräuter|pilze", re.I),
+}
+_PFAD_VERBOTEN = {
+    "Obst & Gemüse": re.compile(r"getränke|säfte|konserven|kühlwaren|backwaren|brot", re.I),
+    "Milchprodukte": re.compile(r"tiefkühl|mehlspeise|backwaren|torte", re.I),
+}
+
+
+def _pfad_passt(k: Kategorie, pfad: str) -> bool:
+    if k.gruppe in _PFAD_PFLICHT and not _PFAD_PFLICHT[k.gruppe].search(pfad):
+        return False
+    return not (k.gruppe in _PFAD_VERBOTEN and _PFAD_VERBOTEN[k.gruppe].search(pfad))
+
+
 def fitness_angebote(angebote: list[FlugblattAngebot]) -> list[FitnessTreffer]:
     treffer = []
     for a in angebote:
         if a.kategorie_pfad and _PFAD_AUSSCHLUSS.search(a.kategorie_pfad):
             continue
         k = kategorie_fuer(a.name, a.beschreibung)
+        if k and a.kategorie_pfad and not _pfad_passt(k, a.kategorie_pfad):
+            continue
         if k:
             treffer.append(FitnessTreffer(a, k, _gramm(a, k)))
     return treffer
