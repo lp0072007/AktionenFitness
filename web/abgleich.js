@@ -54,13 +54,24 @@
     ["erdnussbutter", "erdnussmus", "erdnusscreme"],
     ["haferflocken", "haferflocke"],
     ["griechisch", "greek"],
+    ["brokkoli", "broccoli"],
+    ["zero", "0%", "zuckerfrei", "fyl"],
+    ["riegel", "bar"],
   ];
 
   // Alle Schreibweisen eines Wortes über Synonyme, auch kombiniert ("huhnerbrust" -> "hendlfilet")
   const _varianten = new Map();
+  // Oberbegriffe (nur in eine Richtung): "Nudeln" findet Spaghetti, "Spaghetti" aber keine Penne
+  const OBERBEGRIFFE = {
+    nudel: ["spaghetti", "penne", "fusilli", "farfalle", "tagliatelle", "linguine", "makkaroni", "maccheroni", "spirelli",
+      "rigatoni", "conchiglie", "fleckerl", "hornchen"],
+    nuss: ["walnuss", "haselnuss", "cashew", "cashews", "pekannuss", "paranuss", "macadamia"],
+    fisch: ["lachs", "thunfisch", "forelle", "kabeljau", "dorsch", "seelachs", "pangasius", "zander", "makrele", "hering"],
+  };
+
   function varianten(wort) {
     if (_varianten.has(wort)) return _varianten.get(wort);
-    const v = new Set([wort]);
+    const v = new Set([wort, stamm(wort)]); // Stammform auch: "semmeln" -> "semmel" -> "brotchen"
     for (let runde = 0; runde < 2; runde++) {
       for (const w of [...v]) {
         for (const gruppe of SYNONYME) {
@@ -70,6 +81,9 @@
           }
         }
       }
+    }
+    for (const [ober, unter] of Object.entries(OBERBEGRIFFE)) {
+      if (stamm(wort) === ober || wort === ober || stamm(wort) === ober + "s") unter.forEach((u) => v.add(u));
     }
     const liste = [...v];
     _varianten.set(wort, liste);
@@ -81,7 +95,7 @@
     liter: ["ml", 1000], stk: ["stk", 1], stuck: ["stk", 1], st: ["stk", 1], pkg: ["stk", 1], packung: ["stk", 1],
     packungen: ["stk", 1], flasche: ["stk", 1], flaschen: ["stk", 1], dose: ["stk", 1], dosen: ["stk", 1] };
   const FUELLWOERTER = new Set(["und", "oder", "von", "vom", "fur", "mit", "ohne", "eine", "einen", "ein", "etwas", "paar",
-    "viel", "frisch", "frische", "frischer", "frisches", "die", "der", "das"]);
+    "viel", "frisch", "frische", "frischer", "frisches", "die", "der", "das", "in", "im", "auf", "aus", "nach", "art", "zum", "zur"]);
 
   // Aufzählungszeichen und Abhakkästchen am Zeilenanfang: "- ", "• ", "1. ", "[ ] ", "☐ ", "- [x] "
   const AUFZAEHLUNG = /^\s*(?:(?:[-*•·–>+]|\d+[.)])\s*)?(?:\[[ xX]?\]|[☐☑✓✔])?\s*/;
@@ -135,20 +149,49 @@
   //   "milch" ~ "milch"         1.0  (genau)
   //   "milch" ~ "vollmilch"     0.9  (Kopf des Kompositums: ist Milch)
   //   "milch" ~ "milchschnitte" 0.3  (nur Bestimmungswort: ist keine Milch)
+  // Zuschnitt/Form am Ende eines Wortes: "Lachsfilet" ist Lachs, "Walnusskerne" sind Nüsse, "Paprika-Mix" ist Paprika
+  const ZUSCHNITTE = ["kernmischung", "aufschnitt", "schnitzel", "cocktail", "filets", "filet", "steaks", "steak", "stucke",
+    "wurfel", "kerne", "kern", "mix"];
+  // Sehr kurze Suchwörter, die trotzdem als Ende eines Kompositums zählen ("Öl" ~ "Olivenöl")
+  const KURZE_KOEPFE = new Set(["ol"]);
+  // Synonyme, die nur als ganzes Wort zählen ("Protein Bar" ja, "haltbare" nein)
+  const NUR_GENAU = new Set(["bar"]);
+
+  // Grundvergleich ohne Zuschnitt: genau (1), Kopf eines Kompositums (0.9, bei Ersatz-Präfix 0.45)
+  function kopfTreffer(s, wort) {
+    if (NUR_GENAU.has(s)) return wort === s ? 1 : 0;
+    const ss = stamm(s), ws = stamm(wort);
+    if (wort === s || ws === ss) return 1;
+    if ((s.length >= 3 || KURZE_KOEPFE.has(s)) && (wort.endsWith(s) || ws.endsWith(ss))) {
+      const praefix = wort.endsWith(s) ? wort.slice(0, wort.length - s.length) : ws.slice(0, ws.length - ss.length);
+      return ERSATZ_PRAEFIX.some((p) => praefix.endsWith(p)) ? 0.45 : 0.9;
+    }
+    return 0;
+  }
+
   function wortTreffer(such, wort) {
     let best = 0;
     for (const s of varianten(such)) {
+      if (NUR_GENAU.has(s)) { if (wort === s) best = 1; continue; }
       const ss = stamm(s), ws = stamm(wort);
+      for (const z of ZUSCHNITTE) {
+        if (wort.endsWith(z) && wort.length - z.length >= 3 && !s.endsWith(z)) {
+          best = Math.max(best, 0.95 * kopfTreffer(s, wort.slice(0, -z.length)));
+          break;
+        }
+      }
       if (wort === s || ws === ss) best = Math.max(best, 1);
-      else if (s.length >= 3 && (wort.endsWith(s) || ws.endsWith(ss))) {
-        const praefix = wort.slice(0, wort.length - s.length);
+      else if ((s.length >= 3 || KURZE_KOEPFE.has(s)) && (wort.endsWith(s) || ws.endsWith(ss))) {
+        const praefix = wort.endsWith(s) ? wort.slice(0, wort.length - s.length) : ws.slice(0, ws.length - ss.length);
         best = Math.max(best, ERSATZ_PRAEFIX.some((p) => praefix.endsWith(p)) ? 0.45 : 0.9);
       }
       else if (s.length >= 4 && wort.startsWith(ss)) best = Math.max(best, 0.3);
       else if (s.length >= 5 && wort.includes(ss)) best = Math.max(best, 0.25);
-      // Kompositum mit Einschub: "huhnerfilet" ~ "huhnerinnenfilet" (Anfang und Kopf stimmen überein)
+      // Kompositum mit Einschub: "huhnerfilet" ~ "huhnerinnenfilet", "hendlfilet" ~ "maishendlinnenfilet"
       for (let k = 4; k <= s.length - 4; k++) {
-        if (wort.length > s.length && wort.startsWith(s.slice(0, k)) && wort.endsWith(s.slice(k))) {
+        const vorne = s.slice(0, k), hinten = s.slice(k), pos = wort.indexOf(vorne);
+        if (wort.length > s.length && pos >= 0 && pos + k <= wort.length - hinten.length &&
+            (wort.endsWith(hinten) || ws.endsWith(stamm(hinten)))) {
           best = Math.max(best, 0.85);
           break;
         }
@@ -185,7 +228,17 @@
     if (best < 0.9) {
       for (const [kopf, sorten] of Object.entries(KOPF_SORTEN)) {
         if (!s.endsWith(kopf) || !sorten.includes(s.slice(0, -kopf.length))) continue;
-        for (const w of namensWoerter) best = Math.max(best, 0.9 * wortTreffer(kopf, w));
+        const faktor = kopf === "milch" ? 0.9 : 0.75; // Milchsorten sind gleichwertig, Joghurtsorten nicht ganz
+        for (const w of namensWoerter) best = Math.max(best, faktor * wortTreffer(kopf, w));
+      }
+    }
+    // Kompositum der Suche auf zwei Wörter im Namen verteilt: "Basmatireis" ~ "Express Reis, Basmati"
+    if (best < 0.8 && s.length >= 8 && namensWoerter.length > 1) {
+      for (let k = 4; k <= s.length - 4; k++) {
+        const a = Math.max(...namensWoerter.map((w) => kopfTreffer(s.slice(0, k), w)));
+        if (a < 0.85) continue;
+        const b = Math.max(...namensWoerter.map((w) => wortTreffer(s.slice(k), w)));
+        if (b >= 0.85) best = Math.max(best, 0.85 * Math.min(a, b));
       }
     }
     return best;
@@ -214,6 +267,7 @@
         && !sucheText.includes(w))) punkte *= 0.5;
     const kat = angebot.kategorie ? norm(angebot.kategorie) : "";
     if (kat && KATEGORIE_VERARBEITET.test(kat) && !woerter.some((w) => kat.includes(stamm(w)))) punkte *= 0.5;
+    for (const [katRegel, sucheRegel] of KATEGORIE_REGELN) if (kat && katRegel.test(kat) && !sucheRegel.test(sucheText)) punkte *= 0.5;
     if (eintrag.bio && !namensWoerter.includes("bio") && !namensWoerter.some((w) => w.startsWith("bio"))) punkte *= 0.6;
     // kurze, eindeutige Namen leicht bevorzugen ("Vollmilch 1l" vor "Vollmilch Schokolade mit …")
     punkte += 0.05 / Math.max(1, namensWoerter.length - woerter.length);
@@ -228,23 +282,32 @@
     "torte", "tortina", "pudding", "dessert", "chicken", "nugget", "nuggets", "cremissimo", "magnum", "sauce", "sugo",
     "aufstrich", "schnitte", "rulade", "nikolo", "krampus", "adventkalender", "intermezzo", "bonbon", "keks", "kekse",
     "wurfel", "noodles", "suppe", "laibchen", "nudelgericht", "fertiggericht", "tasche", "taschen", "tascherl", "sandwich",
-    "sticks", "stick", "roulade", "likor", "praline", "pralinen", "lebkuchen", "stollen", "beilage", "ciambella"];
+    "sticks", "stick", "roulade", "likor", "praline", "pralinen", "lebkuchen", "stollen", "beilage", "ciambella", "milchreis",
+    "ketchup", "senf", "salat", "fruchtgummi", "kitkat", "torte"];
   function istVerarbeitet(w) {
     return VERARBEITET.some((m) => w === m || (m.length >= 4 && w.endsWith(m)));
   }
   // Produktarten: Wörter, die sagen, was ein Produkt eigentlich ist (auch als Kopf eines Kompositums: "Bergkäse")
-  const PRODUKTARTEN = ["kase", "gouda", "emmentaler", "edamer", "camembert", "scheiben", "joghurt", "jogurt", "butter",
+  const PRODUKTARTEN = ["kase", "gouda", "emmentaler", "edamer", "camembert", "joghurt", "jogurt", "butter",
     "schokolade", "creme", "topfen", "rahm", "obers", "kakao", "wurst", "schinken", "salami", "aufstrich", "kefir",
-    "buttermilch", "molke"];
+    "buttermilch", "molke", "gewurz"];
   function istProduktart(w) {
     // auch am Wortanfang: "Käse-Selektion" wird zu "kaseselektion"
     return PRODUKTARTEN.some((m) => w === m || (m.length >= 4 && (w.endsWith(m) || w.startsWith(m))));
   }
   // Ersatzprodukte: Präfix + Suchwort ist etwas anderes ("Hafermilch" ist keine Milch)
   const ERSATZ_PRAEFIX = ["kokosnuss", "kokos", "hafer", "mandel", "soja", "reis", "karfiol", "schoko", "erdnuss", "kakao",
-    "butter", "dinkel", "erbsen", "vanille", "erdbeer", "uberraschungs", "nougat", "kaffee", "kokosnuss", "milchreis"];
+    "butter", "dinkel", "erbsen", "vanille", "erdbeer", "uberraschungs", "nougat", "kaffee", "see", "lamm", "erd", "granat",
+    "zahn", "knusper", "hering", "herings", "makrelen", "nudel", "wurst", "kartoffel", "erdapfel", "ge"]; // "ge": Genuss ≠ Nuss
   // Händler-Kategorien für verarbeitete Produkte (Billa/Penny liefern sie mit)
-  const KATEGORIE_VERARBEITET = /\beis\b|eiscreme|pizza|tiefkuhlgerichte|fertiggerichte|susses|knabber|dessert|snack/; // \b: nicht "Fleisch"
+  const KATEGORIE_VERARBEITET = /\beis\b|eiscreme|pizza|tiefkuhlgerichte|fertiggerichte|susses|knabber|dessert|snack|torten|mehlspeisen/; // \b: nicht "Fleisch"
+  // Händler-Kategorie passt nur, wenn die Suche dazu passt: "Himbeeren" -> kein Himbeer-Sirup (Getränke)
+  const KATEGORIE_REGELN = [
+    [/\bgetranke\b/, /wasser|cola|saft|sirup|tee\b|kaffee|bier|wein|limo|drink|smoothie|energy|milch|sekt|schnaps|likor|gin\b|rum\b|vodka|whisk|spritzer|soda|tonic|getrank|zero/],
+    [/milchalternativ/, /milch|drink/],
+    [/susse aufstrich/, /aufstrich|marmelade|konfit|jam\b|honig|nutella|creme/],
+    [/\bkase\b|hartkase|frischkase/, /kase|gouda|emmentaler|edamer|mozzarella|cottage|feta|parmesan|cheddar|camembert|brie|raclette|aufstrich|halloumi|ricotta|mascarpone|scheiben/],
+  ];
 
   const SCHWELLE = 0.6;
 

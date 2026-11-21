@@ -75,7 +75,7 @@ ist erst nötig, wenn der Katalog zu groß für den Browser wird.
 |---|---|---|
 | 2.1 | Mengen umrechnen: 1 kg gebraucht, 500-g-Packung → 2 Stück; Mengenaktionen einrechnen | ☐ |
 | 2.2 | Vorlieben: Bio, Marke fix/egal, Eigenmarke ok | ☐ |
-| 2.3 | Testset ~50 Einträge mit erwarteten Treffern, Trefferquote messen | ☐ |
+| 2.3 | Testset ~50 Einträge mit erwarteten Treffern, Trefferquote messen (`web/tests/testliste.test.mjs`, 56 Einträge; vorher 75 % gefunden / 83 % Fehltreffer vermieden, jetzt 100 % / 100 %) | ☑ |
 
 ## Phase 3: Optimierung „Wo einkaufen?“
 

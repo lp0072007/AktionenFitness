@@ -132,7 +132,7 @@ test("Eigenschaften sind optional, Modifikator-Komposita, Hüttenkäse = Cottage
 
 test("Milch findet Milch, nicht Käse mit Milch im Namen", () => {
   const ang = [
-    { id: "1", kette: "penny", name: "Salzburg Milch Almkönig Scheiben", preis: 6.69 },
+    { id: "1", kette: "penny", name: "Salzburg Milch Almkönig Scheiben", preis: 6.69, kategorie: "Kühlwaren > Käse, Aufstriche & Salate" },
     { id: "2", kette: "spar", name: "SalzburgMilch Premium Bergbauern H-Milch 3,5% Fett", preis: 0.89 },
     { id: "3", kette: "penny", name: "Österreichische Vollmilch aus Deiner Region", preis: 1.19 },
     { id: "4", kette: "billa", name: "BILLA Heumilch Gouda", preis: 1.99 },

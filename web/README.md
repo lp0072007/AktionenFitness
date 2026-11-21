@@ -44,6 +44,9 @@ Mengen („2x“, „500g“, „1,5 kg“, „½ kg“, „10er“) werden erka
 „mager“ sind optional. Jeder Punkt wird mit **allen** aktuellen Aktionen abgeglichen (Spar-Region, Lidl, Hofer, Penny,
 Billa, dm; Daten: `data/aktionen.js`) → Empfehlung, günstigste Aufteilung auf Geschäfte, falsche Treffer abwählbar.
 Logik: `abgleich.js`, Tests: `node --test` im Ordner `web`.
+**Testliste:** `tests/testliste/erwartet.mjs` (56 typische Einträge, was gefunden werden muss / nicht darf) gegen
+eingefrorene echte Aktionen (`tests/testliste/angebote.json`). Bericht mit Trefferquote: `node tests/testliste.test.mjs --bericht`.
+Fällt beim Einkaufen ein Fehltreffer auf, als neuen Fall eintragen.
 
 ## Funktionen
 
