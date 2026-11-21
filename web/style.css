@@ -15,6 +15,7 @@
   color-scheme: light;
 }
 
+/* Dunkel: automatisch nach Systemeinstellung, außer man hat "Hell" gewählt (thema.js) … */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #0f1411;
@@ -31,6 +32,22 @@
     --schatten: 0 1px 2px rgb(0 0 0 / .4);
     color-scheme: dark;
   }
+}
+/* … oder ausdrücklich "Dunkel" gewählt */
+:root[data-theme="dark"] {
+  --bg: #0f1411;
+  --flaeche: #171e19;
+  --flaeche-2: #1e2721;
+  --text: #e7ede8;
+  --text-leise: #9aa79f;
+  --rand: #2a352e;
+  --akzent: #3ccf7a;
+  --akzent-text: #06200f;
+  --akzent-weich: #15301f;
+  --warn: #fb923c;
+  --rot: #f87171;
+  --schatten: 0 1px 2px rgb(0 0 0 / .4);
+  color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
@@ -372,3 +389,11 @@ body.schublade-offen { overflow: hidden; }
 .ek-vorschau__link:focus-visible { outline: 2px solid var(--akzent); outline-offset: 2px; }
 .ek-vorschau__link svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .karte--markiert { outline: 3px solid var(--akzent); outline-offset: 2px; transition: outline-color .3s; }
+
+/* Umschalter Hell/Dunkel/Automatisch (thema.js) */
+.thema-knopf { flex: none; width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--rand);
+  background: var(--flaeche); cursor: pointer; font-size: 17px; line-height: 1; display: inline-grid; place-items: center;
+  margin-left: auto; }
+.thema-knopf:hover { background: var(--flaeche-2); }
+.thema-knopf:focus-visible { outline: 2px solid var(--akzent); outline-offset: 2px; }
+.thema-knopf + .zurueck, .thema-knopf + .liste-knopf { margin-left: 0; }

@@ -69,7 +69,7 @@ Fällt beim Einkaufen ein Fehltreffer auf, als neuen Fall eintragen.
 - **App fürs Handy (PWA):** über http(s) geöffnet lässt sich die Seite installieren und funktioniert offline
   (`manifest.webmanifest`, `sw.js`). Per Doppelklick (file://) gibt es keinen Offline-Modus.
 - **Online stellen:** siehe `docs/ONLINE_STELLEN.md` (GitHub Pages + automatischer Abruf Mo/Do).
-- Hell/Dunkel nach Systemeinstellung, für Handy optimiert
+- **Hell / Dunkel / Automatisch:** Umschalter oben in der Kopfzeile (🖥️ → ☀️ → 🌙), gilt auf allen Seiten und wird gespeichert (`thema.js`). Für Handy optimiert.
 
 ## Kopieren für die Notizen-App
 
