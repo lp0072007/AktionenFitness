@@ -1,17 +1,28 @@
-# Aktionen automatisch abrufen und die Website auf GitHub Pages veröffentlichen.
+# Aktionen jeden Morgen sparsam aktualisieren und (optional) die Website auf GitHub Pages veröffentlichen.
 # Einrichtung: docs/ONLINE_STELLEN.md
 #
-# Läuft Montag und Donnerstag früh (neue Flugblätter) und auf Knopfdruck (Actions -> "Aktionen aktualisieren" -> Run).
-# Der Preisverlauf (SQLite) wird im Branch "daten" aufbewahrt, damit er von Lauf zu Lauf wächst.
+# Täglich früh und auf Knopfdruck (Actions -> "Aktionen aktualisieren" -> Run workflow).
+# Sparsam: Lidl, Hofer, Penny, Billa, MPreis werden jedes Mal geholt (je wenige Sekunden). Spar nur, wenn es ein neues
+# Flugblatt gibt (sonst kein 20-MB-PDF), dm etwa einmal pro Woche (Dauerpreise, bremst bei vielen Anfragen).
+# Fällt ein Geschäft aus oder liefert 0 Angebote, bleibt sein letzter Stand stehen und der Lauf zeigt eine Warnung.
+# Letzter Stand und Preisverlauf liegen im Branch "daten".
+#
+# Veröffentlichen (GitHub Pages) erst, wenn die Repository-Variable VEROEFFENTLICHEN = "ja" gesetzt ist
+# (Settings -> Secrets and variables -> Actions -> Variables) und Pages auf "GitHub Actions" steht.
 name: Aktionen aktualisieren
 
 on:
   schedule:
-    - cron: "17 4 * * 1,4"   # Mo + Do 04:17 UTC (= 05:17 / 06:17 in Österreich)
+    - cron: "17 4 * * *"   # täglich 04:17 UTC (= 05:17 / 06:17 in Österreich)
   workflow_dispatch:
+    inputs:
+      alles:
+        description: "Alles neu laden (auch unveränderte Spar-Flugblätter und dm)"
+        type: boolean
+        default: false
 
 permissions:
-  contents: write   # Preisverlauf in den Branch "daten" schreiben
+  contents: write   # letzten Stand und Preisverlauf in den Branch "daten" schreiben
   pages: write
   id-token: write
 
@@ -40,41 +51,53 @@ jobs:
           cd scraper && python -m pytest -q
           cd ../web && node --test
 
-      - name: Preisverlauf holen (Branch "daten")
+      - name: Letzten Stand holen (Branch "daten")
         run: |
-          mkdir -p data
+          mkdir -p data/letzter_stand
           if git fetch --depth=1 origin daten; then
             git show FETCH_HEAD:preisverlauf.db > data/preisverlauf.db || rm -f data/preisverlauf.db
+            for f in angebote.json aktionen.js; do
+              git show "FETCH_HEAD:stand/$f" > "data/letzter_stand/$f" || rm -f "data/letzter_stand/$f"
+            done
           fi
+          ls -la data data/letzter_stand
 
       - name: Export
         env:
           # Flugblatt-Ausschnitte von Spar nur veröffentlichen, wenn die Bildrechte geklärt sind:
           # Repository-Variable FLUGBLATT_BILDER = "ja" setzen (Settings -> Secrets and variables -> Actions -> Variables)
           FLUGBLATT_BILDER: ${{ vars.FLUGBLATT_BILDER }}
+          ALLES: ${{ inputs.alles }}
         run: |
           cd scraper
-          if [ "$FLUGBLATT_BILDER" = "ja" ]; then OPT=""; else OPT="--ohne-bilder"; fi
+          OPT=""
+          if [ "$FLUGBLATT_BILDER" != "ja" ]; then OPT="--ohne-bilder"; fi
+          if [ "$ALLES" != "true" ]; then OPT="$OPT --alt ../data/letzter_stand"; fi
           python -m aktionen.export $OPT
 
-      - name: Preisverlauf sichern (Branch "daten")
+      - name: Letzten Stand und Preisverlauf sichern (Branch "daten")
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # In einem eigenen Ordner, damit der Website-Ordner unberührt bleibt
-          mkdir /tmp/daten && cp data/preisverlauf.db /tmp/daten/ && cd /tmp/daten
+          mkdir -p /tmp/daten/stand
+          cp data/preisverlauf.db /tmp/daten/
+          cp web/data/angebote.json web/data/aktionen.js /tmp/daten/stand/
+          cd /tmp/daten
           git init -q && git checkout -q -b daten
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add preisverlauf.db && git commit -qm "Preisverlauf $(date -u +%F)"
+          git add -A && git commit -qm "Stand $(date -u +%F)"
           git push -qf "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" daten
 
       - uses: actions/upload-pages-artifact@v3
+        if: vars.VEROEFFENTLICHEN == 'ja'
         with:
           path: web
 
   veroeffentlichen:
     needs: export
+    if: vars.VEROEFFENTLICHEN == 'ja'
     runs-on: ubuntu-latest
     environment:
       name: github-pages

@@ -23,6 +23,7 @@ Dann <http://localhost:8000> öffnen.
 cd scraper
 python -m aktionen.export                    # Niederösterreich, Wien, Steiermark
 python -m aktionen.export --alle             # alle 11 Spar-Regionen (dauert einige Minuten)
+python -m aktionen.export --sparsam          # nur Geändertes: Spar bei neuem Flugblatt, dm 1× pro Woche (~30 s)
 ```
 
 Das schreibt `web/data/angebote.json` und `web/data/angebote.js` (gleicher Inhalt; die `.js`-Variante
@@ -68,7 +69,7 @@ Fällt beim Einkaufen ein Fehltreffer auf, als neuen Fall eintragen.
   Startseite steht dann, was davon gerade wo in Aktion ist; antippen zeigt die passenden Angebote.
 - **App fürs Handy (PWA):** über http(s) geöffnet lässt sich die Seite installieren und funktioniert offline
   (`manifest.webmanifest`, `sw.js`). Per Doppelklick (file://) gibt es keinen Offline-Modus.
-- **Online stellen:** siehe `docs/ONLINE_STELLEN.md` (GitHub Pages + automatischer Abruf Mo/Do).
+- **Online stellen:** siehe `docs/ONLINE_STELLEN.md` (GitHub Pages + sparsamer Abruf jeden Morgen).
 - **Einstellungen (⚙️ in der Kopfzeile, `vorlieben.js`):**
   - *Kundenkarten:* Lidl Plus, jö (Billa, Penny), SPAR-App. Mit Karte zählt der Kartenpreis überall – auf den Karten (💳),
     beim Sortieren und in der Einkaufsliste. Ohne Karte steht der Kartenpreis nur als Hinweis dabei.

@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import io
 import json
+import os
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -172,11 +173,14 @@ def kette_exportieren(kette: str, bilder_ordner: Path | None = None) -> dict:
 
 
 def region_exportieren(region: str, pdf: str | None = None, bilder_ordner: Path | None = None,
-                       alle_bilder: bool = True) -> dict:
-    """Spar-Region aus dem Flugblatt. alle_bilder: Ausschnitt für jede Aktion (sonst nur für Fitness-Produkte)."""
-    fb = None
-    if pdf is None:
+                       alle_bilder: bool = True, fb=None) -> dict:
+    """Spar-Region aus dem Flugblatt. alle_bilder: Ausschnitt für jede Aktion (sonst nur für Fitness-Produkte).
+
+    fb: schon ermitteltes aktuelles Flugblatt (spart eine Anfrage, siehe sparsamer Lauf in main()).
+    """
+    if pdf is None and fb is None:
         fb = aktuelles_flugblatt(region)
+    if pdf is None:
         print(f"    {fb.flipbook.name} ({fb.flipbook.titel})", file=sys.stderr)
         pdf = pdf_herunterladen(fb, DATEN_ORDNER, fortschritt=Fortschritt("PDF laden", einheit="MB"))
     angebote = angebote_aus_pdf(pdf, Fortschritt("Seiten lesen"))
@@ -212,6 +216,41 @@ def region_exportieren(region: str, pdf: str | None = None, bilder_ordner: Path 
     }
 
 
+# ---------- Sparsamer Lauf: unveränderte Teile vom letzten Stand übernehmen ----------
+
+def alten_stand_laden(ordner: Path | None) -> tuple[dict, dict]:
+    """Letzten Export lesen: (angebote.json, Inhalt von aktionen.js). Fehlt etwas, leere dicts."""
+    if ordner is None:
+        return {}, {}
+    try:
+        angebote = json.loads((ordner / "angebote.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        angebote = {}
+    try:
+        text = (ordner / "aktionen.js").read_text(encoding="utf-8").strip()
+        aktionen = json.loads(text[text.index("=") + 1:].rstrip(";"))
+    except (OSError, ValueError):
+        aktionen = {}
+    return angebote, aktionen
+
+
+def tage_seit(stand: str | None, jetzt: datetime) -> float:
+    """Alter eines Zeitstempels ("2026-11-24T05:17") in Tagen; ohne Stand unendlich."""
+    if not stand:
+        return float("inf")
+    try:
+        return (jetzt - datetime.fromisoformat(stand)).total_seconds() / 86400
+    except ValueError:
+        return float("inf")
+
+
+def warnung(text: str) -> None:
+    """Auf der Konsole und – in GitHub Actions – als Warnung im Lauf sichtbar."""
+    print(f"\n    ⚠ {text}", file=sys.stderr)
+    if os.environ.get("GITHUB_ACTIONS"):
+        print(f"::warning::{text}")
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="python -m aktionen.export")
     p.add_argument("--region", action="append", choices=sorted(REGIONEN))
@@ -228,31 +267,72 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--ohne-mpreis", action="store_true")
     p.add_argument("--ohne-dm", action="store_true")
     p.add_argument("--ohne-verlauf", action="store_true", help="Preise nicht im Preisverlauf speichern")
+    p.add_argument("--alt", type=Path, help="Ordner mit dem letzten Stand (angebote.json, aktionen.js). Sparsamer Lauf: "
+                   "unverändertes Spar-Flugblatt und frisches dm werden übernommen, ausgefallene Ketten ebenfalls")
+    p.add_argument("--sparsam", action="store_true", help="wie --alt mit dem Zielordner (eigener letzter Export)")
+    p.add_argument("--dm-tage", type=float, default=6.5, help="dm erst neu laden, wenn der Stand so viele Tage alt ist")
     args = p.parse_args(argv)
 
     regionen = sorted(REGIONEN) if args.alle else (args.region or STANDARD_REGIONEN)
     if args.pdf and len(regionen) != 1:
         p.error("--pdf geht nur mit genau einer --region")
+    alt, alt_aktionen = alten_stand_laden(args.alt or (args.ziel.parent if args.sparsam else None))
+    sparsam = bool(alt)
+    alt_regionen = {r["region"]: r for r in alt.get("regionen") or []}
 
     # Struktur: regionen[] = Spar pro Bundesland; lidl, hofer = österreichweit (gelten für alle Regionen)
-    daten = {"erstellt": datetime.now().isoformat(timespec="minutes"), "regionen": [], "lidl": None, "hofer": None, "penny": None, "billa": None, "mpreis": None, "dm": None}
+    jetzt = datetime.now()
+    erstellt = jetzt.isoformat(timespec="minutes")
+    daten = {"erstellt": erstellt, "regionen": [], "lidl": None, "hofer": None, "penny": None, "billa": None, "mpreis": None, "dm": None}
     bilder = None if args.ohne_bilder else args.ziel.parent / BILDER_UNTERORDNER
     ketten = [k for k in WEITERE_KETTEN if not getattr(args, f"ohne_{k}")]
     # Aufwand grob: Spar-Region (PDF + Auswertung) ≈ 2,5 × Kette, Billa ≈ 1,5 × (viele Angebote), dm ≈ 4 ×
     spar = 2.5 if args.nur_fitness_bilder or args.ohne_bilder else 3.0  # alle Ausschnitte: ca. +10 s je Region
     gesamt = Gesamt([spar] * len(regionen) + [{"billa": 1.5, "dm": 4.0}.get(k, 1.0) for k in ketten])  # dm: 3 s Pausen
+
+    def region_uebernehmen(r: str, grund: str) -> bool:
+        a, alle = alt_regionen.get(r), (alt_aktionen.get("regionen") or {}).get(r)
+        if not a or alle is None:
+            return False
+        print(f"    {grund} – letzter Stand übernommen ({a.get('flugblatt')})", file=sys.stderr)
+        daten["regionen"].append({**a, "alle": alle.get("angebote", []), "uebernommen": True})
+        return True
+
     for r in regionen:
         gesamt.schritt(f"Spar {REGION_NAMEN.get(r, r)}")
         try:
-            daten["regionen"].append(region_exportieren(r, args.pdf, bilder, alle_bilder=not args.nur_fitness_bilder))
+            fb = None if args.pdf else aktuelles_flugblatt(r)
+            # Sparsam: gleiches Flugblatt wie beim letzten Mal -> kein PDF laden
+            if sparsam and fb and alt_regionen.get(r, {}).get("flugblatt") == fb.flipbook.name \
+                    and region_uebernehmen(r, "Flugblatt unverändert"):
+                continue
+            region = region_exportieren(r, args.pdf, bilder, alle_bilder=not args.nur_fitness_bilder, fb=fb)
+            if not region["alle"]:
+                raise RuntimeError("0 Angebote im Flugblatt – hat sich das PDF-Layout geändert?")
+            daten["regionen"].append({**region, "stand": erstellt})
         except Exception as e:  # noqa: BLE001
-            print(f"\n    übersprungen ({e})", file=sys.stderr)
+            warnung(f"Spar {REGION_NAMEN.get(r, r)}: {e}")
+            region_uebernehmen(r, "Fehler")
     for kette in ketten:
         gesamt.schritt(KETTEN_NAMEN.get(kette, kette))
+        alt_kette = alt.get(kette)
+        alt_alle = (alt_aktionen.get("ketten") or {}).get(kette, [])
+        # dm hat Dauerpreise und bremst bei vielen Anfragen: nur etwa einmal pro Woche neu laden
+        if sparsam and kette == "dm" and alt_kette and tage_seit(alt_kette.get("stand"), jetzt) < args.dm_tage:
+            print(f"    Dauerpreise vom {alt_kette['stand'][:10]} übernommen", file=sys.stderr)
+            daten[kette] = {**alt_kette, "alle": alt_alle, "uebernommen": True}
+            continue
         try:
-            daten[kette] = kette_exportieren(kette, bilder)
+            neu = kette_exportieren(kette, bilder)
+            if not neu["anzahl_angebote"]:
+                raise RuntimeError("0 Angebote – hat sich die Website geändert?")
+            daten[kette] = {**neu, "stand": erstellt}
         except Exception as e:  # noqa: BLE001
-            print(f"\n    übersprungen ({e})", file=sys.stderr)
+            warnung(f"{KETTEN_NAMEN.get(kette, kette)}: {e}")
+            if alt_kette:
+                print(f"    letzter Stand vom {str(alt_kette.get('stand') or alt.get('erstellt'))[:10]} übernommen",
+                      file=sys.stderr)
+                daten[kette] = {**alt_kette, "alle": alt_alle, "uebernommen": True}
     gesamt.ende()
 
     args.ziel.parent.mkdir(parents=True, exist_ok=True)
@@ -264,7 +344,8 @@ def main(argv: list[str] | None = None) -> int:
     }
     # Preisverlauf: alle Aktionen (und dm-Dauerpreise) mit Datum speichern, Spar bekommt einen stabilen Schlüssel
     alle_dicts = [d for r in aktionen["regionen"].values() for d in r["angebote"]] + \
-        [d for l in aktionen["ketten"].values() for d in l] + (daten["dm"]["angebote"] if daten.get("dm") else [])
+        [d for l in aktionen["ketten"].values() for d in l] + \
+        (daten["dm"]["angebote"] if daten.get("dm") and not daten["dm"].get("uebernommen") else [])  # alte dm-Preise nicht neu datieren
     fitness_dicts = [d for r in daten["regionen"] for d in r["angebote"]] + \
         [d for k in WEITERE_KETTEN if daten[k] for d in daten[k]["angebote"]]
     for d in alle_dicts + fitness_dicts:
@@ -288,9 +369,12 @@ def main(argv: list[str] | None = None) -> int:
     # Zusätzlich als JS, damit index.html auch per Doppelklick (file://) funktioniert, wo fetch() blockiert ist
     args.ziel.with_suffix(".js").write_text(f"window.ANGEBOTE = {text};\n", encoding="utf-8")
     n = sum(len(r["angebote"]) for r in daten["regionen"])
+    alt_markierung = lambda x: " (übernommen)" if x.get("uebernommen") else ""
     weitere = ", ".join(f"{KETTEN_NAMEN.get(k, k)} {len(daten[k]['angebote']) if daten[k] else 'übersprungen'}"
-                        for k in WEITERE_KETTEN)
-    print(f"{args.ziel}: Spar {len(daten['regionen'])} Regionen / {n} Fitness-Angebote, {weitere}", file=sys.stderr)
+                        f"{alt_markierung(daten[k]) if daten[k] else ''}" for k in WEITERE_KETTEN)
+    neu_regionen = sum(1 for r in daten["regionen"] if not r.get("uebernommen"))
+    print(f"{args.ziel}: Spar {len(daten['regionen'])} Regionen ({neu_regionen} neu) / {n} Fitness-Angebote, {weitere}",
+          file=sys.stderr)
     return 0 if daten["regionen"] or any(daten[k] for k in WEITERE_KETTEN) else 1
 
 

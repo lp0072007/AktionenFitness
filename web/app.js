@@ -173,7 +173,9 @@ function karteBauen(a, rang) {
   const region = aktuelleRegion();
   const von = a.gueltig_von ?? (a.kette === "spar" ? region?.gueltig_von : null);
   const bis = a.gueltig_bis ?? (a.kette === "spar" ? region?.gueltig_bis : null);
-  const stand = DATEN.erstellt ? new Date(DATEN.erstellt).toLocaleDateString("de-AT") : "–";
+  // Stand des jeweiligen Geschäfts (sparsamer Lauf: nicht jedes Geschäft wird jeden Tag neu geladen)
+  const standIso = DATEN[a.kette]?.stand ?? DATEN.erstellt;
+  const stand = standIso ? new Date(standIso).toLocaleDateString("de-AT") : "–";
   if (von) {
     const zukunft = von > heuteIso();
     gueltig.textContent = `${zukunft ? "⏳ erst ab" : "📅 gültig"} ${WOCHENTAG(von)} ${datum(von)}` +
@@ -570,7 +572,13 @@ function kopfAktualisieren() {
   $("#gueltigkeit").textContent = teile.join(" + ");
   const fb = L.sichereUrl(r?.flugblatt_url);
   if (fb) $("#flugblattLink").href = fb;
-  $("#stand").textContent = DATEN.erstellt ? `Datenstand: ${new Date(DATEN.erstellt).toLocaleString("de-AT")}` : "";
+  const tag = (iso) => new Date(iso).toLocaleDateString("de-AT", { day: "2-digit", month: "2-digit" });
+  const staende = [
+    ...DATEN.regionen.filter((x) => x.stand).map((x) => `Spar ${x.name} ${tag(x.stand)}`),
+    ...LANDESWEIT.filter((k) => DATEN[k]?.stand).map((k) => `${KETTEN[k]} ${tag(DATEN[k].stand)}`),
+  ];
+  $("#stand").textContent = DATEN.erstellt ? `Datenstand: ${new Date(DATEN.erstellt).toLocaleString("de-AT")}` +
+    (staende.length ? ` · zuletzt neu geladen: ${staende.join(", ")}` : "") : "";
 }
 
 function einstellungenSpeichern() {
