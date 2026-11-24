@@ -18,8 +18,9 @@
 
   // Nur was man zum Anzeigen und Rechnen braucht (nicht die ganzen Nährwerte usw.)
   const FELDER = ["id", "kette", "name", "preis", "normalpreis", "ab_menge", "menge", "einheit", "pro_kg", "gueltig_von",
-    "gueltig_bis", "url", "bild", "zusatzpreis", "zusatz_text", "aktion"];
+    "gueltig_bis", "url", "bild", "zusatzpreis", "zusatz_text", "aktion", "merkmale"];
   function schnappschuss(a) {
+    a = a.roh ?? a; // mit Kundenkarte umgerechnet (vorlieben.js) -> Original speichern
     const s = {};
     for (const f of FELDER) if (a[f] != null) s[f] = a[f];
     return s;
@@ -195,6 +196,14 @@
       if (t) {
         rechts.append(badge(t.angebot.kette), " ", euro(t.kosten.preis));
         rechts.title = t.angebot.name;
+        // Darunter: wie viele Packungen, Mengenaktion, Kartenpreis
+        const detail = [A.packungText(t), t.kosten.hinweis, t.angebot.karte ? `💳 ${t.angebot.karte}` : null].filter(Boolean);
+        if (detail.length) {
+          const d = document.createElement("small");
+          d.className = "ek-vorschau__detail" + (t.kosten.aktionGilt ? "" : " ek-vorschau__detail--warn");
+          d.textContent = detail.join(" · ");
+          name.append(d);
+        }
       } else {
         const anders = ctx.mitDaten === false ? null : andererTag(e, ctx.angebote || [], ctx.tag);
         if (anders) {

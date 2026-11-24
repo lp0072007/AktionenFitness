@@ -72,14 +72,52 @@ test("Gültigkeit am Einkaufstag", () => {
 });
 
 test("Kosten: Packungen aus Menge, Mengenaktion erst ab x Stück", () => {
-  const skyr = ANGEBOTE.find((a) => a.name.startsWith("Alpro"));
-  const zwei = A.kosten(A.parseZeile("2x Skyr"), skyr);
-  assert.equal(zwei.aktionGilt, false);
-  assert.equal(zwei.preis, 2 * 1.99);
+  const skyr = ANGEBOTE.find((a) => a.name.startsWith("Alpro")); // 1,32 € ab 3, einzeln 1,99 €
+  const eins = A.kosten(A.parseZeile("Skyr"), skyr);
+  assert.equal(eins.aktionGilt, false);                 // 3 × 1,32 = 3,96 € > 1 × 1,99 € -> nicht aufrunden
+  assert.equal(eins.preis, 1.99);
+  assert.match(eins.hinweis, /erst ab 3 Stück/);
   const drei = A.kosten(A.parseZeile("3x Skyr"), skyr);
   assert.ok(Math.abs(drei.preis - 3 * 1.32) < 1e-9 && Math.abs(drei.ersparnis - 3 * 0.67) < 1e-9);
   const hendl = ANGEBOTE.find((a) => a.name.startsWith("S-BUDGET Hendl"));
   assert.equal(A.kosten(A.parseZeile("1kg Hendlfilet"), hendl).stueck, 2);  // 700-g-Packungen
+});
+
+test("Kosten: aufrunden, wenn die Aktionsmenge nicht mehr kostet", () => {
+  const skyr = ANGEBOTE.find((a) => a.name.startsWith("Alpro"));
+  // 2 einzeln = 3,98 €, 3 mit Aktion = 3,96 € -> 3 nehmen
+  const zwei = A.kosten(A.parseZeile("2x Skyr"), skyr);
+  assert.deepEqual([zwei.stueck, zwei.aktionGilt, zwei.aufgerundet], [3, true, true]);
+  assert.ok(Math.abs(zwei.preis - 3.96) < 1e-9);
+  assert.equal(zwei.hinweis, "3 nehmen: kostet gleich viel wie 2 einzeln");
+  // "1+1 GRATIS" (Spar NÖ KW 47, S. 4): 1 Packung 14,99 €, ab 2 je 7,49 € -> 2 kosten so viel wie 1
+  const kaffee = { id: "k", kette: "spar", name: "Dallmayr Prodomo", preis: 7.49, normalpreis: 14.99, ab_menge: 2,
+    menge: 500, einheit: "g", aktion: ["1+1 GRATIS"] };
+  const k = A.kosten(A.parseZeile("Kaffee"), kaffee);
+  assert.deepEqual([k.stueck, k.aufgerundet], [2, true]);
+  assert.ok(Math.abs(k.preis - 14.98) < 1e-9);
+  assert.equal(k.hinweis, "2 nehmen: kostet gleich viel wie 1 einzeln");
+  // Ohne Einzelpreis kann nichts verglichen werden
+  const unbekannt = A.kosten(A.parseZeile("Kaffee"), { ...kaffee, normalpreis: undefined });
+  assert.deepEqual([unbekannt.aktionGilt, unbekannt.aufgerundet], [false, false]);
+  assert.match(unbekannt.hinweis, /Einzelpreis unbekannt/);
+});
+
+// Gleiche Formatierung wie auf der Website (de-AT: "€ 0,99")
+const eur = (x) => x.toLocaleString("de-AT", { style: "currency", currency: "EUR" });
+
+test("Kosten: Anzahl × Menge und Packungstext", () => {
+  const topfen = { id: "t", kette: "hofer", name: "Magertopfen", preis: 0.99, menge: 250, einheit: "g" };
+  const t = { angebot: topfen, kosten: A.kosten(A.parseZeile("2x 500g Topfen"), topfen) };
+  assert.equal(t.kosten.stueck, 4);                     // vorher: 2 (Anzahl ignoriert)
+  assert.equal(A.packungText(t), `4 × ${eur(0.99)}`);
+  const kg = { angebot: topfen, kosten: A.kosten(A.parseZeile("1 kg Topfen"), topfen) };
+  assert.equal(kg.kosten.stueck, 4);
+  const eine = { angebot: topfen, kosten: A.kosten(A.parseZeile("Topfen"), topfen) };
+  assert.equal(A.packungText(eine), null);
+  const aepfel = { id: "a", kette: "billa", name: "Äpfel", preis: 1.99, pro_kg: true };
+  const lose = { angebot: aepfel, kosten: A.kosten(A.parseZeile("1,5 kg Äpfel"), aepfel) };
+  assert.equal(A.packungText(lose), `1,5 kg × ${eur(1.99)}/kg`);
 });
 
 test("Auswertung: Rangliste und günstigste Aufteilung", () => {
@@ -168,4 +206,39 @@ test("Vollmilch, H-Milch, Bergbauernmilch und Milch gehören zusammen", () => {
   assert.deepEqual(ids("Milch"), ["1", "2", "3"]);
   assert.deepEqual(ids("Vollmilch"), ["1", "2", "3"]);
   assert.deepEqual(ids("Frischmilch"), ["1", "2", "3"]);
+});
+
+test("Mengen in allen Schreibweisen", () => {
+  const mengen = (s) => { const e = A.parseZeile(s); return [e.begriff, e.anzahl, e.menge, e.einheit]; };
+  // Gewicht: Groß/Klein, mit/ohne Leerzeichen, ausgeschrieben, Punkt dahinter, österreichisch (dag)
+  for (const s of ["1KG TOPFEN", "1kg Topfen", "1 Kg. Topfen", "1000g Topfen", "1000 Gramm Topfen", "1Kilogramm topfen",
+    "1 KILOGRAMM Topfen", "1 kilo topfen", "1 kilogr Topfen", "1,0 kg Topfen", "Topfen 1kg", "Topfen (1kg)", "100 dag Topfen",
+    "2 Pfund Topfen"]) {
+    assert.deepEqual(mengen(s), ["topfen", 1, 1000, "g"], s);
+  }
+  assert.deepEqual(mengen("1.5kg Quark"), ["quark", 1, 1500, "g"]);   // "1." ist hier keine Aufzählung
+  assert.deepEqual(mengen("1,5 Kilogramm Quark"), ["quark", 1, 1500, "g"]);
+  assert.deepEqual(mengen("250 gr. Quark"), ["quark", 1, 250, "g"]);
+  assert.deepEqual(mengen("½kg Topfen"), ["topfen", 1, 500, "g"]);
+  assert.deepEqual(mengen("1. Topfen"), ["topfen", 1, null, null]);   // Aufzählung
+  // Volumen
+  for (const s of ["1 Liter Milch", "1L Milch", "1 ltr milch", "1 Litre Milch", "1000ML Milch", "10 dl Milch", "100cl Milch"]) {
+    assert.deepEqual(mengen(s), ["milch", 1, 1000, "ml"], s);
+  }
+  // Gebinde zählen als Stück, das Wort gehört nicht zum Suchbegriff
+  assert.deepEqual(mengen("2 Becher Topfen"), ["topfen", 2, null, null]);
+  assert.deepEqual(mengen("2 Gläser Gurken"), ["gurken", 2, null, null]);
+  assert.deepEqual(mengen("1 Sack Kartoffeln"), ["kartoffeln", 1, null, null]);
+  assert.deepEqual(mengen("2 Kopf Salat"), ["salat", 2, null, null]);
+  // ...aber nur als eigenes Wort
+  assert.deepEqual(mengen("Kopfsalat"), ["kopfsalat", 1, null, null]);
+  assert.deepEqual(mengen("2 Gurken"), ["gurken", 2, null, null]);
+
+  // Topfen und Quark finden dasselbe, egal wie geschrieben
+  const topfen = { id: "t", kette: "hofer", name: "Milsani Magertopfen", preis: 0.99, menge: 250, einheit: "g" };
+  for (const s of ["1KG TOPFEN", "1 Kilogramm Quark", "1000g quark", "Magerquark 1kg", "1 kg Magertopfen"]) {
+    const e = A.parseZeile(s);
+    assert.ok(A.bewerte(e, topfen) >= A.SCHWELLE, s);
+    assert.equal(A.kosten(e, topfen).stueck, 4, s);
+  }
 });

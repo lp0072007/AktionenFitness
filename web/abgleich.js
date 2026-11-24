@@ -91,14 +91,34 @@
   }
 
   // ---------- Liste parsen ----------
-  const EINHEITEN = { g: ["g", 1], gramm: ["g", 1], kg: ["g", 1000], kilo: ["g", 1000], ml: ["ml", 1], l: ["ml", 1000],
-    liter: ["ml", 1000], stk: ["stk", 1], stuck: ["stk", 1], st: ["stk", 1], pkg: ["stk", 1], packung: ["stk", 1],
-    packungen: ["stk", 1], flasche: ["stk", 1], flaschen: ["stk", 1], dose: ["stk", 1], dosen: ["stk", 1] };
+  // Einheiten in allen üblichen Schreibweisen (Groß/Klein egal, Punkt dahinter erlaubt: "1 Kg.", "250 gr")
+  //   Gewicht -> g, Volumen -> ml, Gebinde ("Becher", "Glas", "Sack" …) -> Stück
+  const EINHEIT_GRUPPEN = [
+    ["g", 1, ["g", "gr", "grm", "gramm", "gram"]],
+    ["g", 1000, ["kg", "kilo", "kilos", "kilogramm", "kilogram", "kilogr"]],
+    ["g", 10, ["dag", "dkg", "deka", "dekagramm"]],
+    ["g", 500, ["pfund"]],
+    ["ml", 1, ["ml", "milliliter"]],
+    ["ml", 10, ["cl", "zentiliter"]],
+    ["ml", 100, ["dl", "deziliter"]],
+    ["ml", 1000, ["l", "lt", "ltr", "liter", "litre", "litres", "liters"]],
+    ["stk", 1, ["stk", "stück", "stueck", "stuck", "st", "pkg", "pck", "pack", "packs", "packung", "packungen", "packerl",
+      "flasche", "flaschen", "fl", "dose", "dosen", "becher", "glas", "gläser", "glaeser", "glaser", "sack", "säcke", "saecke",
+      "sackerl", "kiste", "kisten", "tray", "trays", "beutel", "netz", "netze", "bund", "bünde", "stange", "stangen",
+      "tafel", "tafeln", "schale", "schalen", "tube", "tuben", "karton", "kartons", "rolle", "rollen", "laib", "laibe", "kopf",
+      "köpfe", "stange"]],
+  ];
+  const EINHEITEN = {};
+  for (const [einheit, faktor, namen] of EINHEIT_GRUPPEN) for (const n of namen) EINHEITEN[norm(n)] = [einheit, faktor];
+  // Längste zuerst, damit "kilogramm" nicht als "kg"/"g" endet; danach Wortende (kein Buchstabe, auch kein Umlaut)
+  const EINHEIT_RE = [...new Set(EINHEIT_GRUPPEN.flatMap(([, , n]) => n))].sort((a, b) => b.length - a.length).join("|");
+  const NACH_EINHEIT = "(?![a-zäöüß])\\.?";
   const FUELLWOERTER = new Set(["und", "oder", "von", "vom", "fur", "mit", "ohne", "eine", "einen", "ein", "etwas", "paar",
     "viel", "frisch", "frische", "frischer", "frisches", "die", "der", "das", "in", "im", "auf", "aus", "nach", "art", "zum", "zur"]);
 
   // Aufzählungszeichen und Abhakkästchen am Zeilenanfang: "- ", "• ", "1. ", "[ ] ", "☐ ", "- [x] "
-  const AUFZAEHLUNG = /^\s*(?:(?:[-*•·–>+]|\d+[.)])\s*)?(?:\[[ xX]?\]|[☐☑✓✔])?\s*/;
+  // "1." nur als Nummer, wenn keine Ziffer folgt: "1.5kg Topfen" ist eine Menge, keine Aufzählung
+  const AUFZAEHLUNG = /^\s*(?:(?:[-*•·–>+]|\d+[.)](?!\d))\s*)?(?:\[[ xX]?\]|[☐☑✓✔])?\s*/;
 
   function parseZeile(zeile) {
     const original = zeile.replace(AUFZAEHLUNG, "").trim();
@@ -108,7 +128,7 @@
 
     // Klammern sind Notizen: Mengen darin zählen, der Rest nicht ("Eier (10er)", "Skyr (Natur, 2 Stk)")
     text = text.replace(/\(([^)]*)\)/g, (_, innen) => {
-      const m = innen.match(/\d+(?:[.,]\d+)?\s*(?:er\b|[x×]|kg|kilo|gramm|g|ml|liter|l|stk|stück|stuck|st|pkg|packungen?|flaschen?|dosen?)\b\.?/i);
+      const m = innen.match(new RegExp(`\\d+(?:[.,]\\d+)?\\s*(?:er\\b|[x×]|(?:${EINHEIT_RE})${NACH_EINHEIT})`, "i"));
       return m ? ` ${m[0]} ` : " ";
     });
     // "½ kg", "1/2 l"
@@ -118,8 +138,8 @@
 
     // "2x Milch", "Milch x2", "2 x Milch"
     text = text.replace(/(?:^|\s)(\d+)\s*[x×]\s*|\s*[x×]\s*(\d+)\s*$/i, (_, a, b) => { anzahl = Number(a || b); return " "; });
-    // "500g", "1,5 kg", "2 l", "3 Stk"
-    text = text.replace(/(\d+(?:[.,]\d+)?)\s*(kg|kilo|gramm|g|ml|liter|l|stk|stück|stuck|st|pkg|packungen?|flaschen?|dosen?)\b\.?/i,
+    // "500g", "1,5 kg", "1.5kg", "1 Kilogramm", "250 gr", "10 dag", "2 l", "33cl", "3 Stk", "2 Becher"
+    text = text.replace(new RegExp(`(\\d+(?:[.,]\\d+)?)\\s*(${EINHEIT_RE})${NACH_EINHEIT}`, "i"),
       (_, zahl, e) => {
         const [einh, faktor] = EINHEITEN[norm(e)] || [null, 1];
         const wert = Number(zahl.replace(",", ".")) * faktor;
@@ -321,21 +341,54 @@
     return null;
   }
 
-  // Wie viele Packungen braucht man, was kostet das? Berücksichtigt "ab 2 Stück"-Aktionen.
+  // Wie viele Packungen braucht man, was kostet das?
+  //   "1 kg Topfen", Packung 250 g        -> 4 Packungen
+  //   "2x 500g Topfen", Packung 250 g     -> 4 Packungen (Anzahl × Menge)
+  //   "1,5 kg Äpfel", Preis per kg        -> 1,5 × Kilopreis
+  // Mengenaktionen ("ab 2 Stück", "1+1 gratis"): Wird die Mindestmenge nicht erreicht, gilt der Einzelpreis.
+  // Kostet die Mindestmenge aber höchstens so viel wie die gebrauchte Menge einzeln, wird aufgerundet
+  // ("1+1 gratis": 2 Stück kosten so viel wie 1) – mit Hinweis.
   function kosten(eintrag, a) {
-    let stueck = eintrag.anzahl || 1;
-    if (eintrag.menge && a.menge && eintrag.einheit === a.einheit) stueck = Math.max(1, Math.ceil(eintrag.menge / a.menge - 1e-9));
-    if (eintrag.menge && a.pro_kg && eintrag.einheit === "g") stueck = eintrag.menge / 1000; // kg-Ware
-    const aktionGilt = !a.ab_menge || stueck >= a.ab_menge;
-    const einzel = aktionGilt ? a.preis : (a.normalpreis || a.preis);
-    const normal = a.normalpreis || null;
+    const anzahl = eintrag.anzahl || 1;
+    let stueck = anzahl;
+    if (eintrag.menge && a.menge && eintrag.einheit === a.einheit) {
+      stueck = Math.max(1, Math.ceil((eintrag.menge * anzahl) / a.menge - 1e-9));
+    } else if (eintrag.menge && a.pro_kg && eintrag.einheit === "g") {
+      stueck = (eintrag.menge * anzahl) / 1000; // kg-Ware
+    }
+    const normal = a.normalpreis && a.normalpreis > a.preis ? a.normalpreis : null;
+    let aktionGilt = !a.ab_menge || stueck >= a.ab_menge;
+    let hinweis = null, aufgerundet = false;
+    if (!aktionGilt && normal && !a.pro_kg) {
+      const mitAktion = a.ab_menge * a.preis, einzeln = stueck * normal;
+      if (mitAktion <= einzeln + 0.02) {
+        hinweis = `${a.ab_menge} nehmen: ${mitAktion >= einzeln - 0.02 ? "kostet gleich viel wie" : "billiger als"} ${zahlText(stueck)} einzeln`;
+        stueck = a.ab_menge;
+        aktionGilt = aufgerundet = true;
+      }
+    }
+    if (!aktionGilt) hinweis = normal ? `Aktion erst ab ${a.ab_menge} Stück` : `Aktion erst ab ${a.ab_menge} Stück, Einzelpreis unbekannt`;
+    const einzel = aktionGilt ? a.preis : (normal || a.preis);
     return {
       stueck,
+      einzel,                 // Preis pro Packung (bzw. pro kg), der tatsächlich gezahlt wird
       preis: einzel * stueck,
       ersparnis: normal && aktionGilt ? (normal - a.preis) * stueck : 0,
       aktionGilt,
-      hinweis: !aktionGilt ? `Aktion erst ab ${a.ab_menge} Stück` : null,
+      aufgerundet,            // auf die Aktionsmenge aufgerundet, weil das nicht mehr kostet
+      hinweis,
     };
+  }
+
+  const zahlText = (x) => x.toLocaleString("de-AT", { maximumFractionDigits: 2 });
+
+  // "4 × 0,99 €", "1,5 kg × 9,99 €/kg" – nur wenn mehr als eine Packung gebraucht wird (sonst null)
+  function packungText(t) {
+    const { stueck, einzel } = t.kosten;
+    const euro = (x) => x.toLocaleString("de-AT", { style: "currency", currency: "EUR" });
+    if (t.angebot.pro_kg) return stueck && stueck !== 1 ? `${zahlText(stueck)} kg × ${euro(einzel)}/kg` : null;
+    if (stueck === 1) return null;
+    return `${zahlText(stueck)} × ${euro(einzel)}`;
   }
 
   // ---------- Suchen ----------
@@ -413,7 +466,7 @@
     return { eintraege, rangliste, aufteilung, ohneAktion };
   }
 
-  const api = { norm, stamm, varianten, parseZeile, parseListe, wortTreffer, bewerte, grundpreis, kosten, effektiv, finde, auswerten, SCHWELLE };
+  const api = { norm, stamm, varianten, parseZeile, parseListe, wortTreffer, bewerte, grundpreis, kosten, packungText, effektiv, finde, auswerten, SCHWELLE };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else global.Abgleich = api;
 })(typeof window !== "undefined" ? window : globalThis);

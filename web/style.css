@@ -397,3 +397,25 @@ body.schublade-offen { overflow: hidden; }
 .thema-knopf:hover { background: var(--flaeche-2); }
 .thema-knopf:focus-visible { outline: 2px solid var(--akzent); outline-offset: 2px; }
 .thema-knopf + .zurueck, .thema-knopf + .liste-knopf { margin-left: 0; }
+
+/* Einstellungen: Kundenkarten, Ernährung, Vorlieben (vorlieben.js) */
+.thema-knopf + .einst-knopf { margin-left: 0; }
+.einst-knopf { position: relative; }
+.einst-knopf--aktiv::after { content: ""; position: absolute; top: 3px; right: 3px; width: 9px; height: 9px;
+  border-radius: 50%; background: var(--akzent); border: 2px solid var(--flaeche); }
+.einst fieldset { margin: 0; padding: 10px 12px 12px; border: 1px solid var(--rand); border-radius: 12px;
+  background: var(--flaeche); display: grid; gap: 8px; }
+.einst legend { padding: 0 6px; font-weight: 700; font-size: 15px; }
+.einst__option { align-items: flex-start; }
+.einst__option input { margin-top: 1px; flex: none; }
+.einst__text { display: flex; flex-direction: column; }
+.einst__text b { font-weight: 600; }
+.einst__text small { color: var(--text-leise); font-size: 12px; }
+.einst > .knopf { align-self: flex-end; }
+.einst-dialog { max-height: 92vh; }
+.einst-dialog .merk-dialog__inhalt { overflow: auto; }
+
+/* Einkaufsliste: Packungen, Mengenaktion, Kartenpreis unter dem Namen */
+.ek-vorschau__detail { display: block; font-size: 12px; opacity: 1 !important; color: var(--text-leise); }
+.ek-vorschau__detail--warn { color: var(--warn); }
+.preis--karte::after { content: " 💳"; font-size: .7em; }

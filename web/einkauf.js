@@ -23,9 +23,11 @@ function speichern() {
   } catch { /* privater Modus */ }
 }
 
+// Mit den Einstellungen (⚙️): Filter vegan/vegetarisch/Bio, Kartenpreise
+const V = window.Vorlieben;
 function angebote() {
   const region = DATEN.regionen[$("#region").value];
-  return [...(region?.angebote ?? []), ...Object.values(DATEN.ketten).flat()];
+  return V.anwenden([...(region?.angebote ?? []), ...Object.values(DATEN.ketten).flat()]);
 }
 
 function mengeText(a) {
@@ -102,19 +104,19 @@ function trefferZeile(t, eintrag) {
   if (a.gueltig_von) info.push(`${datum(a.gueltig_von)}–${a.gueltig_bis ? datum(a.gueltig_bis) : "?"}`);
   else if (a.kette === "billa") info.push("aktuell im Shop");
   if (a.ab_menge) info.push(`ab ${a.ab_menge} Stk.`);
-  if (a.zusatzpreis) info.push(`${a.zusatz_text || "Aktionstag"}: ${euro(a.zusatzpreis)}`);
+  if (a.karte) info.push(`💳 mit ${a.karte} (ohne Karte ${euro(a.ohne_karte)})`);
+  if (a.zusatzpreis) info.push(`${V.zusatzName(a)}: ${euro(a.zusatzpreis)}`);
   if (a.aktion?.length) info.push(a.aktion.join(" · "));
   const infoEl = li.querySelector(".ek-treffer__info");
-  infoEl.textContent = (t.kosten.hinweis ? `⚠ ${t.kosten.hinweis} · ` : "") + info.filter(Boolean).join(" · ");
-  infoEl.classList.toggle("warn", !!t.kosten.hinweis);
+  const hinweis = t.kosten.hinweis ? `${t.kosten.aktionGilt ? "💡" : "⚠"} ${t.kosten.hinweis} · ` : "";
+  infoEl.textContent = hinweis + info.filter(Boolean).join(" · ");
+  infoEl.classList.toggle("warn", !t.kosten.aktionGilt);
 
   const preis = li.querySelector(".ek-treffer__preis");
-  const stueck = t.kosten.stueck;
-  preis.innerHTML = "";
-  preis.append(euro(t.kosten.preis));
+  preis.replaceChildren(euro(t.kosten.preis));
   const klein = document.createElement("small");
-  klein.textContent = (stueck !== 1 ? `${stueck.toLocaleString("de-AT")} × ${euro(a.preis)}` : "") +
-    (a.normalpreis ? `${stueck !== 1 ? " · " : ""}statt ${euro(a.normalpreis)}` : "");
+  const normal = t.kosten.aktionGilt && a.normalpreis > a.preis ? `statt ${euro(a.normalpreis)}` : null;
+  klein.textContent = [A.packungText(t), normal].filter(Boolean).join(" · ");
   preis.append(klein);
   return li;
 }
@@ -290,6 +292,7 @@ function start() {
   $("#erledigteWeg").addEventListener("click", L.erledigteWeg);
   $("#allesWeg").addEventListener("click", () => { if (confirm("Ganze Liste löschen?")) L.leeren(); });
   L.beiAenderung(berechnen);
+  V.beiAenderung(berechnen);
   $("#tag").addEventListener("change", berechnen);
   berechnen();
 }

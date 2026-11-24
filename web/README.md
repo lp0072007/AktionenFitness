@@ -69,6 +69,15 @@ Fällt beim Einkaufen ein Fehltreffer auf, als neuen Fall eintragen.
 - **App fürs Handy (PWA):** über http(s) geöffnet lässt sich die Seite installieren und funktioniert offline
   (`manifest.webmanifest`, `sw.js`). Per Doppelklick (file://) gibt es keinen Offline-Modus.
 - **Online stellen:** siehe `docs/ONLINE_STELLEN.md` (GitHub Pages + automatischer Abruf Mo/Do).
+- **Einstellungen (⚙️ in der Kopfzeile, `vorlieben.js`):**
+  - *Kundenkarten:* Lidl Plus, jö (Billa, Penny), SPAR-App. Mit Karte zählt der Kartenpreis überall – auf den Karten (💳),
+    beim Sortieren und in der Einkaufsliste. Ohne Karte steht der Kartenpreis nur als Hinweis dabei.
+  - *Ernährung:* alles / vegetarisch / vegan. Erkannt über die Billa-Kennzeichnung (`pp-vegan`, `pp-veget`) und den
+    Produktnamen (Fleisch-/Milchwörter, „vegan“, „Veggie“ …). Unbekanntes bleibt sichtbar. Ohne Gewähr.
+  - *Vorlieben:* nur Bio, keine Eigenmarken (S-BUDGET, Clever, Milsani, Milbona …). Bestimmte Marke: mit auf die Liste schreiben.
+  - Tests: `tests/vorlieben.test.mjs`.
+- **Packungen und Mengenaktionen:** „1 kg Topfen“ bei 250-g-Packungen → 4 × 0,99 €. „ab 3 Stück“ gilt erst ab 3, sonst der
+  Einzelpreis – außer die Aktionsmenge kostet nicht mehr („1+1 gratis“: 💡 2 nehmen, kostet gleich viel wie 1).
 - **Hell / Dunkel / Automatisch:** Umschalter oben in der Kopfzeile (🖥️ → ☀️ → 🌙), gilt auf allen Seiten und wird gespeichert (`thema.js`). Für Handy optimiert.
 
 ## Kopieren für die Notizen-App

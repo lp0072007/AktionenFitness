@@ -73,8 +73,8 @@ ist erst nötig, wenn der Katalog zu groß für den Browser wird.
 
 | # | Aufgabe | Status |
 |---|---|---|
-| 2.1 | Mengen umrechnen: 1 kg gebraucht, 500-g-Packung → 2 Stück; Mengenaktionen einrechnen | ☐ |
-| 2.2 | Vorlieben: Bio, Marke fix/egal, Eigenmarke ok | ☐ |
+| 2.1 | Mengen umrechnen: 1 kg gebraucht, 500-g-Packung → 2 Stück; Mengenaktionen einrechnen (aufrunden, wenn die Aktionsmenge nicht mehr kostet, z. B. 1+1 gratis) | ☑ |
+| 2.2 | Vorlieben: Bio, Marke fix/egal, Eigenmarke ok – dazu vegan/vegetarisch (⚙️ Einstellungen, `vorlieben.js`). Marke fix = Marke mit auf die Liste schreiben | ☑ |
 | 2.3 | Testset ~50 Einträge mit erwarteten Treffern, Trefferquote messen (`web/tests/testliste.test.mjs`, 56 Einträge; vorher 75 % gefunden / 83 % Fehltreffer vermieden, jetzt 100 % / 100 %) | ☑ |
 
 ## Phase 3: Optimierung „Wo einkaufen?“
@@ -84,7 +84,7 @@ ist erst nötig, wenn der Katalog zu groß für den Browser wird.
 | 3.1 | Gesamtpreis pro Geschäft (inkl. „nicht verfügbar“) | ☐ |
 | 3.2 | Beste Kombination aus 2–3 Geschäften mit Mindestersparnis pro zusätzlichem Weg | ☐ |
 | 3.3 | Theoretisches Minimum (jedes Produkt im billigsten Geschäft) | ☐ |
-| 3.4 | Kundenkarten (Lidl Plus, jö) als Schalter | ☐ |
+| 3.4 | Kundenkarten (Lidl Plus, jö, SPAR-App) als Schalter | ☑ |
 
 ## Phase 4: Oberfläche
 

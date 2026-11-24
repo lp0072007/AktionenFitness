@@ -6,6 +6,7 @@ const DATEN = window.ANGEBOTE || { regionen: [] };
 const ALLE = window.AKTIONEN || { regionen: {}, ketten: {} };
 const L = window.Einkaufsliste;
 const VERLAUF = window.VERLAUF || { preise: {} };
+const V = window.Vorlieben; // Kundenkarten, vegan/vegetarisch, Bio (⚙️ in der Kopfzeile, vorlieben.js)
 const SPEICHER_EINST = "aktionenfitness.einstellungen.v1";
 const SEITE = 60; // Karten pro "Mehr anzeigen"
 
@@ -83,7 +84,11 @@ function aktuelleRegion() {
 }
 
 // ---------- Angebote ----------
+// Alle Listen laufen durch die Einstellungen: Filter (vegan, Bio …) und Kartenpreise
 function fitnessAngebote() {
+  return V.anwenden(fitnessRoh());
+}
+function fitnessRoh() {
   const r = aktuelleRegion();
   return [...(r?.angebote ?? []), ...LANDESWEIT.flatMap((k) => DATEN[k]?.angebote ?? [])];
 }
@@ -93,14 +98,14 @@ let _bilder;
 function bildFuer(a) {
   // Fitness-Angebote ohne eigenes Bild (Export --ohne-bilder) bekommen das Händlerbild aus "Alle Aktionen"
   _bilder ??= new Map([...Object.values(ALLE.regionen).flatMap((r) => r.angebote), ...Object.values(ALLE.ketten).flat(),
-    ...fitnessAngebote(), ...DATEN.regionen.flatMap((r) => r.angebote)].filter((x) => x.bild).map((x) => [x.id, x.bild]));
+    ...fitnessRoh(), ...DATEN.regionen.flatMap((r) => r.angebote)].filter((x) => x.bild).map((x) => [x.id, x.bild]));
   return a.bild || _bilder.get(a.id);
 }
 
 // Alle Aktionen (für "Alle Aktionen" und den Abgleich der Einkaufsliste)
 function alleAktionen() {
   const region = ALLE.regionen[zustand.region] ?? Object.values(ALLE.regionen)[0];
-  return [...(region?.angebote ?? []), ...Object.values(ALLE.ketten).flat()];
+  return V.anwenden([...(region?.angebote ?? []), ...Object.values(ALLE.ketten).flat()]);
 }
 
 function angeboteDerAnsicht() {
@@ -185,9 +190,11 @@ function karteBauen(a, rang) {
   if (a.normalpreis && a.normalpreis > a.preis) k.querySelector(".normalpreis").textContent = euro(a.normalpreis);
 
   const bed = [];
+  if (a.karte) bed.push(`💳 Preis mit ${a.karte} (ohne Karte ${euro(a.ohne_karte)})`);
   if (a.ab_menge) bed.push(`gilt ab ${a.ab_menge} Stück${a.normalpreis ? ` (1 Stk. ${euro(a.normalpreis)})` : ""}`);
-  if (a.zusatzpreis) bed.push(`${a.zusatz_text || "Aktionstag"}: ${euro(a.zusatzpreis)}`);
+  if (a.zusatzpreis) bed.push(`${V.zusatzName(a)}: ${euro(a.zusatzpreis)}`);
   k.querySelector(".karte__bedingung").textContent = bed.join(" · ");
+  if (a.karte) k.querySelector(".preis").classList.add("preis--karte");
 
   const akt = k.querySelector(".karte__aktionen");
   for (const t of a.aktion ?? []) {
@@ -206,7 +213,7 @@ function karteBauen(a, rang) {
     const extra = [];
     if (a.ab_menge) extra.push(`ab ${a.ab_menge} Stück`);
     const gz = a.zusatzpreis ? grundpreis(a, a.zusatzpreis) : null;
-    if (gz) extra.push(`${a.zusatz_text || "Aktionstag"}: ${euro(gz.wert)} / ${gz.einheit}`);
+    if (gz) extra.push(`${V.zusatzName(a)}: ${euro(gz.wert)} / ${gz.einheit}`);
     kp.querySelector(".kilopreis__extra").textContent = extra.join(" · ");
   } else kp.remove();
 
@@ -325,17 +332,18 @@ function verlaufZeigen(el, a) {
   if (!frueher.length) return el.remove();
   const tief = frueher.reduce((m, e) => (e[1] < m[1] ? e : m));
   const seit = datum(eintraege[0][0]);
-  if (a.preis < tief[1] - 0.005) {
+  const preis = a.ohne_karte ?? a.preis; // Verlauf speichert Preise ohne Karte
+  if (preis < tief[1] - 0.005) {
     el.textContent = `🔥 Tiefster Preis seit ${seit}`;
     el.classList.add("verlauf--tief");
-  } else if (a.preis <= tief[1] + 0.005) {
+  } else if (preis <= tief[1] + 0.005) {
     el.textContent = `👍 So günstig wie am ${datum(tief[0])}`;
   } else {
     el.textContent = `📉 Am ${datum(tief[0])} schon ${euro(tief[1])}`;
     el.classList.add("verlauf--teurer");
   }
   el.title = eintraege.map(([d, p]) => `${datum(d)}: ${euro(p)}`).join("\n");
-  el.prepend(minikurve([...frueher, [VERLAUF.stand, a.preis]]), " ");
+  el.prepend(minikurve([...frueher, [VERLAUF.stand, preis]]), " ");
 }
 
 function knopfAktualisieren(knopf, id) {
@@ -355,7 +363,9 @@ function angeboteZeichnen() {
   mehrAktualisieren();
   const art = zustand.ansicht === "alle" ? "Aktionen" : "Fitness-Angebote";
   const sortText = { kilopreis: "nach Kilopreis – günstigstes zuerst", rabatt: "nach Rabatt – höchster zuerst", preis: "nach Preis" };
-  $("#zielInfo").textContent = `${zahl(aktuelleListe.length)} ${art} · sortiert ${sortText[zustand.sortierung]}`;
+  const einst = V.zusammenfassung();
+  $("#zielInfo").textContent = `${zahl(aktuelleListe.length)} ${art} · sortiert ${sortText[zustand.sortierung]}` +
+    (einst ? ` · ${einst}` : "");
 }
 
 // Nächste Karten unten anhängen (beim Scrollen automatisch, sonst per Knopf)
@@ -648,6 +658,7 @@ function start() {
   });
   for (const id of ["#kopierOhne", "#kopierErledigt"]) $(id).addEventListener("change", () => letztesErgebnis && kopierenZeichnen(letztesErgebnis));
   L.beiAenderung(listeZeichnen);
+  V.beiAenderung(() => { angeboteZeichnen(); listeZeichnen(); merkZeichnen(); });
 
   $("#merkBearbeiten").addEventListener("click", () => { merkDialogZeichnen(); $("#merkDialog").showModal(); });
   $("#merkDialog").addEventListener("click", (e) => { if (e.target === e.currentTarget) e.currentTarget.close(); });
