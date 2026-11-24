@@ -2,7 +2,7 @@
 
 const DATEN = window.AKTIONEN || { regionen: {}, ketten: {} };
 const A = window.Abgleich;
-const KETTEN = { spar: "Spar", lidl: "Lidl", hofer: "Hofer", penny: "Penny", billa: "Billa", dm: "dm" };
+const KETTEN = { spar: "Spar", lidl: "Lidl", hofer: "Hofer", penny: "Penny", billa: "Billa", mpreis: "MPreis", dm: "dm" };
 const SPEICHER = "aktionenfitness.einkauf.v1"; // Region und abgewählte Treffer; die Liste selbst: liste.js
 const L = window.Einkaufsliste;
 
@@ -102,7 +102,7 @@ function trefferZeile(t, eintrag) {
   const info = [mengeText(a)];
   if (t.grundpreis) info.push(`${euro(t.grundpreis.wert)}/${t.grundpreis.einheit}`);
   if (a.gueltig_von) info.push(`${datum(a.gueltig_von)}–${a.gueltig_bis ? datum(a.gueltig_bis) : "?"}`);
-  else if (a.kette === "billa") info.push("aktuell im Shop");
+  else if (a.kette === "billa" || a.kette === "mpreis") info.push("aktuell im Shop");
   if (a.ab_menge) info.push(`ab ${a.ab_menge} Stk.`);
   if (a.karte) info.push(`💳 mit ${a.karte} (ohne Karte ${euro(a.ohne_karte)})`);
   if (a.zusatzpreis) info.push(`${V.zusatzName(a)}: ${euro(a.zusatzpreis)}`);

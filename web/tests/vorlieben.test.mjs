@@ -57,6 +57,13 @@ test("Bio und Eigenmarken", () => {
   assert.equal(m("Milsani Skyr", { kette: "hofer" }).eigenmarke, true);
   assert.equal(m("Milbona Skyr", { kette: "lidl" }).eigenmarke, true);
   assert.equal(m("NÖM Skyr", { kette: "billa" }).eigenmarke, false);
+  for (const n of ["M Topfen", "M-BIO Haferflocken", "Jeden Tag Reis", "Therese Mölk Vollkornbrot"]) {
+    assert.equal(m(n, { kette: "mpreis" }).eigenmarke, true, n);
+  }
+  assert.equal(m("Milsani Skyr", { kette: "mpreis" }).eigenmarke, false); // "M" nur als eigenes Wort
+  assert.equal(m("M&M'S Minis Funsize Halloween", { kette: "mpreis" }).eigenmarke, false);
+  assert.equal(m("M Braunschweiger", { kette: "mpreis" }).eigenmarke, true);
+  assert.equal(m("M-BIO Haferflocken", { kette: "mpreis" }).bio, true);
   assert.equal(m("Clever Haferflocken", { kette: "spar" }).eigenmarke, false); // Clever gibt es nur bei Billa
 });
 

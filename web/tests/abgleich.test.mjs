@@ -242,3 +242,65 @@ test("Mengen in allen Schreibweisen", () => {
     assert.equal(A.kosten(e, topfen).stueck, 4, s);
   }
 });
+
+test("MPreis-Namen und -Kategorien: keine Fehltreffer, Gesuchtes wird gefunden", () => {
+  // Echte Produkte aus den MPreis-Aktionen (24.11.2026)
+  const mp = (name, kategorie) => ({ id: name, kette: "mpreis", name, preis: 1, kategorie });
+  const P = [
+    mp("Bebivita Beutel Dinkel Himbeer Apfel Banane", "Lebensmittel > Grundnahrung > Babynahrung"),
+    mp("Danone Actimel Kids Erdbeere-Banane", "Lebensmittel > Milch & Eier > Milch > Milchgetränke"),
+    mp("Ölz Milch Brötle Alpen-Frischmilch Schoko", "Lebensmittel > Brot & Gebäck > Zopf, Brioche & Strudel"),
+    mp("Iglo Blattspinat mit Schafskäse", "Lebensmittel > Tiefkühl > Gemüse & Kräuter"),
+    mp("Starbucks Frappuccino Coffee Eiskaffee", "Getränke > Kaffee, Tee & Kakao > Kaffee > Eiskaffee"),
+    mp("Melitta Kaffee Auslese Klassisch", "Getränke > Kaffee, Tee & Kakao > Kaffee > Bohnenkaffee"),
+    mp("Pan Südtiroler Topfenstrudel", "Lebensmittel > Tiefkühl > Mehlspeisen  & Teige"),
+    mp("Jasmin Reis", "Lebensmittel > Grundnahrung > Reis"),
+    mp("Eskimo Cremissimo Vanille Eis", "Lebensmittel > Tiefkühl > Eis > Bechereis"),
+    mp("Dr. Oetker Pizza Ristorante Salame", "Lebensmittel > Tiefkühl > Pizza"),
+    mp("Ferrero Kinder Riegel 18er-Packung", "Lebensmittel > Süßes & Salziges > Schokolade > Schokoriegel"),
+    mp("Tirol Milch Heumilch Bergkäse 45%", "Lebensmittel > Milch & Eier > Käse"),
+    mp("Schärdinger Formil haltbare Milch 3,5%", "Lebensmittel > Milch & Eier > Milch"),
+    mp("Bananen", "Lebensmittel > Obst"),
+    // aus dem Vorher-Nachher-Vergleich mit allen Ketten
+    { id: "ps", kette: "penny", name: "Best Moments Pasta Sauce", preis: 1, kategorie: "Grundnahrungsmittel > Saucen & Dressings" },
+    { id: "pf", kette: "billa", name: "Kotányi Pfeffer Mühle Weiß", preis: 1 },
+    { id: "tr", kette: "billa", name: "Trauben weiß kernlos", preis: 1 },
+    { id: "lk", kette: "penny", name: "Weiss Lebkuchen Hexenhaus", preis: 1 },
+    { id: "we", kette: "mpreis", name: "Schöller Wassereis Peach", preis: 1, kategorie: "Lebensmittel > Tiefkühl > Eis > Stieleis" },
+    { id: "nu", kette: "penny", name: "Barilla Spaghetti", preis: 1 },
+  ];
+  const namen = (s) => A.finde(A.parseZeile(s), P, null).map((t) => t.angebot.name);
+  const hat = (s, teil) => namen(s).some((n) => n.includes(teil));
+  // nicht finden
+  assert.ok(!hat("Bananen", "Bebivita"), "Babybrei ist keine Banane");
+  assert.ok(!hat("Bananen", "Actimel"), "Actimel ist keine Banane");
+  assert.ok(!hat("Milch", "Brötle"), "Milch-Brötle ist keine Milch");
+  assert.ok(!hat("Käse", "Blattspinat"), "Spinat mit Käse ist kein Käse");
+  assert.ok(!hat("Kaffee", "Eiskaffee"), "Eiskaffee ist kein Kaffee");
+  assert.ok(!hat("Eis", "Reis"), "Reis ist kein Eis");
+  assert.ok(!hat("Proteinriegel", "Kinder Riegel"));
+  assert.ok(!hat("Topfen", "Topfenstrudel"));
+  // finden
+  assert.ok(hat("Bananen", "Bananen"));
+  assert.ok(hat("Milch", "Formil"));
+  assert.ok(hat("Käse", "Bergkäse"));
+  assert.ok(hat("Kaffee", "Melitta"));
+  assert.ok(hat("Eiskaffee", "Starbucks"));
+  assert.ok(hat("Spinat", "Blattspinat"));
+  assert.ok(hat("Topfenstrudel", "Topfenstrudel"), "ausdrücklich gesucht -> trotz Mehlspeisen-Kategorie");
+  assert.ok(hat("Reis", "Jasmin"));
+  assert.ok(hat("Eis", "Cremissimo"));
+  assert.ok(hat("Tiefkühlpizza", "Ristorante"));
+  assert.ok(hat("Pizza", "Ristorante"));
+  assert.ok(!hat("Nudeln", "Pasta Sauce"), "Sauce sind keine Nudeln");
+  assert.ok(hat("Nudeln", "Spaghetti"));
+  assert.ok(!hat("Eis", "Pfeffer") && !hat("Eis", "Trauben") && !hat("Eis", "Lebkuchen"), "weiß/Weiss ist kein Eis");
+  assert.ok(hat("Eis", "Wassereis"), "Wassereis ist Eis");
+  assert.ok(hat("Lebkuchen", "Weiss Lebkuchen"));
+  // Ganzer Produktname: Abteilung (Käse) zählt nicht dagegen; ein einzelnes Wort aber schon
+  const adler = { id: "ta", kette: "mpreis", name: "Tirol Milch Tiroler Adler 45%", preis: 1.79, menge: 100, einheit: "g",
+    kategorie: "Lebensmittel > Milch & Eier > Käse > Schnittkäse" };
+  assert.ok(A.finde(A.parseZeile("Tiroler Adler 300g"), [adler], null).length === 1, "Tiroler Adler");
+  assert.equal(A.kosten(A.parseZeile("Tiroler Adler 300g"), adler).stueck, 3, "3 × 100 g");
+  assert.ok(A.finde(A.parseZeile("Milch"), [adler], null).length === 0, "Milch findet keinen Käse");
+});

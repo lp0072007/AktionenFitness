@@ -63,6 +63,7 @@
     penny: /^(penny|echt b!o|ich bin osterreich)\b/,
     lidl: /^(milbona|pilos|chef select|combino|lidl|vemondo|solevita|freeway|crownfield|alpenfest|kania|vitasia|baresa|deluxe|favorina|bellarom|tastino|snack day|maribel|golden seafood|nautica|dulano|sol ?mar|alesto|gelatelli|my best veggie|harvest basket|pikok|linessa|cien|w5|perlenbacher|mcennedy|sondey|fin carre)\b/,
     hofer: /^(milsani|zuruck zum ursprung|lyttos|golden bridge|cucina nobile|back family|choceur|rio d ?oro|river|hofer|knusperone|moser roth|wonnemeyer|just veg|happy harvest|asia green garden|almare|natur aktiv|bramwald|cantinetta|the deli|tandil)\b/,
+    mpreis: /^(mpreis|m(?! m s\b)|m bio|jeden tag|therese molk)\b/, // "M&M'S" -> "m m s" ist keine Eigenmarke
     dm: /^(dmbio|dm bio|dm)\b/,
   };
 

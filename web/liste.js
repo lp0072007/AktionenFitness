@@ -8,7 +8,7 @@
   "use strict";
   const A = global.Abgleich;
   const SCHLUESSEL = "aktionenfitness.einkaufsliste.v2";
-  const KETTEN = { spar: "Spar", lidl: "Lidl", hofer: "Hofer", penny: "Penny", billa: "Billa", dm: "dm" };
+  const KETTEN = { spar: "Spar", lidl: "Lidl", hofer: "Hofer", penny: "Penny", billa: "Billa", mpreis: "MPreis", dm: "dm" };
   const euro = (x) => x.toLocaleString("de-AT", { style: "currency", currency: "EUR" });
   const datum = (iso) => new Date(iso + "T00:00:00").toLocaleDateString("de-AT", { weekday: "short", day: "2-digit", month: "2-digit" });
 

@@ -178,8 +178,15 @@
   const NUR_GENAU = new Set(["bar"]);
 
   // Grundvergleich ohne Zuschnitt: genau (1), Kopf eines Kompositums (0.9, bei Ersatz-Präfix 0.45)
+  // Wortenden, die nur zufällig wie das Suchwort enden: "Reis", "Preis", "weiß"/"Weiss" enden auf "eis", sind aber
+  // kein Eis ("Wassereis" schon). Geprüft auch an der Stammform ("weiss" -> "weis").
+  const FALSCHE_KOEPFE = { eis: /((?<!wasse)r|w|gl|kr)eiss?$/ };
+  const falscherKopf = (s, wort) => wort !== s && !!FALSCHE_KOEPFE[s] &&
+    (FALSCHE_KOEPFE[s].test(wort) || FALSCHE_KOEPFE[s].test(stamm(wort)));
+
   function kopfTreffer(s, wort) {
     if (NUR_GENAU.has(s)) return wort === s ? 1 : 0;
+    if (falscherKopf(s, wort)) return 0;
     const ss = stamm(s), ws = stamm(wort);
     if (wort === s || ws === ss) return 1;
     if ((s.length >= 3 || KURZE_KOEPFE.has(s)) && (wort.endsWith(s) || ws.endsWith(ss))) {
@@ -193,6 +200,7 @@
     let best = 0;
     for (const s of varianten(such)) {
       if (NUR_GENAU.has(s)) { if (wort === s) best = 1; continue; }
+      if (falscherKopf(s, wort)) continue;
       const ss = stamm(s), ws = stamm(wort);
       for (const z of ZUSCHNITTE) {
         if (wort.endsWith(z) && wort.length - z.length >= 3 && !s.endsWith(z)) {
@@ -227,7 +235,7 @@
     "bodenhaltung", "mittel", "zart", "fein", "grob", "gemischt", "weiss", "braun", "vollkorn"]);
   // Bestimmungswörter, die man vom gesuchten Kompositum abtrennen darf: "Magertopfen" -> auch "Speisetopfen"
   const MODIFIKATOREN = ["mager", "light", "griechisch", "natur", "bio", "fettarm", "halbfett",
-    "laktosefrei", "protein", "high"];
+    "laktosefrei", "protein", "high", "tiefkuhl", "tk"];
 
   // Sorten, die für ein Produkt praktisch dasselbe sind: "Vollmilch" ~ "H-Milch 3,5 %" ~ "Bergbauernmilch"
   const KOPF_SORTEN = {
@@ -278,16 +286,29 @@
     }
     for (const s of woerter) if (!kern.includes(s) && besterTreffer(s, namensWoerter) < 0.6) fehlend++;
     let punkte = (summe / kern.length) * Math.pow(0.85, fehlend);
+    // "Blattspinat mit Schafskäse" ist kein Käse: Steht ein Suchwort nur hinter "mit", ist es eine Zutat
+    const mitPos = namensWoerter.indexOf("mit");
+    const vorne = mitPos > 0 ? namensWoerter.slice(0, mitPos) : namensWoerter; // was das Produkt eigentlich ist
+    if (mitPos > 0 && kern.some((s) => besterTreffer(s, vorne) < 0.6)) punkte *= 0.5;
     // Steht im Namen eine andere Produktart, die man nicht sucht, ist es etwas anderes:
     // "Milch" -> nicht "Heumilch Gouda" oder "Salzburg Milch Almkönig Scheiben" (beides Käse)
-    if (namensWoerter.some((w) => istProduktart(w) && !woerter.some((s) => besterTreffer(s, [w]) >= 0.6))) punkte *= 0.5;
+    // (nur vor "mit": in "Spinat mit Schafskäse" ist Käse eine Zutat, keine andere Produktart)
+    if (vorne.some((w) => istProduktart(w) && !woerter.some((s) => besterTreffer(s, [w]) >= 0.6))) punkte *= 0.5;
     // Verarbeitete Produkte abwerten, außer man sucht genau danach
     const sucheText = woerter.join(" ");
     if (namensWoerter.some((w) => istVerarbeitet(w) && !woerter.some((s) => w.includes(s) && istVerarbeitet(s))
         && !sucheText.includes(w))) punkte *= 0.5;
     const kat = angebot.kategorie ? norm(angebot.kategorie) : "";
-    if (kat && KATEGORIE_VERARBEITET.test(kat) && !woerter.some((w) => kat.includes(stamm(w)))) punkte *= 0.5;
-    for (const [katRegel, sucheRegel] of KATEGORIE_REGELN) if (kat && katRegel.test(kat) && !sucheRegel.test(sucheText)) punkte *= 0.5;
+    // Sucht man selbst ein verarbeitetes Produkt und steht es so im Namen ("Topfenstrudel"), ist die Kategorie
+    // kein Gegenargument. Nur als ganzes Wort: "Proteinriegel" macht "Kinder Riegel" nicht passend.
+    const gesuchtVerarbeitet = (w) => istVerarbeitet(w) &&
+      [w, w.replace(/^(tiefkuhl|tk)(?=.{4})/, "")].some((x) => namensWoerter.some((nw) => wortTreffer(x, nw) >= 0.9)); // "Tiefkühlpizza"
+    if (kat && KATEGORIE_VERARBEITET.test(kat) && !woerter.some((w) => kat.includes(stamm(w)) || gesuchtVerarbeitet(w))) punkte *= 0.5;
+    // Ganzer Produktname gesucht ("Tiroler Adler", "Kaiser Max"): dann gilt die Abteilung nicht als Gegenargument
+    const genauerName = kern.length >= 2 && kern.every((s) => namensWoerter.some((w) => wortTreffer(s, w) >= 0.95));
+    if (!genauerName) {
+      for (const [katRegel, sucheRegel] of KATEGORIE_REGELN) if (kat && katRegel.test(kat) && !sucheRegel.test(sucheText)) punkte *= 0.5;
+    }
     if (eintrag.bio && !namensWoerter.includes("bio") && !namensWoerter.some((w) => w.startsWith("bio"))) punkte *= 0.6;
     // kurze, eindeutige Namen leicht bevorzugen ("Vollmilch 1l" vor "Vollmilch Schokolade mit …")
     punkte += 0.05 / Math.max(1, namensWoerter.length - woerter.length);
@@ -299,11 +320,12 @@
   // Gilt für ganze Wörter und für das Ende zusammengesetzter Wörter ("proteindrink", "laugenbaguette").
   const VERARBEITET = ["eis", "strudel", "croissant", "plunderteig", "blatterteig", "pizzateig", "germteig", "drink", "shake",
     "riegel", "chips", "curry", "auflauf", "pfanne", "dippers", "basis", "fix", "baguette", "pizza", "snack", "kuchen",
-    "torte", "tortina", "pudding", "dessert", "chicken", "nugget", "nuggets", "cremissimo", "magnum", "sauce", "sugo",
+    // kein "cremissimo": "Eis" soll Cremissimo finden (die Eis-Kategorie der Händler reicht zum Abwerten)
+    "torte", "tortina", "pudding", "dessert", "chicken", "nugget", "nuggets", "magnum", "sauce", "sugo",
     "aufstrich", "schnitte", "rulade", "nikolo", "krampus", "adventkalender", "intermezzo", "bonbon", "keks", "kekse",
     "wurfel", "noodles", "suppe", "laibchen", "nudelgericht", "fertiggericht", "tasche", "taschen", "tascherl", "sandwich",
     "sticks", "stick", "roulade", "likor", "praline", "pralinen", "lebkuchen", "stollen", "beilage", "ciambella", "milchreis",
-    "ketchup", "senf", "salat", "fruchtgummi", "kitkat", "torte"];
+    "ketchup", "senf", "salat", "fruchtgummi", "kitkat", "torte", "eiskaffee"]; // kein "eis…"-Präfix: Eissalat ist Salat
   function istVerarbeitet(w) {
     return VERARBEITET.some((m) => w === m || (m.length >= 4 && w.endsWith(m)));
   }
@@ -327,6 +349,11 @@
     [/milchalternativ/, /milch|drink/],
     [/susse aufstrich/, /aufstrich|marmelade|konfit|jam\b|honig|nutella|creme/],
     [/\bkase\b|hartkase|frischkase/, /kase|gouda|emmentaler|edamer|mozzarella|cottage|feta|parmesan|cheddar|camembert|brie|raclette|aufstrich|halloumi|ricotta|mascarpone|scheiben/],
+    // MPreis-Kategorien (gelten auch für andere Händler mit gleichen Namen)
+    [/baby/, /baby|brei|quetsch|kinder|hipp|bebivita|milupa|alete/],
+    [/\bbrot gebac|backwaren|\bgebac/, /brot|gebac|semmel|weckerl|kipferl|brotle|brotchen|baguette|toast|zopf|brioche|strudel|croissant|kuchen|krapfen|stangerl|flesserl|gipfel|knodel|laugen|ciabatta|bagel|wrap|tortilla|fladen|pita|muffin|donut|schnecke|golatsche|plunder|reindling|striezel/],
+    [/milchgetranke/, /milch|drink|actimel|kefir|shake|getrank|kakao|yakult|lassi|ayran|smoothie/],
+    [/eiskaffee/, /eiskaffee|frappuccino|macchiato|latte|cold brew|kaffeegetrank|kaffeedrink/],
   ];
 
   const SCHWELLE = 0.6;

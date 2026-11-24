@@ -175,6 +175,7 @@ a { color: var(--akzent); }
 .badge--hofer { background: #1c2b5a; color: #f7a600; }
 .badge--dm { background: #002878; color: #ffc800; }
 .badge--billa { background: #ffe500; color: #e2001a; }
+.badge--mpreis { background: #ffffff; color: #d6001c; border: 1px solid #d6001c; }
 .badge--penny { background: #cd1414; color: #ffffff; border: 1px solid #fff200; }
 .karte__gueltig { margin: 0; font-size: 12px; color: var(--text-leise); }
 .karte__gueltig--zukunft { color: var(--warn); font-weight: 600; }

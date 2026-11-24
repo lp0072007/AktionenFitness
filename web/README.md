@@ -44,7 +44,7 @@ Produkt eintippen + **Enter** → erscheint als eigener Punkt in „Deine Liste�
 ✕ zum Löschen; alles im Browser gespeichert). Mehrere Zeilen einfügen oder „Skyr, Topfen“ ergibt mehrere Punkte.
 Mengen („2x“, „500g“, „1,5 kg“, „½ kg“, „10er“) werden erkannt, Klammern sind Notizen, Eigenschaften wie „light“ oder
 „mager“ sind optional. Jeder Punkt wird mit **allen** aktuellen Aktionen abgeglichen (Spar-Region, Lidl, Hofer, Penny,
-Billa, dm; Daten: `data/aktionen.js`) → Empfehlung, günstigste Aufteilung auf Geschäfte, falsche Treffer abwählbar.
+Billa, MPreis; Daten: `data/aktionen.js`) → Empfehlung, günstigste Aufteilung auf Geschäfte, falsche Treffer abwählbar.
 Logik: `abgleich.js`, Tests: `node --test` im Ordner `web`.
 **Testliste:** `tests/testliste/erwartet.mjs` (56 typische Einträge, was gefunden werden muss / nicht darf) gegen
 eingefrorene echte Aktionen (`tests/testliste/angebote.json`). Bericht mit Trefferquote: `node tests/testliste.test.mjs --bericht`.
@@ -72,7 +72,7 @@ Fällt beim Einkaufen ein Fehltreffer auf, als neuen Fall eintragen.
 - **Einstellungen (⚙️ in der Kopfzeile, `vorlieben.js`):**
   - *Kundenkarten:* Lidl Plus, jö (Billa, Penny), SPAR-App. Mit Karte zählt der Kartenpreis überall – auf den Karten (💳),
     beim Sortieren und in der Einkaufsliste. Ohne Karte steht der Kartenpreis nur als Hinweis dabei.
-  - *Ernährung:* alles / vegetarisch / vegan. Erkannt über die Billa-Kennzeichnung (`pp-vegan`, `pp-veget`) und den
+  - *Ernährung:* alles / vegetarisch / vegan. Erkannt über die Kennzeichnung von Billa (`pp-vegan`, `pp-veget`) und MPreis (`VGN`, `BIO`) und den
     Produktnamen (Fleisch-/Milchwörter, „vegan“, „Veggie“ …). Unbekanntes bleibt sichtbar. Ohne Gewähr.
   - *Vorlieben:* nur Bio, keine Eigenmarken (S-BUDGET, Clever, Milsani, Milbona …). Bestimmte Marke: mit auf die Liste schreiben.
   - Tests: `tests/vorlieben.test.mjs`.

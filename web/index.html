@@ -6,7 +6,7 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' file:; style-src 'self' file:; img-src 'self' file: https: data:; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; object-src 'none'">
   <meta name="referrer" content="no-referrer">
   <title>AktionenFitness</title>
-  <meta name="description" content="Aktionen aus Spar, Lidl, Hofer, Penny und Billa durchstöbern, Fitness-Angebote nach Kilopreis, Einkaufsliste mit automatischem Abgleich.">
+  <meta name="description" content="Aktionen aus Spar, Lidl, Hofer, Penny, Billa und MPreis durchstöbern, Fitness-Angebote nach Kilopreis, Einkaufsliste mit automatischem Abgleich.">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#1f8a4c">
@@ -61,6 +61,7 @@
         <button class="chip" data-kette="hofer" aria-pressed="false">Hofer</button>
         <button class="chip" data-kette="penny" aria-pressed="false">Penny</button>
         <button class="chip" data-kette="billa" aria-pressed="false">Billa</button>
+        <button class="chip" data-kette="mpreis" aria-pressed="false">MPreis</button>
         <button class="chip" data-kette="dm" aria-pressed="false">dm</button>
       </div>
     </section>
@@ -86,7 +87,8 @@
     <footer class="fuss">
       <p>Nährwerte sind typische Richtwerte je Produktart, keine Etikettenangaben. Spar-Preise automatisch aus dem
         Flugblatt gelesen – vor dem Einkauf im <a id="flugblattLink" href="#" target="_blank" rel="noopener noreferrer">Original-Flugblatt</a> prüfen.
-        Lidl-, Hofer-, Penny- und Billa-Angebote stammen von den Websites der Händler und gelten österreichweit. dm: Dauerpreise zum Vergleich.</p>
+        Lidl-, Hofer-, Penny-, Billa- und MPreis-Angebote stammen von den Websites der Händler und gelten österreichweit
+        (MPreis: in allen MPreis-Märkten, v. a. Tirol, Vorarlberg, Salzburg). dm: Dauerpreise zum Vergleich.</p>
       <p id="stand"></p>
       <p class="fuss__links"><a href="impressum.html">Impressum</a> · <a href="datenschutz.html">Datenschutz</a></p>
     </footer>
