@@ -42,6 +42,16 @@ ERWARTET = {
         "Chicken Nuggets": (2.49, 2.99, None, None),
         "Wieselburger 0,0% Alkoholfrei": (8.04, None, None, 4.02),
     },
+    # Unter jedem echten Hinweis liegt eine verdeckte Vorlage "1 PACKUNG 2,29 / AB 4 PACKUNGEN JE" (größere Schrift)
+    4: {
+        "Dallmayr Prodomo": (7.49, 14.99, 2, None),
+        "Frizzante Dalla Roccia": (2.99, 5.99, 2, None),
+        "Winzer Krems Donauriesling von der Hochkultur": (5.49, 10.99, 2, None),
+        "Frankenmarkter Limonade": (0.47, 0.95, 6, None),
+        "Pepsi": (0.99, 1.99, 6, None),
+        "SPAR Eistee": (0.29, 0.59, 24, None),
+        "Schartner Bombe": (0.44, 0.89, 24, None),
+    },
     12: {
         "Schärdinger Kefir Himbeer oder Mango-Maracuja": (0.64, 1.29, 2, None),
         "Schärdinger Joghurttraum": (0.79, 1.23, 2, None),

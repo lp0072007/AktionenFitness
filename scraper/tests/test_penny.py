@@ -77,3 +77,23 @@ def test_kategoriepfad_schliesst_fertiggerichte_aus():
         [{"name": "Tiefkühl"}, {"name": "Fleisch & Fisch"}, {"name": "Fisch"}]]))
     assert fertig.kategorie_pfad == "Tiefkühl > Tiefkühlgerichte > Reis & Pasta"
     assert [t.angebot.name for t in fitness_angebote([fertig, lachs])] == ["Berida Lachsfilet"]
+
+
+def test_joe_kartenpreis():
+    # Echte Antwort 24.11.2026 ("Feine Gabelbissen"): price.loyalty = Preis mit jö-Karte
+    a = parse_produkt(produkt(name="Feine Gabelbissen", price={
+        "loyalty": {"perStandardizedQuantity": 482, "tags": ["SO"], "value": 159},
+        "regular": {"perStandardizedQuantity": 603, "promotionQuantity": 1, "promotionType": "FROM", "value": 199},
+        "validityStart": "2026-11-26", "validityEnd": "2026-12-02"}))
+    assert (a.preis, a.zusatzpreis, a.zusatz_text, a.ab_menge) == (1.99, 1.59, "jö", None)
+    # Kartenpreis gleich dem normalen Preis: kein Zusatzpreis
+    gleich = parse_produkt(produkt(price={"loyalty": {"value": 100}, "regular": {"value": 100}}))
+    assert gleich.zusatzpreis is None and gleich.zusatz_text is None
+
+
+def test_merkmale_aus_badges():
+    # Billa kennzeichnet z. B. "Alpro Skyr Natur Ungesüßt" mit pp-veget, pp-vegan, pp-lakto, kuehlung
+    assert parse_produkt(produkt(badges=["pp-veget", "pp-lakto", "kuehlung", "pp-vegan"])).merkmale == ["vegan", "vegetarisch"]
+    assert parse_produkt(produkt(badges=["pp-veget", "pp-bio"])).merkmale == ["bio", "vegetarisch"]
+    assert parse_produkt(produkt(badges=["kuehlung"])).merkmale == []
+    assert parse_produkt(produkt()).merkmale == []

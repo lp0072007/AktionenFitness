@@ -79,6 +79,7 @@ def aktion_als_dict(a: FlugblattAngebot, kette: str, region: str, i: int, bild: 
         "bild": bild or a.bild_url,
         "seite": a.seite or None,
         "kategorie": a.kategorie_pfad,
+        "merkmale": a.merkmale,   # vegan / vegetarisch / bio laut Händler
     }
     return {k: v for k, v in d.items() if v not in (None, [], False)}  # kleinere Datei
 
@@ -106,6 +107,7 @@ def treffer_als_dict(t: FitnessTreffer, kette: str, region: str, i: int, bild: s
         "pro_kg": a.pro_kg,
         "gramm": t.gramm,
         "kategorie": k.name,
+        "merkmale": a.merkmale or None,
         "gruppe": k.gruppe,
         "naehrwerte": {"kcal": k.kcal, "protein": k.protein, "kohlenhydrate": k.kohlenhydrate, "fett": k.fett},
         "protein_pro_euro": t.protein_pro_euro,

@@ -72,6 +72,7 @@ class Box:
 class Preis(Box):
     wert: float = 0.0
     zusatz: bool = False
+    zusatz_text: str | None = None  # "SPAR-App" bei App-Gutscheinen, sonst None (z. B. Aktionstag)
 
 
 @dataclass
@@ -99,6 +100,7 @@ class FlugblattAngebot:
     url: str | None = None
     produkt_id: str | None = None
     kategorie_pfad: str | None = None  # Kategorie beim Händler, z. B. "Tiefkühl > Tiefkühlgerichte > Reis & Pasta"
+    merkmale: list[str] = field(default_factory=list)  # Kennzeichnung des Händlers: "vegan", "vegetarisch", "bio"
 
     def _erweitern(self, b: "Box") -> None:
         if self.bbox is None:
@@ -279,6 +281,8 @@ def analysiere_seite(woerter: list[dict], seite: int, s: Schriften = SPAR_SCHRIF
         p = _naechster(m, preise, 120, nur_darunter=True)
         if p:
             p.zusatz = True
+            if "spar-app" in m.kompakt.lower():
+                p.zusatz_text = "SPAR-App"
     haupt = [p for p in preise if not p.zusatz]
 
     # 2. Hauptpreise → Titel (greedy über alle Paare, bester Abstand zuerst)
@@ -319,26 +323,33 @@ def analysiere_seite(woerter: list[dict], seite: int, s: Schriften = SPAR_SCHRIF
         angebote[id(p)] = angebot
 
     # 3. Bedingungen ("statt 7,99", "1 Becher 1,99 ab 2 Becher je") → Preis darunter
+    bedingungen: dict[int, list[Box]] = {}
     for b in (b for b in boxen if b.font in s.bedingung or re.match(r"(?i)statt\b", b.text)):
         p = _naechster(b, haupt, MAX_ABSTAND_BEDINGUNG, nur_darunter=True) or _naechster(
             b, haupt, MAX_ABSTAND_BEDINGUNG / 2  # z. B. "20% billiger!" unter dem Preis
         )
-        if p is None or id(p) not in angebote:
-            continue
-        a = angebote[id(p)]
-        a._erweitern(b)
-        if (m := _NORMALPREIS_RE.search(b.text)) and a.normalpreis is None:
-            a.normalpreis = _zahl(m.group(1))
-        if m := _AB_MENGE_RE.search(b.text):
-            a.ab_menge = int(m.group(1))
-        if "billiger" in b.text or "SPAREN" in b.text:
-            a.aktion.append(re.sub(r"statt\s+\S+\s*", "", b.text).strip())
+        if p is not None and id(p) in angebote:
+            bedingungen.setdefault(id(p), []).append(b)
+    vorlagen = _vorlagen_bedingungen(bedingungen)
+    for pid, bs in bedingungen.items():
+        a = angebote[pid]
+        for b in bs:
+            a._erweitern(b)
+            if id(b) in vorlagen:
+                continue
+            if (m := _NORMALPREIS_RE.search(b.text)) and a.normalpreis is None:
+                a.normalpreis = _zahl(m.group(1))
+            if m := _AB_MENGE_RE.search(b.text):
+                a.ab_menge = int(m.group(1))
+            if "billiger" in b.text or "SPAREN" in b.text:
+                a.aktion.append(re.sub(r"statt\s+\S+\s*", "", b.text).strip())
 
     # 4. Zusatzpreise → nächster Hauptpreis
     for p in (p for p in preise if p.zusatz):
         h = _naechster(p, [h for h in haupt if id(h) in angebote], 200)
         if h:
             angebote[id(h)].zusatzpreis = p.wert
+            angebote[id(h)].zusatz_text = p.zusatz_text
             angebote[id(h)]._erweitern(p)
 
     # 5. Badges (Preisschrift, aber kein Preis) → nächster Hauptpreis
@@ -356,6 +367,32 @@ def analysiere_seite(woerter: list[dict], seite: int, s: Schriften = SPAR_SCHRIF
     for a in angebote.values():
         a.aktion = aktion_normalisieren(a.aktion)
     return sorted(angebote.values(), key=lambda a: a.name)
+
+
+def _vorlagen_bedingungen(bedingungen: dict[int, list[Box]]) -> set[int]:
+    """Bedingungen (id der Box), die übrig gebliebene Vorlagen sind und ignoriert werden müssen.
+
+    Manche Seiten enthalten unter dem echten Hinweis ("1 Packung 14,99 / ab 2 Packungen je") eine verdeckte Vorlage
+    in anderer Schriftgröße ("1 PACKUNG 2,29 / AB 4 PACKUNGEN JE"), die bei allen Angeboten gleich lautet.
+    Erkennung: Ein Preis hat Bedingungen in mehreren Schriftgrößen, und eine davon steht wortgleich auch bei anderen
+    Preisen. Diese Gruppe fällt weg – nur, wenn eine andere Gruppe übrig bleibt.
+    """
+    preis_bezogen = lambda b: bool(_NORMALPREIS_RE.search(b.text) or _AB_MENGE_RE.search(b.text.lower()))
+    haeufigkeit: dict[str, int] = {}
+    for bs in bedingungen.values():
+        for text in {b.text for b in bs if preis_bezogen(b)}:
+            haeufigkeit[text] = haeufigkeit.get(text, 0) + 1
+    vorlagen: set[int] = set()
+    for bs in bedingungen.values():
+        gruppen: dict[float, list[Box]] = {}
+        for b in (b for b in bs if preis_bezogen(b)):
+            gruppen.setdefault(round(b.size, 1), []).append(b)
+        if len(gruppen) < 2:
+            continue
+        doppelt = [g for g in gruppen.values() if all(haeufigkeit[b.text] > 1 for b in g)]
+        if 0 < len(doppelt) < len(gruppen):
+            vorlagen.update(id(b) for g in doppelt for b in g)
+    return vorlagen
 
 
 _AKTION_MUSTER = [

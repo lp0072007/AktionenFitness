@@ -5,7 +5,8 @@ Beide Shops liefern Produkte im selben JSON-Format über /api/product-discovery/
     price.regular.value (Cent, Aktionspreis), price.regular.promotionText ("ab 2 Becher"),
     price.regular.promotionQuantity / promotionType (FROM, PER_SET_OF),
     price.crossed (Streichpreis), price.standard.value (Normalpreis, nur Billa),
-    price.discountPercentage, price.validityStart/validityEnd (nur Penny), images[], slug, sku, parentCategories.
+    price.discountPercentage, price.validityStart/validityEnd (nur Penny), images[], slug, sku, parentCategories,
+    price.loyalty.value (Preis mit jö-Karte, Cent), badges[] ("pp-vegan", "pp-veget", "pp-bio", …).
 """
 
 from __future__ import annotations
@@ -18,6 +19,15 @@ NICHT_LEBENSMITTEL = {"Haushalt", "Non-Food", "Haustier", "Pflege", "Drogerie", 
                       "Küche, Haushalt & Garten", "Baby & Kleinkind"}
 _EINHEITEN = {"g": (1, "g"), "kg": (1000, "g"), "ml": (1, "ml"), "liter": (1000, "ml"), "l": (1000, "ml"),
               "stk": (1, "stk")}
+# Kennzeichnungen des Händlers -> Merkmale für die Website (Filter vegan/vegetarisch/Bio)
+_BADGE_MERKMALE = {"pp-vegan": "vegan", "gs-vegan": "vegan", "pp-veget": "vegetarisch", "pp-bio": "bio"}
+
+
+def merkmale(p: dict) -> list[str]:
+    gefunden = {_BADGE_MERKMALE[b] for b in p.get("badges") or [] if b in _BADGE_MERKMALE}
+    if "vegan" in gefunden:
+        gefunden.add("vegetarisch")
+    return sorted(gefunden)
 
 
 def kategorie_pfad(p: dict) -> str | None:
@@ -65,6 +75,10 @@ def parse_produkt(p: dict, produkt_basis_url: str) -> FlugblattAngebot | None:
     vorher = preis_info.get("crossed") or (preis_info.get("standard") or {}).get("value")
     normalpreis = vorher / 100 if vorher and vorher / 100 > preis else None
 
+    # Kartenpreis (jö Bonus Club), nur wenn wirklich günstiger
+    karte = (preis_info.get("loyalty") or {}).get("value")
+    zusatzpreis = round(karte / 100, 2) if karte and karte < regulaer["value"] else None
+
     aktion = []
     if preis_info.get("discountPercentage"):
         aktion.append(f"{preis_info['discountPercentage']}%")
@@ -83,10 +97,13 @@ def parse_produkt(p: dict, produkt_basis_url: str) -> FlugblattAngebot | None:
         beschreibung=beschreibung,
         normalpreis=round(normalpreis, 2) if normalpreis else None,
         ab_menge=ab_menge,
+        zusatzpreis=zusatzpreis,
+        zusatz_text="jö" if zusatzpreis else None,
         aktion=aktion,
         menge=menge,
         einheit=einheit,
         pro_kg=pro_kg,
+        merkmale=merkmale(p),
         grundpreis_ok=True,  # strukturierte Daten vom Händler
         gueltig_von=date.fromisoformat(von) if von else None,
         gueltig_bis=date.fromisoformat(bis) if bis else None,
