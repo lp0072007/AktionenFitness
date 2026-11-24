@@ -3,7 +3,7 @@
 #
 # Täglich früh und auf Knopfdruck (Actions -> "Aktionen aktualisieren" -> Run workflow).
 # Sparsam: Lidl, Hofer, Penny, Billa, MPreis werden jedes Mal geholt (je wenige Sekunden). Spar nur, wenn es ein neues
-# Flugblatt gibt (sonst kein 20-MB-PDF), dm etwa einmal pro Woche (Dauerpreise, bremst bei vielen Anfragen).
+# Flugblatt gibt (sonst kein 20-MB-PDF). dm wird nicht geladen (robots.txt der dm-Produktsuche: "Disallow: /").
 # Fällt ein Geschäft aus oder liefert 0 Angebote, bleibt sein letzter Stand stehen und der Lauf zeigt eine Warnung.
 # Letzter Stand und Preisverlauf liegen im Branch "daten".
 #
@@ -17,7 +17,7 @@ on:
   workflow_dispatch:
     inputs:
       alles:
-        description: "Alles neu laden (auch unveränderte Spar-Flugblätter und dm)"
+        description: "Alles neu laden (auch unveränderte Spar-Flugblätter)"
         type: boolean
         default: false
 

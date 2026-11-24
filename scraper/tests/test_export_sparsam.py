@@ -59,7 +59,7 @@ def umgebung(tmp_path, monkeypatch):
 def test_erster_lauf_laedt_alles(umgebung):
     d = umgebung.lauf("--sparsam")  # noch kein alter Stand -> alles laden
     assert umgebung.aufrufe["region"] == 1
-    assert set(umgebung.aufrufe["ketten"]) == set(export.WEITERE_KETTEN)
+    assert set(umgebung.aufrufe["ketten"]) == set(export.WEITERE_KETTEN) - {"dm"}  # dm nur mit --mit-dm
     assert d["regionen"][0]["stand"] == d["erstellt"] and d["billa"]["stand"] == d["erstellt"]
 
 
@@ -80,15 +80,20 @@ def test_neues_flugblatt_wird_geladen(umgebung):
     assert d["regionen"][0]["flugblatt"] == "Wien KW 49" and not d["regionen"][0].get("uebernommen")
 
 
+def test_dm_nur_auf_wunsch(umgebung):
+    d = umgebung.lauf()
+    assert "dm" not in umgebung.aufrufe["ketten"] and d["dm"] is None
+
+
 def test_dm_nur_einmal_pro_woche(umgebung):
-    umgebung.lauf()
-    umgebung.lauf("--sparsam")
+    umgebung.lauf("--mit-dm")
+    umgebung.lauf("--sparsam", "--mit-dm")
     assert "dm" not in umgebung.aufrufe["ketten"] and "billa" in umgebung.aufrufe["ketten"]
     # Stand künstlich 8 Tage alt machen -> dm wird wieder geladen
     d = json.loads(umgebung.ziel.read_text(encoding="utf-8"))
     d["dm"]["stand"] = (datetime.now() - timedelta(days=8)).isoformat(timespec="minutes")
     umgebung.ziel.write_text(json.dumps(d), encoding="utf-8")
-    umgebung.lauf("--sparsam")
+    umgebung.lauf("--sparsam", "--mit-dm")
     assert "dm" in umgebung.aufrufe["ketten"]
 
 

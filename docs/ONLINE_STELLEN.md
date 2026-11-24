@@ -4,8 +4,9 @@ Vorbereitet ist alles im Repository: `.github/workflows/aktualisieren.yml` ruft 
 Aktionen ab, speichert den Preisverlauf und veröffentlicht den Ordner `web/` auf GitHub Pages.
 
 **Sparsamer Lauf** (`python -m aktionen.export --alt …`, ca. 30 s statt 20 min): Lidl, Hofer, Penny, Billa und MPreis
-werden jedes Mal geholt (je wenige Sekunden). Spar nur, wenn es ein **neues Flugblatt** gibt (sonst kein 20-MB-PDF),
-dm etwa **einmal pro Woche** (Dauerpreise, bremst bei vielen Anfragen). Fällt ein Geschäft aus oder liefert es
+werden jedes Mal geholt (je wenige Sekunden). Spar nur, wenn es ein **neues Flugblatt** gibt (sonst kein 20-MB-PDF).
+**dm wird nicht automatisch geladen:** die dm-Produktsuche verbietet automatische Zugriffe in ihrer robots.txt
+(`Disallow: /`). Lokal zum Testen: `python -m aktionen.export --mit-dm`. Fällt ein Geschäft aus oder liefert es
 0 Angebote, bleibt sein **letzter Stand** stehen und der Lauf zeigt eine **Warnung** (gelbes Dreieck im Actions-Tab).
 Letzter Stand und Preisverlauf liegen im Branch `daten`. „Alles neu laden“: *Run workflow* → Häkchen „alles“. Die Website ist eine
 installierbare App (PWA): am Handy „Zum Startbildschirm hinzufügen“, funktioniert danach auch ohne Netz.
@@ -33,7 +34,7 @@ Wenn du die Ausschnitte trotzdem veröffentlichen willst (nur mit Erlaubnis!): *
 
 ## Bekannte Grenzen
 
-- **Hofer/dm aus der Cloud:** Manche Händler blockieren Anfragen von Rechenzentren (GitHub). Dann bleibt der letzte
+- **Hofer aus der Cloud:** Manche Händler blockieren Anfragen von Rechenzentren (GitHub). Dann bleibt der letzte
   Stand dieser Kette stehen (Warnung im Lauf). Die Website zeigt unten, wann jedes Geschäft zuletzt neu geladen wurde.
 - **Preisverlauf und letzter Stand** liegen im Branch `daten` (`preisverlauf.db`, `stand/`). Den Branch nicht löschen, sonst fängt der Verlauf
   von vorne an. Lokal kannst du ihn holen: `git fetch origin daten && git show FETCH_HEAD:preisverlauf.db > data/preisverlauf.db`.

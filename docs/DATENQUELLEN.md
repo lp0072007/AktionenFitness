@@ -295,3 +295,14 @@ Aktionszeiträume und kein offizielles API).
 - [Open Food Facts](https://world.openfoodfacts.org/data): kostenlos, Abfrage per EAN:
   `https://world.openfoodfacts.org/api/v2/product/{ean}.json`
 - Manuelle Basisliste für Generika (Magertopfen, Hühnerbrust, Haferflocken, …)
+
+## robots.txt (geprüft 24.11.2026)
+
+| Host | Was wir abrufen | robots.txt | |
+|---|---|---|---|
+| shop.billa.at, www.penny.at | `/api/product-discovery/…` | nur Sitemap, keine Sperren | ✅ |
+| www.lidl.at | `/c/store/…` | gesperrt: `/q/search`, `/1*`–`/9*`, `/cc.js` | ✅ |
+| www.hofer.at | `/angebote`, `/angebote/<datum>` | gesperrt: `/tools`, `/*?q=` (Datei nur im Browser abrufbar) | ✅ |
+| data-hub.mpreis.at | `/typesense-proxy/multi_search` | keine robots.txt (404); www.mpreis.at sperrt nur `/search/`, Filter | ✅ |
+| flugblatt.interspar.at | Flugblattseite ✅, PDF über `GetPDF.ashx` | `Disallow: /*.ashx` | ❌ PDF-Download ausgeschlossen – Anfrage bei Spar läuft |
+| product-search.services.dmtech.com | `/at/search/crawl` | `Disallow: /` | ❌ → dm nicht mehr automatisch (`--mit-dm`) |

@@ -23,7 +23,7 @@ Dann <http://localhost:8000> öffnen.
 cd scraper
 python -m aktionen.export                    # Niederösterreich, Wien, Steiermark
 python -m aktionen.export --alle             # alle 11 Spar-Regionen (dauert einige Minuten)
-python -m aktionen.export --sparsam          # nur Geändertes: Spar bei neuem Flugblatt, dm 1× pro Woche (~30 s)
+python -m aktionen.export --sparsam          # nur Geändertes: Spar bei neuem Flugblatt (~30 s); dm nur mit --mit-dm
 ```
 
 Das schreibt `web/data/angebote.json` und `web/data/angebote.js` (gleicher Inhalt; die `.js`-Variante

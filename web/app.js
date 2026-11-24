@@ -608,7 +608,10 @@ function start() {
   zustand.region = DATEN.regionen.some((r) => r.region === einst.region) ? einst.region : DATEN.regionen[0]?.region;
   sel.value = zustand.region ?? "";
   sel.hidden = DATEN.regionen.length < 2;
-  zustand.kette = KETTEN[einst.kette] ? einst.kette : "";
+  // Geschäfte ohne Daten (z. B. dm, das nicht mehr automatisch geladen wird) nicht als Auswahl anbieten
+  const hatDaten = (k) => k === "spar" ? DATEN.regionen.length > 0 : !!(DATEN[k] || ALLE.ketten[k]?.length);
+  document.querySelectorAll("[data-kette]").forEach((b) => { if (b.dataset.kette) b.hidden = !hatDaten(b.dataset.kette); });
+  zustand.kette = KETTEN[einst.kette] && hatDaten(einst.kette) ? einst.kette : "";
   zustand.sortierung = SORTIERUNG[einst.sortierung] ? einst.sortierung : "kilopreis";
   $("#sortierung").value = zustand.sortierung;
   auswahlSetzen("kette", zustand.kette);

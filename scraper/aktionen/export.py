@@ -265,7 +265,8 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--ohne-penny", action="store_true")
     p.add_argument("--ohne-billa", action="store_true")
     p.add_argument("--ohne-mpreis", action="store_true")
-    p.add_argument("--ohne-dm", action="store_true")
+    # dm sperrt seine Produktsuche per robots.txt ("Disallow: /") und bremst mit 429 -> nur noch auf ausdrücklichen Wunsch
+    p.add_argument("--mit-dm", action="store_true", help="dm-Dauerpreise laden (robots.txt verbietet es, nur lokal/zum Testen)")
     p.add_argument("--ohne-verlauf", action="store_true", help="Preise nicht im Preisverlauf speichern")
     p.add_argument("--alt", type=Path, help="Ordner mit dem letzten Stand (angebote.json, aktionen.js). Sparsamer Lauf: "
                    "unverändertes Spar-Flugblatt und frisches dm werden übernommen, ausgefallene Ketten ebenfalls")
@@ -285,7 +286,7 @@ def main(argv: list[str] | None = None) -> int:
     erstellt = jetzt.isoformat(timespec="minutes")
     daten = {"erstellt": erstellt, "regionen": [], "lidl": None, "hofer": None, "penny": None, "billa": None, "mpreis": None, "dm": None}
     bilder = None if args.ohne_bilder else args.ziel.parent / BILDER_UNTERORDNER
-    ketten = [k for k in WEITERE_KETTEN if not getattr(args, f"ohne_{k}")]
+    ketten = [k for k in WEITERE_KETTEN if not getattr(args, f"ohne_{k}", False) and (k != "dm" or args.mit_dm)]
     # Aufwand grob: Spar-Region (PDF + Auswertung) ≈ 2,5 × Kette, Billa ≈ 1,5 × (viele Angebote), dm ≈ 4 ×
     spar = 2.5 if args.nur_fitness_bilder or args.ohne_bilder else 3.0  # alle Ausschnitte: ca. +10 s je Region
     gesamt = Gesamt([spar] * len(regionen) + [{"billa": 1.5, "dm": 4.0}.get(k, 1.0) for k in ketten])  # dm: 3 s Pausen
