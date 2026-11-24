@@ -152,3 +152,24 @@ def test_obst_und_gemuese_nur_unverarbeitet():
                             kategorie_pfad="Getränke > Alkoholfreie Getränke > Frucht- & Gemüsesäfte")
     tk = FlugblattAngebot(seite=0, name="Iglo Erbsen", preis=2.0, kategorie_pfad="Tiefkühl > Obst, Gemüse & Kräuter > Gemüse")
     assert [t.angebot.name for t in fitness_angebote([saft, tk])] == ["Iglo Erbsen"]
+
+
+def test_haendlerkategorie_pro_fitnesskategorie():
+    from aktionen.fitness import fitness_angebote
+    from aktionen.flugblatt_pdf import FlugblattAngebot
+
+    def a(name, pfad):
+        return FlugblattAngebot(seite=0, name=name, preis=1.0, menge=100, einheit="g", kategorie_pfad=pfad)
+
+    treffer = {t.angebot.name: t.kategorie.name for t in fitness_angebote([
+        a("Tirol Milch Tiroler Adler 45%", "Lebensmittel > Milch & Eier > Käse > Schnittkäse"),       # Käse, keine Milch
+        a("Danone Actimel Kids Erdbeere-Banane", "Lebensmittel > Milch & Eier > Milch > Milchgetränke"),  # keine Banane
+        a("Tirol Milch Frische Vollmilch 3,5%", "Lebensmittel > Milch & Eier > Milch > Frischmilch"),
+        a("Bananen", "Lebensmittel > Obst > Exotische Früchte"),
+        a("Exquisa Zero Quark-Joghurt Gebr.Mandeln", "Lebensmittel > Milch & Eier > Joghurt"),
+    ])}
+    assert "Tirol Milch Tiroler Adler 45%" not in treffer
+    assert "Danone Actimel Kids Erdbeere-Banane" not in treffer
+    assert treffer["Tirol Milch Frische Vollmilch 3,5%"] == "Milch"
+    assert treffer["Bananen"] == "Bananen"
+    assert treffer["Exquisa Zero Quark-Joghurt Gebr.Mandeln"] == "Joghurt"  # nicht Nüsse, nicht Zero-Getränk

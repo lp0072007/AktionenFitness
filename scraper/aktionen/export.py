@@ -23,11 +23,11 @@ from PIL import Image
 from . import verlauf
 from .ausschnitte import ausschnitte_speichern
 from .fortschritt import Fortschritt, Gesamt
-from .stores import billa, dm, hofer, lidl, penny
+from .stores import billa, dm, hofer, lidl, mpreis, penny
 
 # Österreichweite Ketten mit strukturierten Daten: Name -> Modul mit aktuelle_angebote() und UA
-KETTEN_NAMEN = {"lidl": "Lidl", "hofer": "Hofer", "penny": "Penny", "billa": "Billa", "dm": "dm"}
-WEITERE_KETTEN = {"lidl": lidl, "hofer": hofer, "penny": penny, "billa": billa, "dm": dm}
+KETTEN_NAMEN = {"lidl": "Lidl", "hofer": "Hofer", "penny": "Penny", "billa": "Billa", "mpreis": "MPreis", "dm": "dm"}
+WEITERE_KETTEN = {"lidl": lidl, "hofer": hofer, "penny": penny, "billa": billa, "mpreis": mpreis, "dm": dm}
 from .fitness import DATEN_ORDNER, FitnessTreffer, fitness_angebote
 from .flugblatt_pdf import FlugblattAngebot, analysiere_seite
 from .spar_flugblatt import REGIONEN, aktuelles_flugblatt, pdf_herunterladen
@@ -130,7 +130,7 @@ def _bild_speichern(client: httpx.Client, url: str, ziel: Path) -> None:
 
 
 def kette_exportieren(kette: str, bilder_ordner: Path | None = None) -> dict:
-    """Österreichweite Kette (Lidl, Hofer, Penny, Billa). Produktbilder werden parallel geladen und verkleinert."""
+    """Österreichweite Kette (Lidl, Hofer, Penny, Billa, MPreis). Produktbilder werden parallel geladen und verkleinert."""
     modul = WEITERE_KETTEN[kette]
     f = Fortschritt("Angebote")
     angebote = modul.aktuelle_angebote(fortschritt=f)
@@ -225,6 +225,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--ohne-hofer", action="store_true")
     p.add_argument("--ohne-penny", action="store_true")
     p.add_argument("--ohne-billa", action="store_true")
+    p.add_argument("--ohne-mpreis", action="store_true")
     p.add_argument("--ohne-dm", action="store_true")
     p.add_argument("--ohne-verlauf", action="store_true", help="Preise nicht im Preisverlauf speichern")
     args = p.parse_args(argv)
@@ -234,7 +235,7 @@ def main(argv: list[str] | None = None) -> int:
         p.error("--pdf geht nur mit genau einer --region")
 
     # Struktur: regionen[] = Spar pro Bundesland; lidl, hofer = österreichweit (gelten für alle Regionen)
-    daten = {"erstellt": datetime.now().isoformat(timespec="minutes"), "regionen": [], "lidl": None, "hofer": None, "penny": None, "billa": None, "dm": None}
+    daten = {"erstellt": datetime.now().isoformat(timespec="minutes"), "regionen": [], "lidl": None, "hofer": None, "penny": None, "billa": None, "mpreis": None, "dm": None}
     bilder = None if args.ohne_bilder else args.ziel.parent / BILDER_UNTERORDNER
     ketten = [k for k in WEITERE_KETTEN if not getattr(args, f"ohne_{k}")]
     # Aufwand grob: Spar-Region (PDF + Auswertung) ≈ 2,5 × Kette, Billa ≈ 1,5 × (viele Angebote), dm ≈ 4 ×

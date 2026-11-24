@@ -1,0 +1,446 @@
+{
+ "_quelle": "MPreis Typesense-Suche (Markt 8450), 24.11.2026, Auswahl je Aktionsart",
+ "results": [
+  {
+   "found": 9,
+   "hits": [
+    {
+     "document": {
+      "categories": [
+       "Tafelschokolade",
+       "Schokolade",
+       "Süßes & Salziges",
+       "Lebensmittel",
+       "ProductRoot"
+      ],
+      "id": "144440",
+      "image": "https://res.cloudinary.com/dit8huoga/image/upload/v1789175028/api/144440_angle.jpg",
+      "mixins": {
+       "markantAttributes": {
+        "data": {
+         "description": {
+          "brandName": "Tony's Chocolonely"
+         }
+        }
+       },
+       "mpreisAttributes": {
+        "properties": [
+         "1GM"
+        ]
+       },
+       "productCustomAttributes": {
+        "packagingUnit": "180g",
+        "weightDependent": false
+       }
+      },
+      "name": "Dark Milk Brownie Ben&Jerry's",
+      "product_store_data": [
+       {
+        "sitePrice": {
+         "attributes": {
+          "type": "PAK"
+         },
+         "base": 13.83,
+         "discounts": {
+          "discountQuantity": 1,
+          "forQuantity": 2,
+          "id": "MPR-20806803"
+         },
+         "effective": 2.49,
+         "original": 4.99,
+         "promotionType": "1+1 gratis"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "document": {
+      "categories": [
+       "Tafelschokolade",
+       "Schokolade",
+       "Süßes & Salziges",
+       "Lebensmittel",
+       "ProductRoot"
+      ],
+      "id": "145910",
+      "image": "https://res.cloudinary.com/dit8huoga/image/upload/v1779619050/api/145910_angle.jpg",
+      "mixins": {
+       "markantAttributes": {
+        "data": {
+         "description": {
+          "brandName": "Schogetten"
+         }
+        }
+       },
+       "mpreisAttributes": {
+        "properties": [
+         "1GM",
+         "GNL",
+         "KL2"
+        ]
+       },
+       "productCustomAttributes": {
+        "packagingUnit": "100g",
+        "weightDependent": false
+       }
+      },
+      "name": "Edel-Zartbitter",
+      "product_store_data": [
+       {
+        "sitePrice": {
+         "attributes": {
+          "type": "PAK"
+         },
+         "base": 13.2,
+         "discounts": {
+          "discountQuantity": 1,
+          "forQuantity": 3,
+          "id": "MPR-20795724"
+         },
+         "effective": 1.32,
+         "original": 1.99,
+         "promotionType": "1+1 gratis"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "document": {
+      "categories": [
+       "Pralinen",
+       "Schokolade",
+       "Süßes & Salziges",
+       "Lebensmittel",
+       "ProductRoot"
+      ],
+      "id": "171839",
+      "mixins": {
+       "markantAttributes": {
+        "data": {
+         "description": {
+          "brandName": "Lindt"
+         }
+        }
+       },
+       "mpreisAttributes": {
+        "properties": [
+         "RPL",
+         "KL2",
+         "WSP"
+        ]
+       },
+       "productCustomAttributes": {
+        "packagingUnit": "200g",
+        "weightDependent": false
+       }
+      },
+      "name": "Lindor Kugeln Weiss Cornet",
+      "product_store_data": [
+       {
+        "sitePrice": {
+         "attributes": {
+          "id": "MPR-20813224",
+          "type": "AB"
+         },
+         "base": 30,
+         "effective": 6,
+         "original": 8,
+         "promotionType": "In der Menge billiger",
+         "wholesale": {
+          "minQuantity": 2
+         }
+        }
+       }
+      ]
+     }
+    },
+    {
+     "document": {
+      "categories": [
+       "Weißwein",
+       "Wein",
+       "Wein & Schaumwein",
+       "Getränke",
+       "ProductRoot"
+      ],
+      "id": "118203",
+      "image": "https://res.cloudinary.com/dit8huoga/image/upload/v1632906121/mpreis/products/183bce43-d66f-4c50-bd9b-6c083a232d38.jpg",
+      "mixins": {
+       "markantAttributes": {
+        "data": {
+         "description": {
+          "brandName": ""
+         }
+        }
+       },
+       "mpreisAttributes": {
+        "properties": [
+         "J16",
+         "gEW",
+         "RPL"
+        ]
+       },
+       "productCustomAttributes": {
+        "packagingUnit": "750ml",
+        "weightDependent": false
+       }
+      },
+      "name": "Riesling MagicMountain Rheingau",
+      "product_store_data": [
+       {
+        "sitePrice": {
+         "attributes": {
+          "type": "REGULAR_PRICE"
+         },
+         "base": 13.33,
+         "effective": 10,
+         "original": 22.99,
+         "promotionType": "Preisgesenkt",
+         "type": "V4AB"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "document": {
+      "categories": [
+       "Waffeln & Schnitten",
+       "Süßes & Salziges",
+       "Lebensmittel",
+       "ProductRoot"
+      ],
+      "id": "206620",
+      "mixins": {
+       "markantAttributes": {
+        "data": {
+         "description": {
+          "brandName": "Hanuta"
+         }
+        }
+       },
+       "mpreisAttributes": {
+        "properties": []
+       },
+       "productCustomAttributes": {
+        "packagingUnit": "173g",
+        "weightDependent": false
+       }
+      },
+      "name": "Hanuta Cocos Riegel T5",
+      "product_store_data": [
+       {
+        "sitePrice": {
+         "attributes": {
+          "type": "REGULAR_PRICE"
+         },
+         "base": 11.56,
+         "effective": 2,
+         "original": 2,
+         "promotionType": "Preisgesenkt",
+         "type": "V4AB"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "document": {
+      "categories": [
+       "Pralinen",
+       "Schokolade",
+       "Süßes & Salziges",
+       "Lebensmittel",
+       "ProductRoot"
+      ],
+      "id": "172449",
+      "image": "https://res.cloudinary.com/dit8huoga/image/upload/v1779629002/api/172449_angle.jpg",
+      "mixins": {
+       "markantAttributes": {
+        "data": {
+         "description": {
+          "brandName": "Lindt"
+         }
+        }
+       },
+       "mpreisAttributes": {
+        "properties": [
+         "KL2",
+         "RPL"
+        ]
+       },
+       "productCustomAttributes": {
+        "packagingUnit": "500g",
+        "weightDependent": false
+       }
+      },
+      "name": "Lindor Kugeln Milk & White Cornet",
+      "product_store_data": [
+       {
+        "sitePrice": {
+         "attributes": {
+          "type": "REGULAR_PRICE"
+         },
+         "base": 20,
+         "effective": 10,
+         "isInFlyer": true,
+         "original": 10,
+         "promotionType": "Preisgesenkt",
+         "type": "V4AB"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "document": {
+      "categories": [
+       "Salami",
+       "Wurst",
+       "Fleisch & Wurst",
+       "Lebensmittel",
+       "ProductRoot"
+      ],
+      "id": "666089",
+      "mixins": {
+       "markantAttributes": {
+        "data": {
+         "description": {
+          "brandName": "Levoni"
+         }
+        }
+       },
+       "mpreisAttributes": {
+        "properties": [
+         "FKT",
+         "KW",
+         "GLU",
+         "LAK"
+        ]
+       },
+       "productCustomAttributes": {
+        "packagingUnit": "1kg",
+        "weightDependent": true
+       }
+      },
+      "name": "Salame Ungherese",
+      "product_store_data": [
+       {
+        "sitePrice": {
+         "attributes": {
+          "type": "REGULAR_PRICE"
+         },
+         "base": 19.99,
+         "effective": 19.99,
+         "original": 28.99,
+         "promotionType": "Preisgesenkt",
+         "type": "V3BP"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "document": {
+      "categories": [
+       "Nüsse",
+       "Nüsse & Trockenfrüchte",
+       "Grundnahrung",
+       "Lebensmittel",
+       "ProductRoot"
+      ],
+      "id": "365763",
+      "image": "https://res.cloudinary.com/dit8huoga/image/upload/v1790038901/api/365763_angle.jpg",
+      "mixins": {
+       "markantAttributes": {
+        "data": {
+         "description": {
+          "brandName": "Alnatura"
+         }
+        }
+       },
+       "mpreisAttributes": {
+        "properties": [
+         "RPL",
+         "ALN",
+         "BIO",
+         "VGN"
+        ]
+       },
+       "productCustomAttributes": {
+        "packagingUnit": "150g",
+        "weightDependent": false
+       }
+      },
+      "name": "Bio Nuss Mix geröstet & ungesalzen",
+      "product_store_data": [
+       {
+        "sitePrice": {
+         "attributes": {
+          "type": "REGULAR_PRICE"
+         },
+         "base": 20,
+         "effective": 3,
+         "original": 3,
+         "promotionType": "Preisgesenkt",
+         "type": "V4AB"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "document": {
+      "categories": [
+       "Fruchtsäfte & Smoothies",
+       "Säfte & Sirup",
+       "Getränke",
+       "ProductRoot"
+      ],
+      "id": "365270",
+      "image": "https://res.cloudinary.com/dit8huoga/image/upload/v1788397284/api/365270_front.jpg",
+      "mixins": {
+       "markantAttributes": {
+        "data": {
+         "description": {
+          "brandName": "Alnatura"
+         }
+        }
+       },
+       "mpreisAttributes": {
+        "properties": [
+         "BIO",
+         "VGN",
+         "ALN",
+         "RPL",
+         "gEW"
+        ]
+       },
+       "productCustomAttributes": {
+        "packagingUnit": "750ml",
+        "weightDependent": false
+       }
+      },
+      "name": "Bio Pink Grapefruit Direktsaft 0,75 Liter",
+      "product_store_data": [
+       {
+        "sitePrice": {
+         "attributes": {
+          "type": "REGULAR_PRICE"
+         },
+         "base": 2.67,
+         "effective": 2,
+         "original": 2,
+         "promotionType": "Preisgesenkt",
+         "type": "V4AB"
+        }
+       }
+      ]
+     }
+    }
+   ]
+  }
+ ]
+}

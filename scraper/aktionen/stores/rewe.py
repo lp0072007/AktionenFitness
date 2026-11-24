@@ -67,6 +67,10 @@ def parse_produkt(p: dict, produkt_basis_url: str) -> FlugblattAngebot | None:
             anzahl = None
         if faktor_einheit and anzahl:
             menge, einheit = anzahl * faktor_einheit[0], faktor_einheit[1]
+            # Tippfehler beim Händler: "0.25" + "ml" (Penny, Oxxenkracherl 24.11.2026) meint 0,25 Liter.
+            # Unter 5 ml/g mit Nachkommastellen gibt es im Lebensmittelhandel nicht.
+            if einheit in ("g", "ml") and menge < 5 and menge != int(menge):
+                menge *= 1000
 
     ab_menge = None
     if regulaer.get("promotionType") in ("FROM", "PER_SET_OF") and (regulaer.get("promotionQuantity") or 0) > 1:

@@ -97,3 +97,10 @@ def test_merkmale_aus_badges():
     assert parse_produkt(produkt(badges=["pp-veget", "pp-bio"])).merkmale == ["bio", "vegetarisch"]
     assert parse_produkt(produkt(badges=["kuehlung"])).merkmale == []
     assert parse_produkt(produkt()).merkmale == []
+
+
+def test_tippfehler_ml_statt_liter():
+    # Echt (24.11.2026): "Oxxenkracherl Energydrink" mit amount "0.25" und volumeLabelShort "ml"
+    a = parse_produkt(produkt(name="Oxxenkracherl Energydrink", amount="0.25", volumeLabelShort="ml"))
+    assert (a.menge, a.einheit) == (250, "ml")
+    assert parse_produkt(produkt(amount="2", volumeLabelShort="g")).menge == 2  # ganze kleine Mengen bleiben

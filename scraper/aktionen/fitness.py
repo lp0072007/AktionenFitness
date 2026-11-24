@@ -90,12 +90,13 @@ KATEGORIEN: tuple[Kategorie, ...] = (
     Kategorie("Rote-Rüben-Saft", "Kohlenhydrate", (r"rote[- ]?(bete|beete|rüben?)[- ]?(direkt)?saft", r"randensaft",
                                                    r"(direkt)?saft rote[- ]?(bete|beete|rüben?)"), 40, 1, 8.5, 0,
               ausschluss=(r"shot", r"ingwer")),
-    Kategorie("Bananen", "Kohlenhydrate", (r"banane",), 90, 1.1, 20, 0.3, ausschluss=(r"chips", r"nikolo", r"schoko")),
+    Kategorie("Bananen", "Kohlenhydrate", (r"banane",), 90, 1.1, 20, 0.3, ausschluss=(r"chips", r"nikolo", r"schoko",
+              r"actimel", r"jo(g)?hurt", r"drink", r"saft", r"smoothie", r"brei", r"bebivita", r"quetsch", r"müsli")),
     Kategorie("Milch", "Protein", (r"\bh?-?milch\b", r"vollmilch", r"magermilch", r"\bh-milch"), 50, 3.4, 4.8, 1.5,
               ausschluss=(r"schoko", r"kakao", r"cacao", r"reis", r"hafer", r"pudding", r"milchreis", r"käse",
                           r"scheiben", r"selektion", r"butter", r"joghurt", r"topfen", r"rahm", r"schlag")),
     Kategorie("Nüsse", "Fette", (r"nusskern", r"mandeln", r"walnüsse", r"cashew", r"haselnüsse"), 620, 18, 12, 54,
-              ausschluss=(r"schoko", r"nougat", r"krokant")),
+              ausschluss=(r"schoko", r"nougat", r"krokant", r"jo(g)?hurt", r"quark", r"topfen", r"skyr", r"müsli")),
     Kategorie("Erdnussbutter", "Fette", (r"erdnussbutter", r"erdnussmus", r"peanut butter"), 600, 25, 14, 50),
     Kategorie("Olivenöl", "Fette", (r"olivenöl",), 820, 0, 0, 91),
     # Zuckerfreier Sirup zum Aufspritzen ("flavour your life", Mautner Markhof 0 %): Geschmack fast ohne Kalorien
@@ -114,7 +115,7 @@ KATEGORIEN: tuple[Kategorie, ...] = (
     Kategorie("Zero-Getränk", "Getränke", (r"\bzero\b", r"pepsi max", r"zuckerfrei", r"ohne zucker", r"cola[^,·]*light",
                                             r"light[^,·]*cola"), 1, 0, 0.1, 0,
               ausschluss=(r"krispel", r"wein", r"bier", r"radler", r"sekt", r"\brot\b", r"\bweiß\b", r"kaugummi",
-                          r"schokolade", r"bonbon", r"gummi")),
+                          r"schokolade", r"bonbon", r"gummi", r"jo(g)?hurt", r"quark", r"topfen", r"skyr", r"pudding")),
 
     # Joghurt und Kefir (auch mit Frucht; Desserts und Knusper-Varianten nicht)
     Kategorie("Kefir", "Milchprodukte", (r"\bkefir", r"buttermilch"), 55, 3.4, 4, 2.5),
@@ -235,8 +236,22 @@ _PFAD_VERBOTEN = {
 }
 
 
+# Dasselbe für einzelne Kategorien (nach Name): "Tirol Milch Tiroler Adler" ist Käse, kein Milch-Treffer;
+# "Actimel Kids Erdbeere-Banane" steht bei den Milchgetränken, nicht beim Obst
+_PFAD_PFLICHT_NAME = {
+    "Bananen": re.compile(r"obst", re.I),
+}
+_PFAD_VERBOTEN_NAME = {
+    "Milch": re.compile(r"käse|joghurt|butter|rahm|topfen|dessert|pudding", re.I),
+}
+
+
 def _pfad_passt(k: Kategorie, pfad: str) -> bool:
     if k.gruppe in _PFAD_PFLICHT and not _PFAD_PFLICHT[k.gruppe].search(pfad):
+        return False
+    if k.name in _PFAD_PFLICHT_NAME and not _PFAD_PFLICHT_NAME[k.name].search(pfad):
+        return False
+    if k.name in _PFAD_VERBOTEN_NAME and _PFAD_VERBOTEN_NAME[k.name].search(pfad):
         return False
     return not (k.gruppe in _PFAD_VERBOTEN and _PFAD_VERBOTEN[k.gruppe].search(pfad))
 

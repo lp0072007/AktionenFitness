@@ -231,6 +231,42 @@ dm macht kaum Aktionen (1 von 200 Proteinprodukten mit Streichpreis). Eingebunde
 **Rate-Limit:** Bei schnellen Anfragen kommt 429. Deshalb 3 s Pause und nur 100 Treffer pro Suchbegriff
 (Liste in `aktionen/stores/dm.py`). Bei 429 wird automatisch gewartet (`Retry-After`). KW 47: 683 Produkte, ~150 fitnessrelevant.
 
+## MPreis ✅ (eingebunden 24.11.2026, `aktionen/stores/mpreis.py`)
+
+Die Website (Vue-App) ist von Algolia auf **Typesense** umgestiegen (Komponenten heißen noch „algoliaProductGrid“).
+Abfrage über einen Proxy von MPreis, **ohne API-Schlüssel**, per POST mit JSON:
+
+    POST https://data-hub.mpreis.at/typesense-proxy/multi_search
+    {"searches":[{"collection":"products","q":"*",
+      "filter_by":"available:true && priceMissing:false && $product_store_data(storeId:=8450 && sitePrice.isInFlyer:true)",
+      "include_fields":"id,name,image,categories,mixins.productCustomAttributes.packagingUnit,
+                        mixins.markantAttributes.data.description.brandName,
+                        $product_store_data(productId,storeId,sitePrice,strategy:nest_array)",
+      "per_page":250,"page":1}]}
+
+- **Sammlungen:** `products` (Stammdaten) und `product_store_data` (Preis/Verfügbarkeit **pro Markt**), verknüpft per Join
+  `$product_store_data(…)`. Ohne Join fehlt der Preis; `product_store_data` allein lehnt der Proxy ab (HTTP 400).
+- **Markt:** `storeId`, Standardmarkt der Website **8450** (daher der alte Index-Name). Preise gelten pro Markt –
+  ob sie sich zwischen Märkten unterscheiden, ist noch nicht geprüft.
+- **Preisfelder** (`sitePrice`): `effective` (aktuell), `original` (Normalpreis), `base` (Grundpreis/kg bzw. l),
+  `promotionType`, `wholesale.minQuantity` (= ab Menge), `isInFlyer` (im Flugblatt).
+- **Produktfelder:** `name`, Marke `mixins.markantAttributes.data.description.brandName`,
+  Packung `mixins.productCustomAttributes.packagingUnit` („250g“, „500ml“), `weightDependent` (Kilo-Ware),
+  `categories` (z. B. „Topfen > Milch & Eier > Lebensmittel“), `image` (Cloudinary).
+- **Umfang (Markt 8450):** 13.013 Produkte **mit Normalpreis** (ganzes Sortiment → auch für Gesamtpreis-Vergleich),
+  davon Aktionstypen: Preisgesenkt 623, Immer günstig 490, In der Menge billiger 464, 1+1 gratis 255,
+  Dauertiefpreis 98. Im Flugblatt: 307, davon Lebensmittel 211.
+- **Keine Gültigkeitsdaten** in den Preisen (wie Billa: aktueller Stand).
+- Filter-Tipp: `promotionType:!=""` greift nicht, stattdessen `sitePrice.promotionType:=[…]` oder `isInFlyer:true`.
+- „Immer günstig“ und „Dauertiefpreis“ sind Dauerpreise, keine Aktionen.
+- **Umsetzung:** Lebensmittel + Getränke mit Preisgesenkt / In der Menge billiger / 1+1 gratis oder im Flugblatt
+  (~1.200 Aktionen, 5 Anfragen, ~3 s). „Preisgesenkt“ ohne niedrigeren Preis und nicht im Flugblatt wird weggelassen
+  (dauerhaft gesenkt). „1+1 gratis“-Label aus `discounts` (forQuantity 3 = 2+1). Eigenschaften `VGN`/`BIO` → Merkmale.
+  Produktlink `https://www.mpreis.at/shop/p/{id}` (leitet weiter). Eigenmarken: M, M-BIO, Jeden Tag, Therese Mölk.
+- **Noch ungenutzt:** echte Nährwerte (`mixins.markantAttributes.data.nutrient`: kcal, Eiweiß … pro 100 g) und Zutaten.
+- Produktdetails zusätzlich über `POST https://www.mpreis.at/api/products` mit `{productIds, marketId}`.
+- Nutzungsbedingungen vor einem öffentlichen Start prüfen (interne Schnittstelle der Website, keine offizielle API).
+
 ## ADEG ⚠️ (noch nicht eingebunden)
 
 Das Flugblatt gibt es pro Markt (selbstständige Kaufleute). `adeg.at/flugblatt-aktionen/adeg-flugblatt` lädt es erst nach
@@ -248,7 +284,7 @@ Drogerie, kaum Lebensmittel, deshalb für Fitness-Angebote nicht relevant.
 | Penny | `https://www.penny.at/api/products?page={n}&pageSize={n}` |
 | Lidl | `https://www.lidl.at/p/api/gridboxes/AT/de/?max={n}` |
 | Hofer | über roksh.at (`https://www.roksh.at/hofer/angebot/`) |
-| MPreis | Algolia-Suchindex (`prod_mpreis_8450`) |
+| MPreis | ~~Algolia-Suchindex (`prod_mpreis_8450`)~~ veraltet → Typesense, siehe Abschnitt MPreis |
 | ADEG | kein Shop → Flugblatt-PDF + KI-Auswertung |
 
 Alternative Rohdaten: heisse-preise.io stellt `data/latest-canonical.json` bereit (alle Ketten, aber keine

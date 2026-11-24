@@ -40,4 +40,4 @@ python -m aktionen.flugblatt_pdf flugblatt.pdf 14                   # alle Angeb
 
 ## Status
 
-**Spar, Lidl, Hofer, Penny und Billa funktionieren durchgehend.** Lidl: strukturierte Angebote von den Angebotsseiten auf lidl.at (`aktionen/stores/lidl.py`), österreichweit gültig. Spar: Flugblatt finden → PDF laden → Angebote auslesen (ohne KI) → Fitness-Rangliste. Nährwerte kommen aus einer eigenen Tabelle typischer Werte (`aktionen/fitness.py`). Siehe [docs/DATENQUELLEN.md](docs/DATENQUELLEN.md).
+**Spar, Lidl, Hofer, Penny, Billa und MPreis funktionieren durchgehend.** MPreis: Typesense-Suche der Website (`aktionen/stores/mpreis.py`), ein Preis für alle Märkte. Lidl: strukturierte Angebote von den Angebotsseiten auf lidl.at (`aktionen/stores/lidl.py`), österreichweit gültig. Spar: Flugblatt finden → PDF laden → Angebote auslesen (ohne KI) → Fitness-Rangliste. Nährwerte kommen aus einer eigenen Tabelle typischer Werte (`aktionen/fitness.py`). Siehe [docs/DATENQUELLEN.md](docs/DATENQUELLEN.md).
