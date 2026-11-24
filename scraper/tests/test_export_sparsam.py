@@ -121,3 +121,11 @@ def test_warnung_in_github_actions(monkeypatch, capsys):
     monkeypatch.setenv("GITHUB_ACTIONS", "true")
     export.warnung("Billa: 0 Angebote")
     assert "::warning::Billa: 0 Angebote" in capsys.readouterr().out
+
+
+def test_ohne_spar(umgebung):
+    d = umgebung.lauf("--ohne-spar")
+    assert d["regionen"] == [] and umgebung.aufrufe["region"] == 0
+    assert d["billa"] is not None
+    aktionen = (umgebung.ordner / "aktionen.js").read_text(encoding="utf-8")
+    assert '"regionen":{}' in aktionen

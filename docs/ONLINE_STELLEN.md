@@ -4,7 +4,8 @@ Vorbereitet ist alles im Repository: `.github/workflows/aktualisieren.yml` ruft 
 Aktionen ab, speichert den Preisverlauf und veröffentlicht den Ordner `web/` auf GitHub Pages.
 
 **Sparsamer Lauf** (`python -m aktionen.export --alt …`, ca. 30 s statt 20 min): Lidl, Hofer, Penny, Billa und MPreis
-werden jedes Mal geholt (je wenige Sekunden). Spar nur, wenn es ein **neues Flugblatt** gibt (sonst kein 20-MB-PDF).
+werden jedes Mal geholt (je wenige Sekunden). **Spar ist standardmäßig aus**, weil die robots.txt von Spar den
+PDF-Abruf ausschließt (Anfrage bei Spar läuft). Mit Erlaubnis: Variable `SPAR` = `ja` – dann nur bei **neuem Flugblatt**.
 **dm wird nicht automatisch geladen:** die dm-Produktsuche verbietet automatische Zugriffe in ihrer robots.txt
 (`Disallow: /`). Lokal zum Testen: `python -m aktionen.export --mit-dm`. Fällt ein Geschäft aus oder liefert es
 0 Angebote, bleibt sein **letzter Stand** stehen und der Lauf zeigt eine **Warnung** (gelbes Dreieck im Actions-Tab).

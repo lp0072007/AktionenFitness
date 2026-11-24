@@ -2,8 +2,8 @@
 # Einrichtung: docs/ONLINE_STELLEN.md
 #
 # Täglich früh und auf Knopfdruck (Actions -> "Aktionen aktualisieren" -> Run workflow).
-# Sparsam: Lidl, Hofer, Penny, Billa, MPreis werden jedes Mal geholt (je wenige Sekunden). Spar nur, wenn es ein neues
-# Flugblatt gibt (sonst kein 20-MB-PDF). dm wird nicht geladen (robots.txt der dm-Produktsuche: "Disallow: /").
+# Sparsam: Lidl, Hofer, Penny, Billa, MPreis werden jedes Mal geholt (je wenige Sekunden). Spar nur mit Variable
+# SPAR = "ja" (Erlaubnis von Spar nötig, siehe docs/DATENQUELLEN.md) und dann nur bei neuem Flugblatt. dm wird nicht geladen (robots.txt der dm-Produktsuche: "Disallow: /").
 # Fällt ein Geschäft aus oder liefert 0 Angebote, bleibt sein letzter Stand stehen und der Lauf zeigt eine Warnung.
 # Letzter Stand und Preisverlauf liegen im Branch "daten".
 #
@@ -67,11 +67,14 @@ jobs:
           # Flugblatt-Ausschnitte von Spar nur veröffentlichen, wenn die Bildrechte geklärt sind:
           # Repository-Variable FLUGBLATT_BILDER = "ja" setzen (Settings -> Secrets and variables -> Actions -> Variables)
           FLUGBLATT_BILDER: ${{ vars.FLUGBLATT_BILDER }}
+          # Spar erst mit Erlaubnis: robots.txt schließt den PDF-Abruf (GetPDF.ashx) aus. Variable SPAR = "ja" schaltet ein.
+          SPAR: ${{ vars.SPAR }}
           ALLES: ${{ inputs.alles }}
         run: |
           cd scraper
           OPT=""
           if [ "$FLUGBLATT_BILDER" != "ja" ]; then OPT="--ohne-bilder"; fi
+          if [ "$SPAR" != "ja" ]; then OPT="$OPT --ohne-spar"; fi
           if [ "$ALLES" != "true" ]; then OPT="$OPT --alt ../data/letzter_stand"; fi
           python -m aktionen.export $OPT
 

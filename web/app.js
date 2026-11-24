@@ -572,6 +572,7 @@ function kopfAktualisieren() {
   $("#gueltigkeit").textContent = teile.join(" + ");
   const fb = L.sichereUrl(r?.flugblatt_url);
   if (fb) $("#flugblattLink").href = fb;
+  $("#sparHinweis").hidden = DATEN.regionen.length === 0; // ohne Spar (z. B. veröffentlichte Version) kein Spar-Hinweis
   const tag = (iso) => new Date(iso).toLocaleDateString("de-AT", { day: "2-digit", month: "2-digit" });
   const staende = [
     ...DATEN.regionen.filter((x) => x.stand).map((x) => `Spar ${x.name} ${tag(x.stand)}`),

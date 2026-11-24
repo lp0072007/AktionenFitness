@@ -264,6 +264,7 @@ function start() {
   const gespeichert = laden();
   const sel = $("#region");
   for (const [key, r] of Object.entries(DATEN.regionen)) sel.add(new Option(r.name, key));
+  sel.closest("label").hidden = sel.options.length === 0; // ohne Spar keine Regionsauswahl
   if (gespeichert.region && DATEN.regionen[gespeichert.region]) sel.value = gespeichert.region;
   $("#tag").value = heuteIso();
   zustand.ausgeschlossen = new Set(gespeichert.ausgeschlossen ?? []);

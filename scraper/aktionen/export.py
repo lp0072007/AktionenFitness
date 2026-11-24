@@ -260,6 +260,9 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--ohne-bilder", action="store_true", help="keine Flugblatt-Ausschnitte erzeugen")
     p.add_argument("--nur-fitness-bilder", action="store_true",
                    help="Spar: Ausschnitte nur für Fitness-Produkte (schneller, weniger Speicher)")
+    # Spar: PDF-Abruf über GetPDF.ashx ist laut robots.txt ausgeschlossen -> veröffentlichte Version ohne Spar,
+    # bis Spar zustimmt (Workflow-Variable SPAR=ja)
+    p.add_argument("--ohne-spar", action="store_true", help="keine Spar-Flugblätter")
     p.add_argument("--ohne-lidl", action="store_true")
     p.add_argument("--ohne-hofer", action="store_true")
     p.add_argument("--ohne-penny", action="store_true")
@@ -274,7 +277,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--dm-tage", type=float, default=6.5, help="dm erst neu laden, wenn der Stand so viele Tage alt ist")
     args = p.parse_args(argv)
 
-    regionen = sorted(REGIONEN) if args.alle else (args.region or STANDARD_REGIONEN)
+    regionen = [] if args.ohne_spar else sorted(REGIONEN) if args.alle else (args.region or STANDARD_REGIONEN)
     if args.pdf and len(regionen) != 1:
         p.error("--pdf geht nur mit genau einer --region")
     alt, alt_aktionen = alten_stand_laden(args.alt or (args.ziel.parent if args.sparsam else None))
