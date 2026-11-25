@@ -73,7 +73,12 @@
       <div id="leerHinweis" class="ek-leer">Trag links deine Produkte ein – das Ergebnis erscheint hier.</div>
       <div id="ergebnis" hidden>
         <div class="ek-empfehlung" id="empfehlung"></div>
-        <h2 class="ek-titel">Geschäfte im Vergleich</h2>
+        <div id="einGeschaeftBlock" hidden>
+          <h2 class="ek-titel">Alles in einem Geschäft</h2>
+          <p class="ek-hinweis" id="normalStand"></p>
+          <div class="ek-rangliste" id="einGeschaeft"></div>
+        </div>
+        <h2 class="ek-titel">Geschäfte im Vergleich (nur Aktionen)</h2>
         <div class="ek-rangliste" id="rangliste"></div>
         <h2 class="ek-titel">Günstigste Aufteilung</h2>
         <div id="aufteilung"></div>
@@ -101,6 +106,7 @@
   </template>
 
   <script src="data/aktionen.js"></script>
+  <script src="data/sortiment.js"></script>
   <script src="abgleich.js"></script>
   <script src="liste.js"></script>
   <script src="vorlieben.js"></script>

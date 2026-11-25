@@ -85,7 +85,8 @@ def _aktion(preis: dict) -> tuple[list[str], int | None]:
     return labels, ab_menge
 
 
-def parse_produkt(d: dict) -> FlugblattAngebot | None:
+def parse_produkt(d: dict, nur_aktionen: bool = True) -> FlugblattAngebot | None:
+    """nur_aktionen=False: auch Produkte zum Normalpreis (Sortiment, aktionen/sortiment.py)."""
     markt = (d.get("product_store_data") or [{}])[0]
     preis = markt.get("sitePrice") or {}
     effektiv = preis.get("effective")
@@ -112,7 +113,7 @@ def parse_produkt(d: dict) -> FlugblattAngebot | None:
     original = preis.get("original")
     aktion, ab_menge = _aktion(preis)
     # "Preisgesenkt" ohne niedrigeren Preis = dauerhaft gesenkt, keine Aktion (außer im Flugblatt beworben)
-    if not (original and original > effektiv) and not ab_menge and not preis.get("isInFlyer"):
+    if nur_aktionen and not (original and original > effektiv) and not ab_menge and not preis.get("isInFlyer"):
         return None
     merkmale = {_EIGENSCHAFTEN[p] for p in (mixins.get("mpreisAttributes") or {}).get("properties") or []
                 if p in _EIGENSCHAFTEN}

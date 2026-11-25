@@ -1,4 +1,5 @@
 // Oberfläche "Einkaufsliste abgleichen". Logik: abgleich.js, Daten: data/aktionen.js (python -m aktionen.export)
+// und – falls vorhanden – data/sortiment.js mit den Normalpreisen ganzer Online-Shops (python -m aktionen.sortiment)
 
 const DATEN = window.AKTIONEN || { regionen: {}, ketten: {} };
 const A = window.Abgleich;
@@ -12,6 +13,7 @@ const datum = (iso) => new Date(iso + "T00:00:00").toLocaleDateString("de-AT", {
 const heuteIso = () => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
 
 const zustand = { ausgeschlossen: new Set() };
+const SORTIMENT_PRODUKTE = A.sortimentAuspacken(window.SORTIMENT); // [] ohne data/sortiment.js
 
 function laden() {
   try { return JSON.parse(localStorage.getItem(SPEICHER)) || {}; } catch { return {}; }
@@ -28,6 +30,11 @@ const V = window.Vorlieben;
 function angebote() {
   const region = DATEN.regionen[$("#region").value];
   return V.anwenden([...(region?.angebote ?? []), ...Object.values(DATEN.ketten).flat()]);
+}
+
+// Sortiment mit denselben Einstellungen (vegan, Bio …) wie die Aktionen
+function sortiment() {
+  return V.anwenden(SORTIMENT_PRODUKTE);
 }
 
 function mengeText(a) {
@@ -102,6 +109,7 @@ function trefferZeile(t, eintrag) {
   const info = [mengeText(a)];
   if (t.grundpreis) info.push(`${euro(t.grundpreis.wert)}/${t.grundpreis.einheit}`);
   if (a.gueltig_von) info.push(`${datum(a.gueltig_von)}–${a.gueltig_bis ? datum(a.gueltig_bis) : "?"}`);
+  else if (a.dauerpreis) info.push(a.normalpreis > a.preis ? "Shop-Aktion" : "Normalpreis im Online-Shop");
   else if (a.kette === "billa" || a.kette === "mpreis") info.push("aktuell im Shop");
   if (a.ab_menge) info.push(`ab ${a.ab_menge} Stk.`);
   if (a.karte) info.push(`mit ${a.karte}, ohne Karte ${euro(a.ohne_karte)}`);
@@ -121,7 +129,7 @@ function trefferZeile(t, eintrag) {
   return li;
 }
 
-function zeichnen(liste, r) {
+function zeichnen(liste, r, n) {
   $("#leerHinweis").hidden = liste.length > 0;
   $("#ergebnis").hidden = liste.length === 0;
   if (!liste.length) return;
@@ -158,6 +166,14 @@ function zeichnen(liste, r) {
     if (r.ohneAktion.length) p3.textContent = `Nicht in Aktion: ${r.ohneAktion.map((e) => e.text).join(", ")}.`;
     emp.append(h, p1, p2, p3);
   }
+  const ganz = n?.einGeschaeft[0];
+  if (DATEN.erstellt && ganz) {
+    const p4 = document.createElement("p");
+    p4.textContent = `Alles in einem Geschäft am günstigsten: ${KETTEN[ganz.kette]}, ${euro(ganz.preis)} für ` +
+      `${ganz.posten.length} von ${liste.length} Produkten (${ganz.aktion} in Aktion, ${ganz.normal} zum Normalpreis).`;
+    emp.append(p4);
+  }
+  einGeschaeftZeichnen(liste, n);
 
   // Rangliste der Geschäfte
   $("#rangliste").replaceChildren(...r.rangliste.map((z, i) => {
@@ -176,7 +192,10 @@ function zeichnen(liste, r) {
   // Aufteilung nach Geschäft
   const auf = $("#aufteilung");
   auf.replaceChildren();
-  for (const [k, xs] of Object.entries(r.aufteilung).sort((a, b) => b[1].length - a[1].length)) {
+  const gruppen = Object.fromEntries(Object.entries(r.aufteilung).map(([k, xs]) => [k, [...xs]]));
+  for (const { eintrag, treffer } of n?.ohneAktion ?? []) if (treffer) (gruppen[treffer.angebot.kette] ||= []).push({ eintrag, treffer });
+  const ohnePreis = (n ? n.ohneAktion.filter((x) => !x.treffer).map((x) => x.eintrag) : r.ohneAktion);
+  for (const [k, xs] of Object.entries(gruppen).sort((a, b) => b[1].length - a[1].length)) {
     const g = document.createElement("div");
     g.className = "ek-gruppe";
     const kopf = document.createElement("div");
@@ -191,7 +210,7 @@ function zeichnen(liste, r) {
       const links = document.createElement("span");
       links.textContent = eintrag.text + " ";
       const klein = document.createElement("small");
-      klein.textContent = `→ ${treffer.angebot.name}`;
+      klein.textContent = `→ ${treffer.angebot.name}${treffer.angebot.dauerpreis ? " (Normalpreis)" : ""}`;
       links.append(klein);
       const rechts = document.createElement("span");
       rechts.textContent = euro(treffer.kosten.preis);
@@ -201,16 +220,18 @@ function zeichnen(liste, r) {
     g.append(kopf, ul);
     auf.append(g);
   }
-  if (r.ohneAktion.length) {
+  if (ohnePreis.length) {
     const p = document.createElement("p");
     p.className = "ek-fehlt";
-    p.textContent = `Ohne Aktion (Preis unbekannt, kaufst du irgendwo zum Normalpreis): ${r.ohneAktion.map((e) => e.text).join(", ")}`;
+    p.textContent = `Ohne Aktion (Preis unbekannt, kaufst du irgendwo zum Normalpreis): ${ohnePreis.map((e) => e.text).join(", ")}`;
     auf.append(p);
   }
 
   // Alle Treffer pro Eintrag – inklusive abgewählter, damit man sie wieder anhaken kann
   const alleAngebote = angebote();
-  $("#eintraege").replaceChildren(...liste.map((e) => {
+  // Abgewählte Sortiments-Produkte: fehlen in der Rechnung, sollen aber zum Wieder-Anhaken sichtbar bleiben
+  const abgewaehltImSortiment = n ? sortiment().filter((a) => zustand.ausgeschlossen.has(a.id)) : [];
+  $("#eintraege").replaceChildren(...liste.map((e, i) => {
     const box = document.createElement("div");
     box.className = "ek-eintrag";
     const h3 = document.createElement("h3");
@@ -249,13 +270,47 @@ function zeichnen(liste, r) {
       ul.append(...gezeigt.map((t) => trefferZeile(t, e)));
       box.append(ul);
     }
+    // Normalpreise: günstigster passender je Geschäft (auch abgewählte, damit man sie wieder anhaken kann)
+    const normal = n ? Object.values(n.proEintrag[i]?.bestProKette ?? {}) : [];
+    const abgewaehlt = n ? A.finde(e, abgewaehltImSortiment) : [];
+    if (normal.length || abgewaehlt.length) {
+      const t = document.createElement("p");
+      t.className = "ek-unterkopf";
+      t.textContent = "Normalpreise im Online-Shop";
+      const ul = document.createElement("ul");
+      ul.append(...[...normal, ...abgewaehlt].slice(0, 6).map((x) => trefferZeile(x, e)));
+      box.append(t, ul);
+    }
     return box;
+  }));
+}
+
+// "Alles in einem Geschäft": Aktion, wo es eine gibt, sonst Normalpreis (nur Geschäfte mit Online-Shop)
+function einGeschaeftZeichnen(liste, n) {
+  $("#einGeschaeftBlock").hidden = !n || !n.einGeschaeft.length;
+  if (!n) return;
+  $("#normalStand").textContent = "Normalpreise aus den Online-Shops: " + Object.entries(window.SORTIMENT.ketten)
+    .map(([k, s]) => `${KETTEN[k] ?? k} (Stand ${new Date(s.stand).toLocaleDateString("de-AT")})`).join(", ") +
+    ". Lidl, Hofer und Penny stellen keine Normalpreise online.";
+  $("#einGeschaeft").replaceChildren(...n.einGeschaeft.map((z, i) => {
+    const d = document.createElement("div");
+    d.className = "ek-kette" + (i === 0 ? " ek-kette--erste" : "");
+    const s = document.createElement("strong");
+    s.textContent = euro(z.preis);
+    const t1 = document.createElement("span");
+    t1.textContent = `${z.posten.length} von ${liste.length} gefunden · ${z.aktion} in Aktion`;
+    const t2 = document.createElement("span");
+    t2.textContent = z.fehlt.length ? `fehlt: ${z.fehlt.map((e) => e.name).join(", ")}` : "alles da";
+    d.append(badge(z.kette), s, t1, t2);
+    return d;
   }));
 }
 
 function berechnen() {
   const ergebnis = L.auswerten(angebote(), { tag: $("#tag").value, ausgeschlossen: zustand.ausgeschlossen });
-  zeichnen(ergebnis.paare.map((p) => p.eintrag), ergebnis.r);
+  const n = SORTIMENT_PRODUKTE.length && ergebnis.paare.length
+    ? A.mitNormalpreisen(ergebnis.r, sortiment(), { ausgeschlossen: zustand.ausgeschlossen }) : null;
+  zeichnen(ergebnis.paare.map((p) => p.eintrag), ergebnis.r, n);
   listeZeichnen(ergebnis);
 }
 

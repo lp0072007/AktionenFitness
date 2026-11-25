@@ -25,4 +25,7 @@ web/data/angebote.json
 web/data/angebote.js
 web/data/aktionen.js
 web/data/verlauf.js
+# Normalpreise ganzer Shops (python -m aktionen.sortiment). Lokal mit Spar – darf nie ins Git,
+# solange Spar nicht zugestimmt hat. Online erzeugt der Workflow die Datei ohne Spar.
+web/data/sortiment.js
 web/data/bilder/

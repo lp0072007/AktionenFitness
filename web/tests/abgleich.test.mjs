@@ -304,3 +304,39 @@ test("MPreis-Namen und -Kategorien: keine Fehltreffer, Gesuchtes wird gefunden",
   assert.equal(A.kosten(A.parseZeile("Tiroler Adler 300g"), adler).stueck, 3, "3 × 100 g");
   assert.ok(A.finde(A.parseZeile("Milch"), [adler], null).length === 0, "Milch findet keinen Käse");
 });
+
+// ---------- Österreichische und deutsche Schreibweisen ----------
+const schreibweise = (suche, ...produkte) => {
+  const e = A.parseListe(suche)[0];
+  return produkte.map((name) => A.bewerte(e, { name }) >= A.SCHWELLE);
+};
+
+test("Wortgruppen: Rote Rüben = Rote Bete = Rote Beete = Rotebeete", () => {
+  for (const s of ["Rote Rüben", "Rote Bete", "Rote Beete", "Rotebeete", "rote-rüben"]) {
+    assert.deepEqual(schreibweise(s, "Machland Rote Rüben", "Rote Bete gekocht"), [true, true], s);
+  }
+  assert.deepEqual(schreibweise("Grüne Bohnen", "Clever Fisolen geschnitten"), [true]);
+  assert.deepEqual(schreibweise("Gelbe Rüben", "Clever Karotten"), [true]);
+  assert.deepEqual(schreibweise("Saure Sahne", "Schärdinger Sauerrahm"), [true]);
+});
+
+test("Schreibweisen: Hendel, Vogerlsalat, Germ, Staubzucker, Kukuruz …", () => {
+  const faelle = [
+    ["Hendelfilet", "Federike Hendl-Filet"], ["Putenbrust", "Truthahnbrust natur"], ["Feldsalat", "M Vogerlsalat"],
+    ["Kopfsalat", "Häuptelsalat"], ["Porree", "Da komm ich her! Lauch"], ["Peperoni", "Clever Pfefferoni mild"],
+    ["Blaubeeren", "Heidelbeeren 125 g"], ["Hefe", "Haas Germ"], ["Puderzucker", "Wiener Zucker Staubzucker"],
+    ["Mais", "Kukuruz Kolben"], ["Kassler", "Geselchtes Karree"], ["Roastbeef", "Beiried geschnitten"],
+    ["Berliner", "Marillenkrapfen"], ["Bonbons", "Zuckerl Mischung"], ["Pflaumenmus", "Darbo Powidl"],
+    ["Fleischkäse", "Clever Leberkäse"], ["Würstchen", "Berner Würstel"], ["Konfitüre", "Marillen Marmelade"],
+    ["Spätzle", "Omis Schmankerl Nockerl"], ["Rotkohl", "M Blaukraut"], ["Weißkohl", "M Weißkraut"],
+    ["Hafermilch", "M-BIO Haferdrink ungesüßt"], ["Tomatenmark", "Paradeismark"], ["Holunder", "Holler Sirup"],
+  ];
+  for (const [suche, produkt] of faelle) assert.deepEqual(schreibweise(suche, produkt), [true], `${suche} -> ${produkt}`);
+});
+
+test("Falsche Wortenden: Topf, Knoblauch, Gehackte Tomaten", () => {
+  assert.deepEqual(schreibweise("Topfen", "Petersilie im Topf", "BILLA Gurkentopf", "Clever Magertopfen"), [false, false, true]);
+  assert.deepEqual(schreibweise("Lauch", "Clever Knoblauch", "Schnittlauch", "Lauch"), [false, false, true]);
+  assert.deepEqual(schreibweise("Faschiertes", "Clever Gehackte Tomaten", "Frisches Faschiertes gemischt"), [false, true]);
+  assert.deepEqual(schreibweise("Eier", "Pflügelmeier Russenkraut", "Matreier Henkele", "Clever Eier M"), [false, false, true]);
+});

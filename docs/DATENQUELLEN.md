@@ -323,3 +323,27 @@ User-Agent, Lizenz ODbL → Hinweis auf der Website.
 | data-hub.mpreis.at | `/typesense-proxy/multi_search` | keine robots.txt (404); www.mpreis.at sperrt nur `/search/`, Filter | ✅ |
 | flugblatt.interspar.at | Flugblattseite ✅, PDF über `GetPDF.ashx` | `Disallow: /*.ashx` | ❌ PDF-Download ausgeschlossen – Anfrage bei Spar läuft |
 | product-search.services.dmtech.com | `/at/search/crawl` | `Disallow: /` | ❌ → dm nicht mehr automatisch (`--mit-dm`) |
+| www.interspar.at | `/api/listing/<abteilung>?p=<seite>` (Sortiment) | nur `/-global/` gesperrt | ⏳ nur lokal, bis Spar zustimmt; Cloudflare sperrt Python-Abrufe (403), `curl` kommt durch – nicht umgehen |
+| www.gurkerl.at | – | nur `/regal/*` gesperrt | ❌ AGB 1.1 (d): Inhalte „durch automatisierte Mittel“ zu erlangen oder zu kopieren nur mit schriftlicher Zustimmung |
+
+## Sortiment / Normalpreise (eingebaut 25.11.2026, `aktionen/sortiment.py`)
+
+`python -m aktionen.sortiment` lädt das ganze Lebensmittel-Sortiment mit aktuellen Regalpreisen nach
+`web/data/sortiment.js` (nicht im Git). Nur die Vergleichsseite (`einkauf.html`) lädt die Datei: „Alles in einem
+Geschäft“ und Normalpreise für Produkte ohne Aktion (`Abgleich.mitNormalpreisen`).
+
+| Markt | Quelle | Umfang (25.11.2026) | Dauer |
+|---|---|---|---|
+| Billa | wie `billa.py`, Kategorien ohne `inPromotion` | 9 546 | ca. 2 min |
+| MPreis | wie `mpreis.py`, Filter ohne Aktionsarten | 9 922 | ca. 1 min |
+| Spar | `www.interspar.at/api/listing/<abteilung>?p=<seite>`, 32 je Seite, 7 Abteilungen | ca. 9 000 | ca. 5 min |
+
+Spar: Packungsgröße aus Preis ÷ Grundpreis (`referencePrice`), Aktionspreis = `currentPrice` mit `originalPrice`.
+Auf GitHub läuft das Sortiment ohne Spar (`--ohne-spar`, bis die Variable `SPAR = "ja"` gesetzt ist).
+
+Geprüft und **nicht** möglich:
+- **Lidl, Penny**: kein Sortiment mit Normalpreisen online. Penny-Kategorien (`/api/product-discovery/categories/…`)
+  enthalten nur Produkte mit Gültigkeitsdatum, also nur Aktionen (12 Kategorien stichprobenartig geprüft).
+- **Hofer**: sperrte am 25.11.2026 diese Verbindung komplett (Akamai 403, auch `robots.txt`). Nicht umgehen.
+- **Gurkerl**: AGB verbieten es (siehe Tabelle oben). Nur mit schriftlicher Erlaubnis (office@gurkerl.at).
+- **dm**: robots.txt verbietet die Produktsuche.

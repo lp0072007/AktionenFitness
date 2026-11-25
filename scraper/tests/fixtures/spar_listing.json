@@ -1,0 +1,122 @@
+{
+ "total": 361,
+ "page": 1,
+ "limit": 32,
+ "products": [
+  {
+   "id": "01a085e766a773209afb8cadee3a96a5",
+   "name": "Schoko Donuts  9er 180g  180 G",
+   "productNumber": "1002966",
+   "additionalInfo": "",
+   "image": {
+    "url": "https://www.interspar.at/media/d7/12/88/1789091413/A_1002966_HB.jpg?ts=1789091413",
+    "alt": "Schoko Donuts  9er 180g  180 G"
+   },
+   "availability": {
+    "status": "unavailable",
+    "displayStatus": "unavailable"
+   },
+   "deliveryDays": null,
+   "unit": {
+    "name": "Kilogramm",
+    "shortCode": "kg"
+   },
+   "availabilityCase": "fos-market-search",
+   "price": {
+    "currentPrice": 2.99,
+    "taxRate": 10,
+    "referencePrice": {
+     "price": 16.61,
+     "referenceUnit": 1,
+     "unitName": "Kilogramm"
+    }
+   },
+   "calculatedMaxPurchase": 600,
+   "availableStock": 0,
+   "badges": {
+    "image": [],
+    "awards": [],
+    "availability": null
+   },
+   "energyEfficiencyClass": null,
+   "energyEfficiencyLabelUrl": null,
+   "dataSheetUrl": null
+  },
+  {
+   "id": "01a085f829dd726a962a0c8bfaa85fd4",
+   "name": "SPAR Zitronen Kuchen 400 G",
+   "productNumber": "2020001085101",
+   "brand": "SPAR",
+   "additionalInfo": "",
+   "image": {
+    "url": "https://www.interspar.at/media/35/1f/c7/1789376619/A_2020001085101_HB.jpg?ts=1789376619",
+    "alt": "SPAR Zitronen Kuchen 400 G"
+   },
+   "availability": {
+    "status": "unavailable",
+    "displayStatus": "unavailable"
+   },
+   "deliveryDays": null,
+   "unit": {
+    "name": "Kilogramm",
+    "shortCode": "kg"
+   },
+   "availabilityCase": "fos-market-search",
+   "price": {
+    "currentPrice": 2.29,
+    "originalPrice": 2.99,
+    "taxRate": 10,
+    "referencePrice": {
+     "price": 5.73,
+     "referenceUnit": 1,
+     "unitName": "Kilogramm"
+    }
+   },
+   "calculatedMaxPurchase": 600,
+   "availableStock": 0,
+   "badges": {
+    "image": [],
+    "awards": [],
+    "availability": null
+   },
+   "energyEfficiencyClass": null,
+   "energyEfficiencyLabelUrl": null,
+   "dataSheetUrl": null
+  },
+  {
+   "id": "01a085f1da7c7040a5d77d4bcbe6b226",
+   "name": "SPAR Laugenbreze mit Butter 1 STK",
+   "productNumber": "1646825",
+   "brand": "SPAR",
+   "additionalInfo": "",
+   "image": {
+    "url": "https://www.interspar.at/media/cc/07/7d/1789090528/A_1646825_HB.jpg?ts=1789090528",
+    "alt": "SPAR Laugenbreze mit Butter 1 STK"
+   },
+   "availability": {
+    "status": "unavailable",
+    "displayStatus": "unavailable"
+   },
+   "deliveryDays": null,
+   "unit": {
+    "name": "Stück",
+    "shortCode": "Stk"
+   },
+   "availabilityCase": "fos-market-search",
+   "price": {
+    "currentPrice": 1.99,
+    "taxRate": 10
+   },
+   "calculatedMaxPurchase": 600,
+   "availableStock": 0,
+   "badges": {
+    "image": [],
+    "awards": [],
+    "availability": null
+   },
+   "energyEfficiencyClass": null,
+   "energyEfficiencyLabelUrl": null,
+   "dataSheetUrl": null
+  }
+ ]
+}

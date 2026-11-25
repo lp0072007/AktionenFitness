@@ -4,7 +4,8 @@
 # Hauptauslöser: cron-job.org ruft täglich um 05:30 (Wien) die GitHub-API auf (workflow_dispatch), siehe
 # docs/ONLINE_STELLEN.md. Der eigene Zeitplan unten ist nur die Reserve – GitHub startet geplante Läufe oft
 # Stunden zu spät oder gar nicht. Doppelte Läufe schaden nicht (sparsam, concurrency verhindert Überschneidung).
-# Sparsam: Lidl, Hofer, Penny, Billa, MPreis werden jedes Mal geholt (je wenige Sekunden). Spar nur mit Variable
+# Sparsam: Lidl, Hofer, Penny, Billa, MPreis werden jedes Mal geholt (je wenige Sekunden). Dazu die Normalpreise
+# ganzer Shops (Billa, MPreis, ca. 4 Minuten). Spar nur mit Variable
 # SPAR = "ja" (Erlaubnis von Spar nötig, siehe docs/DATENQUELLEN.md) und dann nur bei neuem Flugblatt. dm wird nicht geladen (robots.txt der dm-Produktsuche: "Disallow: /").
 # Fällt ein Geschäft aus oder liefert 0 Angebote, bleibt sein letzter Stand stehen und der Lauf zeigt eine Warnung.
 # Letzter Stand und Preisverlauf liegen im Branch "daten".
@@ -60,7 +61,7 @@ jobs:
             git show FETCH_HEAD:preisverlauf.db > data/preisverlauf.db || rm -f data/preisverlauf.db
             # Nährwerte-Zwischenspeicher: jedes Produkt nur einmal bei Billa/Lidl/Open Food Facts nachschlagen
             git show FETCH_HEAD:naehrwerte.json > data/naehrwerte.json || rm -f data/naehrwerte.json
-            for f in angebote.json aktionen.js; do
+            for f in angebote.json aktionen.js sortiment.js; do
               git show "FETCH_HEAD:stand/$f" > "data/letzter_stand/$f" || rm -f "data/letzter_stand/$f"
             done
           fi
@@ -82,6 +83,19 @@ jobs:
           if [ "$ALLES" != "true" ]; then OPT="$OPT --alt ../data/letzter_stand"; fi
           python -m aktionen.export $OPT
 
+      # Normalpreise ganzer Online-Shops (Billa, MPreis; Spar erst mit SPAR = "ja") für den Einkaufslisten-Vergleich.
+      # Fällt ein Shop aus, bleibt sein letzter Stand. Ein Fehler hier hält die Aktionen nicht auf.
+      - name: Sortiment (Normalpreise)
+        continue-on-error: true
+        env:
+          SPAR: ${{ vars.SPAR }}
+        run: |
+          cd scraper
+          OPT=""
+          if [ "$SPAR" != "ja" ]; then OPT="--ohne-spar"; fi
+          if [ -f ../data/letzter_stand/sortiment.js ]; then OPT="$OPT --alt ../data/letzter_stand/sortiment.js"; fi
+          python -m aktionen.sortiment $OPT
+
       - name: Letzten Stand und Preisverlauf sichern (Branch "daten")
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -91,6 +105,7 @@ jobs:
           cp data/preisverlauf.db /tmp/daten/
           if [ -f data/naehrwerte.json ]; then cp data/naehrwerte.json /tmp/daten/; fi
           cp web/data/angebote.json web/data/aktionen.js /tmp/daten/stand/
+          if [ -f web/data/sortiment.js ]; then cp web/data/sortiment.js /tmp/daten/stand/; fi
           cd /tmp/daten
           git init -q && git checkout -q -b daten
           git config user.name "github-actions[bot]"
