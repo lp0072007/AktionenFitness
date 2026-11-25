@@ -1,7 +1,9 @@
 # Aktionen jeden Morgen sparsam aktualisieren und (optional) die Website auf GitHub Pages veröffentlichen.
 # Einrichtung: docs/ONLINE_STELLEN.md
 #
-# Täglich früh und auf Knopfdruck (Actions -> "Aktionen aktualisieren" -> Run workflow).
+# Hauptauslöser: cron-job.org ruft täglich um 05:30 (Wien) die GitHub-API auf (workflow_dispatch), siehe
+# docs/ONLINE_STELLEN.md. Der eigene Zeitplan unten ist nur die Reserve – GitHub startet geplante Läufe oft
+# Stunden zu spät oder gar nicht. Doppelte Läufe schaden nicht (sparsam, concurrency verhindert Überschneidung).
 # Sparsam: Lidl, Hofer, Penny, Billa, MPreis werden jedes Mal geholt (je wenige Sekunden). Spar nur mit Variable
 # SPAR = "ja" (Erlaubnis von Spar nötig, siehe docs/DATENQUELLEN.md) und dann nur bei neuem Flugblatt. dm wird nicht geladen (robots.txt der dm-Produktsuche: "Disallow: /").
 # Fällt ein Geschäft aus oder liefert 0 Angebote, bleibt sein letzter Stand stehen und der Lauf zeigt eine Warnung.
@@ -13,7 +15,7 @@ name: Aktionen aktualisieren
 
 on:
   schedule:
-    - cron: "17 4 * * *"   # täglich 04:17 UTC (= 05:17 / 06:17 in Österreich)
+    - cron: "17 10 * * *"  # Reserve: täglich 10:17 UTC (= 11:17 / 12:17 in Österreich)
   workflow_dispatch:
     inputs:
       alles:

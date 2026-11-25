@@ -1,6 +1,6 @@
 # Website online stellen (GitHub Pages + automatische Aktualisierung)
 
-Vorbereitet ist alles im Repository: `.github/workflows/aktualisieren.yml` ruft **jeden Morgen** (04:17 UTC) die
+Vorbereitet ist alles im Repository: `.github/workflows/aktualisieren.yml` ruft **jeden Morgen** die
 Aktionen ab, speichert den Preisverlauf und veröffentlicht den Ordner `web/` auf GitHub Pages.
 
 **Sparsamer Lauf** (`python -m aktionen.export --alt …`, ca. 30 s statt 20 min): Lidl, Hofer, Penny, Billa und MPreis
@@ -25,6 +25,22 @@ installierbare App (PWA): am Handy „Zum Startbildschirm hinzufügen“, funkti
    Adresse (`https://<benutzer>.github.io/AktionenFitness/`) im Lauf unter „veroeffentlichen“.
 5. **Impressum und Datenschutz ausfüllen** (`web/impressum.html`, `web/datenschutz.html`, Platzhalter in [ ]),
    im Datenschutz bei „Hosting“ GitHub Pages eintragen. **Vor** dem Veröffentlichen.
+
+## Pünktlicher Start mit cron-job.org (eingerichtet 25.11.2026)
+
+GitHub startet zeitgesteuerte Läufe oft Stunden zu spät oder gar nicht (Montag 23.11.: 04:17 geplant, 14:43 gelaufen;
+25.11.: gar nicht). Deshalb stößt **cron-job.org** den Lauf täglich um **05:30 (Europe/Vienna)** an. Der eigene
+`cron` im Workflow (10:17 UTC) bleibt als Reserve.
+
+- **Aufruf:** `POST https://api.github.com/repos/lp0072007/AktionenFitness/actions/workflows/aktualisieren.yml/dispatches`
+- **Header:** `Authorization: Bearer <Token>`, `Accept: application/vnd.github+json`, `X-GitHub-Api-Version: 2022-11-28`
+- **Body:** `{"ref":"claude/affectionate-euler-5s6yjv"}` (der Standard-Branch – bei Umbenennung hier anpassen)
+- **Erfolg:** HTTP 204, danach ein neuer Lauf im Actions-Tab
+- **Token:** Fine-grained Personal Access Token, nur dieses Repo, Berechtigung nur *Actions: Read and write*.
+  **Läuft am 24.11.2027 ab** → vorher neuen Token erzeugen und in cron-job.org eintragen.
+- **API-Version:** GitHub meldet für `2022-11-28` „Deprecation 10.03.2026, Sunset 10.03.2028“ → vor März 2028 den
+  Header auf die dann aktuelle Version umstellen.
+- Fehler: 401 Token/„Bearer “ falsch · 403 Berechtigung fehlt · 404 Repo nicht freigegeben/URL · 422 Branch falsch.
 
 ## Flugblatt-Ausschnitte (Bildrechte)
 
