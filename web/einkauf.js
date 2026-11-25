@@ -79,6 +79,7 @@ function listeZeichnen(ergebnis) {
   $("#hakenWeg").hidden = $("#erledigteWeg").hidden = n === 0;
   $("#listeLeer").hidden = L.zeilen.length > 0;
   $("#listeAktionen").hidden = L.zeilen.length === 0;
+  $("#listeTeilen").hidden = L.zeilen.length === 0;
   L.zeichnen($("#vorschau"), ergebnis, {
     angebote: angebote().filter((a) => !zustand.ausgeschlossen.has(a.id)), tag: $("#tag").value, mitDaten: !!DATEN.erstellt,
   });
@@ -311,6 +312,8 @@ function berechnen() {
   const n = SORTIMENT_PRODUKTE.length && ergebnis.paare.length
     ? A.mitNormalpreisen(ergebnis.r, sortiment(), { ausgeschlossen: zustand.ausgeschlossen }) : null;
   zeichnen(ergebnis.paare.map((p) => p.eintrag), ergebnis.r, n);
+  // Für "Liste teilen": Produkte ohne Aktion mit dem günstigsten Normalpreis
+  zustand.teilen = { ergebnis, zusatz: new Map((n?.ohneAktion ?? []).filter((x) => x.treffer).map((x) => [x.eintrag, x.treffer])) };
   listeZeichnen(ergebnis);
 }
 
@@ -347,6 +350,8 @@ function start() {
   $("#hakenWeg").addEventListener("click", L.hakenWeg);
   $("#erledigteWeg").addEventListener("click", L.erledigteWeg);
   $("#allesWeg").addEventListener("click", () => { if (confirm("Ganze Liste löschen?")) L.leeren(); });
+  $("#listeTeilen").addEventListener("click", (e) =>
+    zustand.teilen && L.teilen(L.alsText(zustand.teilen.ergebnis, zustand.teilen.zusatz), e.currentTarget));
   L.beiAenderung(berechnen);
   V.beiAenderung(berechnen);
   $("#tag").addEventListener("change", berechnen);

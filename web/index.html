@@ -5,8 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' file: https://gc.zgo.at; style-src 'self' file:; font-src 'self' file:; img-src 'self' file: https: data:; connect-src 'self' https://fabianfrouz.goatcounter.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; object-src 'none'">
   <meta name="referrer" content="no-referrer">
-  <title>AktionenFitness</title>
-  <meta name="description" content="Aktionen aus Lidl, Hofer, Penny, Billa und MPreis: Fitness-Angebote nach Eiweiß pro Euro, Einkaufsliste mit automatischem Abgleich.">
+  <title>AktionenFitness – Eiweiß-Angebote in Österreich</title>
+  <meta name="description" content="Eiweißreiche Angebote von Billa, Lidl, Hofer, Penny und MPreis – jeden Tag aktuell, sortiert nach Preis. Einkaufsliste eintippen und sehen, wo es am günstigsten ist.">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="AktionenFitness">
+  <meta property="og:locale" content="de_AT">
+  <meta property="og:title" content="AktionenFitness – Eiweiß-Angebote aus allen Flugblättern">
+  <meta property="og:description" content="Eiweißreiche Angebote von Billa, Lidl, Hofer, Penny und MPreis – jeden Tag aktuell, sortiert nach Preis. Einkaufsliste eintippen und sehen, wo es am günstigsten ist.">
+  <meta property="og:url" content="https://lp0072007.github.io/AktionenFitness/">
+  <meta property="og:image" content="https://lp0072007.github.io/AktionenFitness/og-bild.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="AktionenFitness: Eiweiß-Angebote aus allen Flugblättern, Beispielkarten mit Preisen">
+  <meta name="twitter:card" content="summary_large_image">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' fill='%23ffffff'/%3E%3Cpath d='M3 3h18v18H3z M7.5 16.5l4.5-8 4.5 8' fill='none' stroke='%231d4ed8' stroke-width='2' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E">
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#ffffff">
@@ -114,7 +125,7 @@
         Lidl-, Hofer-, Penny-, Billa- und MPreis-Angebote stammen von den Websites der Händler und gelten österreichweit
         (MPreis: in allen MPreis-Märkten, v. a. Tirol, Vorarlberg, Salzburg).</p>
       <p id="stand"></p>
-      <p class="fuss__links"><a href="impressum.html">Impressum</a> · <a href="datenschutz.html">Datenschutz</a></p>
+      <p class="fuss__links"><a href="impressum.html">Impressum</a> · <a href="datenschutz.html">Datenschutz</a> · <a href="mailto:fabianfrouz07@gmail.com?subject=Feedback%20zu%20AktionenFitness">Feedback</a></p>
     </footer>
   </main>
 
@@ -142,15 +153,7 @@
 
       <div class="sb-ergebnis" id="sbErgebnis" hidden></div>
 
-      <section class="sb-kopieren" id="sbKopieren" hidden aria-labelledby="kopierTitel">
-        <h3 id="kopierTitel">Als Text für die Notizen-App</h3>
-        <p class="ek-hinweis">Nur die Geschäfte, in die du gehst:</p>
-        <div class="chips" id="kopierKetten" aria-label="Geschäfte für die Liste"></div>
-        <label class="sb-option"><input type="checkbox" id="kopierOhne" checked> Produkte ohne Aktion dazu</label>
-        <label class="sb-option"><input type="checkbox" id="kopierErledigt"> Abgehakte auch</label>
-        <pre class="sb-vorschau" id="kopierVorschau" aria-label="Vorschau"></pre>
-        <button type="button" class="knopf" id="listeKopieren"><span data-ikon="kopieren"></span><span>Kopieren</span></button>
-      </section>
+      <button type="button" class="knopf liste-teilen" id="listeTeilen" hidden><span data-ikon="teilen"></span><span>Liste teilen</span></button>
 
       <div class="ek-vorschau__aktionen" id="listeAktionen" hidden>
         <button type="button" class="knopf knopf--leise" id="hakenWeg">Häkchen entfernen</button>

@@ -256,45 +256,57 @@
     return null;
   }
 
-  // Für die Notizen-App: "* 12x Eier", "* 1kg Karotten" – nur für die gewählten Geschäfte.
-  // optionen: { ketten: Set (leer = alle), ohneAktion: true, erledigte: false }
-  function alsNotiz({ paare, wahl }, optionen = {}) {
-    const ketten = optionen.ketten ?? new Set();
+  // Link unter der geteilten Liste: die Seite, auf der man gerade ist (lokal geöffnet: die Online-Adresse)
+  const SEITE = "https://lp0072007.github.io/AktionenFitness/";
+  const seitenLink = () => (global.location?.protocol?.startsWith("http") ? new URL(".", global.location.href).href : SEITE);
+
+  // Zum Teilen (WhatsApp, Notizen …): nach Geschäft gruppiert, mit Preis, ohne Abgehakte.
+  // zusatz: Map(Eintrag -> Treffer) für Einträge ohne Aktion, z. B. der günstigste Normalpreis (Vergleichsseite)
+  function alsText({ paare, wahl }, zusatz = new Map()) {
     const gruppen = new Map();
     for (const { zeile, eintrag: e } of paare) {
-      if (zeile.erledigt && !optionen.erledigte) continue;
-      const t = wahl.get(e);
-      let gruppe;
-      if (t) {
-        if (ketten.size && !ketten.has(t.angebot.kette)) continue;
-        gruppe = KETTEN[t.angebot.kette] ?? t.angebot.kette;
-      } else {
-        if (optionen.ohneAktion === false) continue;
-        gruppe = "Sonstiges";
-      }
-      const text = zeile.angebot ? `${zeile.anzahl > 1 ? `${zeile.anzahl}x ` : ""}${zeile.angebot.name}` : zeile.text;
-      if (!gruppen.has(gruppe)) gruppen.set(gruppe, []);
-      gruppen.get(gruppe).push(`* ${text.replace(/\s+/g, " ").trim()}`);
+      if (zeile.erledigt) continue;
+      const t = wahl.get(e) ?? zusatz.get(e);
+      const k = t ? KETTEN[t.angebot.kette] ?? t.angebot.kette : "Sonstiges";
+      const name = (zeile.angebot ? `${zeile.anzahl > 1 ? `${zeile.anzahl}x ` : ""}${zeile.angebot.name}` : zeile.text)
+        .replace(/\s+/g, " ").trim();
+      const preis = t ? ` – ${euro(t.kosten.preis)}${t.angebot.dauerpreis ? " (Normalpreis)" : ""}` : "";
+      if (!gruppen.has(k)) gruppen.set(k, []);
+      gruppen.get(k).push(`• ${name}${preis}`);
     }
-    // Ein Geschäft (plus Sonstiges): einfache Liste ohne Überschriften
-    const mitAktion = [...gruppen.keys()].filter((g) => g !== "Sonstiges");
-    if (mitAktion.length <= 1) return [...gruppen.values()].flat().join("\n");
-    return [...gruppen].map(([g, xs]) => `${g}:\n${xs.join("\n")}`).join("\n\n");
+    if (!gruppen.size) return "";
+    const reihen = [...gruppen].sort(([a], [b]) => (a === "Sonstiges") - (b === "Sonstiges")); // Sonstiges ans Ende
+    const text = ["Einkaufsliste"];
+    for (const [k, xs] of reihen) text.push("", `${k}:`, ...xs);
+    text.push("", `Preise vom ${new Date().toLocaleDateString("de-AT")} – ${seitenLink()}`);
+    return text.join("\n");
   }
 
-  // Als Text zum Teilen/Kopieren, nach Geschäft gruppiert
-  function alsText({ paare, wahl }) {
-    const gruppen = new Map();
-    for (const { zeile, eintrag: e } of paare) {
-      const t = wahl.get(e);
-      const k = t ? KETTEN[t.angebot.kette] ?? t.angebot.kette : "Ohne Aktion";
-      if (!gruppen.has(k)) gruppen.set(k, []);
-      gruppen.get(k).push(`${zeile.erledigt ? "☑" : "☐"} ${zeile.angebot && zeile.anzahl > 1 ? `${zeile.anzahl}× ` : ""}${zeile.angebot ? e.name : zeile.text}` +
-        (t ? ` – ${euro(t.kosten.preis)}` : ""));
+  // Teilen: wo es geht das Teilen-Menü (Handy: WhatsApp, Notizen …), sonst in die Zwischenablage.
+  // knopf: dessen letztes Kind zeigt kurz "Kopiert" an
+  async function teilen(text, knopf) {
+    if (!text) return;
+    const schrift = knopf?.lastElementChild;
+    const melden = (meldung) => {
+      if (!schrift) return;
+      schrift.dataset.text ??= schrift.textContent;
+      schrift.textContent = meldung;
+      setTimeout(() => (schrift.textContent = schrift.dataset.text), 2000);
+    };
+    if (global.navigator?.share) {
+      try {
+        await global.navigator.share({ title: "Einkaufsliste", text });
+        return;
+      } catch (e) {
+        if (e?.name === "AbortError") return; // selbst abgebrochen
+      }
     }
-    const zeilenText = ["Einkaufsliste"];
-    for (const [k, xs] of gruppen) zeilenText.push("", `${k}:`, ...xs);
-    return zeilenText.join("\n");
+    try {
+      await global.navigator.clipboard.writeText(text);
+      melden("Kopiert – jetzt einfügen");
+    } catch {
+      global.prompt?.("Zum Kopieren markieren:", text);
+    }
   }
 
   global.addEventListener?.("storage", (ev) => {
@@ -307,7 +319,7 @@
   global.Einkaufsliste = {
     get zeilen() { return zeilen; },
     hinzufuegen, angebotHinzufuegen, anzahlVon, setzeAnzahl, entfernen, abhaken, hakenWeg, erledigteWeg, leeren,
-    auswerten, zeichnen, alsText, alsNotiz, sichereUrl, badge, KETTEN,
+    auswerten, zeichnen, alsText, teilen, sichereUrl, badge, KETTEN,
     beiAenderung(f) { hoerer.add(f); },
   };
 })(typeof window !== "undefined" ? window : globalThis);

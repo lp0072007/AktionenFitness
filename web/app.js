@@ -519,40 +519,7 @@ function listeZeichnen() {
   $("#listeAktionen").hidden = zeilen.length === 0;
   L.zeichnen($("#vorschau"), ergebnis, { angebote, tag: heuteIso(), mitDaten: !!ALLE.erstellt, zeigen: angebotZeigen });
   ergebnisZeichnen(ergebnis);
-  kopierenZeichnen(ergebnis);
-}
-
-// ---------- Kopieren für die Notizen-App ----------
-const kopierWahl = new Set(); // gewählte Geschäfte, leer = alle
-function kopierOptionen() {
-  return { ketten: kopierWahl, ohneAktion: $("#kopierOhne").checked, erledigte: $("#kopierErledigt").checked };
-}
-function kopierenZeichnen(ergebnis) {
-  const box = $("#sbKopieren");
-  box.hidden = ergebnis.paare.length === 0;
-  if (box.hidden) return;
-  const anzahl = {};
-  for (const [k, xs] of Object.entries(ergebnis.r.aufteilung)) anzahl[k] = xs.length;
-  for (const k of [...kopierWahl]) if (!anzahl[k]) kopierWahl.delete(k); // Geschäft nicht mehr dabei
-  const chip = (kette, text) => {
-    const b = document.createElement("button");
-    b.type = "button";
-    b.className = "chip";
-    b.textContent = text;
-    b.setAttribute("aria-pressed", String(kette ? kopierWahl.has(kette) : kopierWahl.size === 0));
-    b.addEventListener("click", () => {
-      if (!kette) kopierWahl.clear();
-      else if (kopierWahl.has(kette)) kopierWahl.delete(kette);
-      else kopierWahl.add(kette);
-      kopierenZeichnen(ergebnis);
-    });
-    return b;
-  };
-  $("#kopierKetten").replaceChildren(chip("", "Alle"),
-    ...Object.keys(anzahl).sort((a, b) => anzahl[b] - anzahl[a]).map((k) => chip(k, `${KETTEN[k] ?? k} (${anzahl[k]})`)));
-  const text = L.alsNotiz(ergebnis, kopierOptionen());
-  $("#kopierVorschau").textContent = text || "– nichts ausgewählt –";
-  $("#listeKopieren").disabled = !text;
+  $("#listeTeilen").hidden = zeilen.length === 0;
 }
 
 // Aus der Liste zu einer Aktion springen (Spar: keine Händlerseite -> Karte auf der Seite zeigen)
@@ -711,19 +678,8 @@ function start() {
   $("#hakenWeg").addEventListener("click", L.hakenWeg);
   $("#erledigteWeg").addEventListener("click", L.erledigteWeg);
   $("#allesWeg").addEventListener("click", () => { if (confirm("Ganze Einkaufsliste löschen?")) L.leeren(); });
-  $("#listeKopieren").addEventListener("click", async (e) => {
-    const knopf = e.currentTarget;
-    const text = L.alsNotiz(letztesErgebnis ?? L.auswerten(alleAktionen(), { tag: heuteIso() }), kopierOptionen());
-    if (!text) return;
-    try {
-      await navigator.clipboard.writeText(text);
-      knopf.lastElementChild.textContent = "Kopiert";
-    } catch {
-      prompt("Zum Kopieren markieren:", text);
-    }
-    setTimeout(() => (knopf.lastElementChild.textContent = "Kopieren"), 1500);
-  });
-  for (const id of ["#kopierOhne", "#kopierErledigt"]) $(id).addEventListener("change", () => letztesErgebnis && kopierenZeichnen(letztesErgebnis));
+  $("#listeTeilen").addEventListener("click", (e) =>
+    L.teilen(L.alsText(letztesErgebnis ?? L.auswerten(alleAktionen(), { tag: heuteIso() })), e.currentTarget));
   L.beiAenderung(listeZeichnen);
   V.beiAenderung(() => { kategorienAktualisieren(); angeboteZeichnen(); listeZeichnen(); merkZeichnen(); });
 

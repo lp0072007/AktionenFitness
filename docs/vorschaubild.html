@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Vorschaubild</title>
+<!-- Vorlage für web/og-bild.png (Vorschau beim Teilen, 1200 × 630). Neu erzeugen: in Edge/Chrome öffnen,
+     Fenster 1200 × 630, Screenshot – oder: msedge --headless=new --window-size=1200,630 --screenshot=og.png vorschaubild.html -->
+<style>
+  @font-face { font-family: Inter; src: url("../web/fonts/inter-variable.woff2") format("woff2"); font-weight: 100 900; }
+  @font-face { font-family: Plex; src: url("../web/fonts/plexmono-500.woff2") format("woff2"); font-weight: 500; }
+  @font-face { font-family: Plex; src: url("../web/fonts/plexmono-600.woff2") format("woff2"); font-weight: 600; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; width: 1200px; height: 630px; overflow: hidden; background: #ffffff; }
+  body { font-family: Inter, sans-serif; color: #16181d; position: relative; }
+  .rahmen { position: absolute; inset: 0; padding: 64px 72px; display: grid; grid-template-columns: 1fr 430px; gap: 56px; }
+  .marke { display: flex; align-items: center; gap: 14px; font-size: 26px; font-weight: 600; letter-spacing: -0.01em; }
+  .marke svg { width: 44px; height: 44px; }
+  h1 { font-size: 60px; line-height: 1.05; letter-spacing: -0.03em; font-weight: 700; margin: 54px 0 22px; }
+  h1 span { color: #1d4ed8; }
+  p { font-size: 24px; line-height: 1.45; color: #5d6270; margin: 0; max-width: 560px; }
+  .ketten { position: absolute; left: 72px; bottom: 60px; display: flex; gap: 22px; font-size: 20px; font-weight: 500;
+            color: #16181d; border-top: 1px solid #e4e5e8; padding-top: 18px; width: 560px; }
+  .ketten span { white-space: nowrap; }
+  .karten { display: flex; flex-direction: column; gap: 14px; padding-top: 0; }
+  .karte { border: 1px solid #e4e5e8; border-radius: 2px; padding: 15px 22px; display: grid; grid-template-columns: 1fr auto;
+           align-items: end; gap: 6px 16px; background: #fff; }
+  .karte:first-child { border-top: 3px solid #1d4ed8; }
+  .oben { grid-column: 1 / -1; font-size: 15px; color: #5d6270; display: flex; gap: 10px; }
+  .oben b { color: #16181d; font-weight: 600; }
+  .name { font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+  .eiweiss { font-size: 15px; color: #5d6270; margin-top: 2px; }
+  .eiweiss b { font-family: Plex, monospace; color: #1d4ed8; font-weight: 600; font-size: 17px; }
+  .preis { font-family: Plex, monospace; font-size: 30px; font-weight: 600; white-space: nowrap; }
+  .preis s { display: block; text-align: right; font-size: 15px; color: #5d6270; font-weight: 500; }
+  .rang { position: absolute; right: 72px; top: 64px; }
+</style>
+</head>
+<body>
+  <div class="rahmen">
+    <div>
+      <div class="marke">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M3 3h18v18H3z"/><path d="M7.5 16.5l4.5-8 4.5 8"/></svg>
+        AktionenFitness
+      </div>
+      <h1>Eiweiß-Angebote<br>aus allen <span>Flugblättern</span></h1>
+      <p>Jeden Tag aktuell, sortiert nach Preis. Einkaufsliste eintippen und sehen, wo es am günstigsten ist.</p>
+    </div>
+    <div class="karten">
+      <div class="karte">
+        <div class="oben"><b>Milchprodukte</b><span>·</span><span>Topfen mager, 250 g</span></div>
+        <div><div class="name">Magertopfen</div><div class="eiweiss"><b>12 g</b> Eiweiß / 100 g</div></div>
+        <div class="preis">€ 0,99<s>€ 1,29</s></div>
+      </div>
+      <div class="karte">
+        <div class="oben"><b>Fleisch</b><span>·</span><span>500 g</span></div>
+        <div><div class="name">Hühnerbrustfilet</div><div class="eiweiss"><b>23 g</b> Eiweiß / 100 g</div></div>
+        <div class="preis">€ 5,29<s>€ 6,49</s></div>
+      </div>
+      <div class="karte">
+        <div class="oben"><b>Vorrat</b><span>·</span><span>500 g</span></div>
+        <div><div class="name">Haferflocken</div><div class="eiweiss"><b>13 g</b> Eiweiß / 100 g</div></div>
+        <div class="preis">€ 0,69</div>
+      </div>
+      <div class="karte">
+        <div class="oben"><b>Milchprodukte</b><span>·</span><span>400 g</span></div>
+        <div><div class="name">Skyr natur</div><div class="eiweiss"><b>11 g</b> Eiweiß / 100 g</div></div>
+        <div class="preis">€ 1,32<s>€ 1,99</s></div>
+      </div>
+    </div>
+  </div>
+  <div class="ketten"><span>Billa</span><span>Lidl</span><span>Hofer</span><span>Penny</span><span>MPreis</span></div>
+</body>
+</html>

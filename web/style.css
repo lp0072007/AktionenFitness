@@ -337,14 +337,11 @@ body.schublade-offen { overflow: hidden; }
 .ek-stepper button { width: 26px; height: 20px; padding: 0; border-radius: var(--radius); border: 1px solid var(--rand);
   background: transparent; cursor: pointer; line-height: 1; font-size: 14px; }
 
-/* Kopieren für die Notizen-App */
-.sb-kopieren { border: 1px solid var(--rand); border-radius: var(--radius); padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
-.sb-kopieren h3 { margin: 0; font-size: 15px; font-weight: 600; }
-.sb-kopieren .chips { border: 0; padding: 0; gap: 16px; }
+/* Liste teilen (Teilen-Menü am Handy, sonst Zwischenablage) */
+.liste-teilen { width: 100%; justify-content: center; gap: 8px; margin: 12px 0 4px; }
+.liste-teilen[hidden] { display: none; }
 .sb-option { display: flex; align-items: center; gap: 10px; font-size: 14px; cursor: pointer; }
 .sb-option input { width: 18px; height: 18px; accent-color: var(--akzent); }
-.sb-vorschau { margin: 0; padding: 10px 12px; background: var(--flaeche-2); max-height: 220px; overflow: auto;
-  font: 13.5px/1.55 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; }
 .knopf:disabled { opacity: .45; cursor: not-allowed; }
 
 /* Impressum, Datenschutz */
