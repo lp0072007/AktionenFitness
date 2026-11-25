@@ -1,0 +1,111 @@
+{
+ "_quelle": "shop.billa.at/api/product-discovery/products/00-256463, 25.11.2026, gekürzt",
+ "sku": "00-256463",
+ "name": "Ja! Natürlich Butterkäse Scheiben",
+ "additionalInformation": [
+  {
+   "foodInformation": {
+    "nutritionInfos": [
+     {
+      "label": "100 Gramm",
+      "preparationGrade": "Unzubereitet",
+      "unit": {
+       "name": "Gramm",
+       "symbol": "g"
+      },
+      "relationValue": 100.0,
+      "nutrients": [
+       {
+        "nutrientId": "ENER-",
+        "name": "Energie",
+        "measureDefinition": ".",
+        "value": 381.0,
+        "unit": {
+         "name": "Kilokalorie",
+         "symbol": "kcal"
+        },
+        "dailyRecommendedPercent": 19.0
+       },
+       {
+        "nutrientId": "ENER-",
+        "name": "Energie",
+        "measureDefinition": ".",
+        "value": 1581.0,
+        "unit": {
+         "name": "Kilojoule",
+         "symbol": "kJ"
+        }
+       },
+       {
+        "nutrientId": "FAT",
+        "name": "Fett",
+        "measureDefinition": ".",
+        "value": 31.0,
+        "unit": {
+         "name": "Gramm",
+         "symbol": "g"
+        },
+        "dailyRecommendedPercent": 44.28571
+       },
+       {
+        "nutrientId": "FASAT",
+        "name": "   davon gesättigte Fettsäuren",
+        "measureDefinition": ".",
+        "value": 21.0,
+        "unit": {
+         "name": "Gramm",
+         "symbol": "g"
+        },
+        "dailyRecommendedPercent": 105.0
+       },
+       {
+        "nutrientId": "CHOAVL",
+        "name": "Kohlenhydrate",
+        "measureDefinition": "Kleiner als (<) - zu klein für genaue Messung (Regel: <0.5)",
+        "value": 0.5,
+        "unit": {
+         "name": "Gramm",
+         "symbol": "g"
+        },
+        "dailyRecommendedPercent": 0.19231
+       },
+       {
+        "nutrientId": "SUGAR-",
+        "name": "   davon Zucker",
+        "measureDefinition": "Kleiner als (<) - zu klein für genaue Messung (Regel: <0.5)",
+        "value": 0.5,
+        "unit": {
+         "name": "Gramm",
+         "symbol": "g"
+        },
+        "dailyRecommendedPercent": 0.55556
+       },
+       {
+        "nutrientId": "PRO-",
+        "name": "Eiweiß",
+        "measureDefinition": ".",
+        "value": 25.0,
+        "unit": {
+         "name": "Gramm",
+         "symbol": "g"
+        },
+        "dailyRecommendedPercent": 50.0
+       },
+       {
+        "nutrientId": "SALTEQ",
+        "name": "Salz",
+        "measureDefinition": ".",
+        "value": 0.8,
+        "unit": {
+         "name": "Gramm",
+         "symbol": "g"
+        },
+        "dailyRecommendedPercent": 13.33333
+       }
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

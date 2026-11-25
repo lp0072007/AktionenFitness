@@ -84,7 +84,7 @@ KATEGORIEN: tuple[Kategorie, ...] = (
     Kategorie("Nudeln", "Kohlenhydrate", (r"\bpasta\b", r"teigwaren", r"spaghetti", r"penne", r"fusilli",
                                           r"nudeln"), 355, 12.5, 71, 1.5,
               ausschluss=(r"noodles", r"fertig", r"suppe", r"instant", r"croissant", r"crepe", r"bolognese",
-                          r"carbonara", r"sauce", r"soße", r"pesto", r"salat")),
+                          r"carbonara", r"sauce", r"soße", r"pesto", r"salat", r"mehlspeis", r"nussnudel")),
     Kategorie("Erdäpfel", "Kohlenhydrate", (r"erdäpfel", r"kartoffel"), 75, 2, 16, 0.1,
               ausschluss=(r"chips", r"püree", r"rösti", r"pommes", r"salat", r"knödel")),
     Kategorie("Rote-Rüben-Saft", "Kohlenhydrate", (r"rote[- ]?(bete|beete|rüben?)[- ]?(direkt)?saft", r"randensaft",
@@ -94,11 +94,13 @@ KATEGORIEN: tuple[Kategorie, ...] = (
               r"actimel", r"jo(g)?hurt", r"drink", r"saft", r"smoothie", r"brei", r"bebivita", r"quetsch", r"müsli")),
     Kategorie("Milch", "Protein", (r"\bh?-?milch\b", r"vollmilch", r"magermilch", r"\bh-milch"), 50, 3.4, 4.8, 1.5,
               ausschluss=(r"schoko", r"kakao", r"cacao", r"reis", r"hafer", r"pudding", r"milchreis", r"käse",
-                          r"scheiben", r"selektion", r"butter", r"joghurt", r"topfen", r"rahm", r"schlag")),
+                          r"scheiben", r"selektion", r"butter", r"joghurt", r"topfen", r"rahm", r"schlag",
+                          r"kuvertüre", r"glasur", r"brötle")),
     Kategorie("Nüsse", "Fette", (r"nusskern", r"mandeln", r"walnüsse", r"cashew", r"haselnüsse"), 620, 18, 12, 54,
               ausschluss=(r"schoko", r"nougat", r"krokant", r"jo(g)?hurt", r"quark", r"topfen", r"skyr", r"müsli")),
     Kategorie("Erdnussbutter", "Fette", (r"erdnussbutter", r"erdnussmus", r"peanut butter"), 600, 25, 14, 50),
-    Kategorie("Olivenöl", "Fette", (r"olivenöl",), 820, 0, 0, 91),
+    Kategorie("Olivenöl", "Fette", (r"olivenöl",), 820, 0, 0, 91,
+              ausschluss=(r"in[^,·]*olivenöl", r"filet", r"makrele", r"thunfisch", r"sardine", r"oliven")),  # "Makrelenfilets in Olivenöl"
     # Zuckerfreier Sirup zum Aufspritzen ("flavour your life", Mautner Markhof 0 %): Geschmack fast ohne Kalorien
     Kategorie("Zero-Sirup", "Extras", (r"\bfyl\b", r"flavou?r your life", r"flav ?drops",
                                         r"(zero|0 ?%|zuckerfrei|ohne zucker)[^,·]*sirup", r"sirup[^,·]*(zero|0 ?%|zuckerfrei|ohne zucker)"),
@@ -161,7 +163,7 @@ _GLOBAL_AUSSCHLUSS = re.compile(
 # Händler-Kategorien (Billa/Penny), deren Produkte nie als Grundnahrungsmittel zählen
 _PFAD_AUSSCHLUSS = re.compile(
     r"tiefkühlgerichte|fertiggerichte|pizza|\beis\b|eiscreme|süßes & salziges|knabber|pesto|aromen|glasuren"
-    r"|pommes|kartoffelprodukte|trockenfrüchte|snack|dessert|aufstrich|frischkäse|riegel|trinkmahlzeit|baby"
+    r"|pommes|kartoffelprodukte|trockenfrüchte|snack|dessert|mehlspeise|aufstrich|frischkäse|riegel|trinkmahlzeit|baby"
     r"|kosmetik|pflege|tiernahrung|katze|hund|kontaktlinse|augen|dusch|\bbad\b|shampoo|haar|haut|creme|lotion"
     r"|zahn|mund|deo|parfum|make-up|nagel|rasur|windel|reinig|wasch|putz|spül|shots?\b",
     re.I,
@@ -189,30 +191,50 @@ class FitnessTreffer:
     def preis(self) -> float:
         return self.angebot.preis
 
-    def _pro_euro(self, wert_pro_100: float, preis: float | None = None) -> float | None:
+    @property
+    def _echte_taugen(self) -> bool:
+        """Echte Werte nehmen? Nicht, wenn sie nur "zubereitet" vorliegen und das die Werte stark ändert:
+        Reis/Nudeln/Haferflocken nehmen beim Kochen Wasser auf, Sirup wird verdünnt (Gemüse, Fisch: ≈ gleich)."""
+        a = self.angebot
+        if a.naehrwerte is None:
+            return False
+        zubereitet = (a.naehrwerte_quelle or "").endswith("(zubereitet)")
+        return not (zubereitet and self.kategorie.gruppe in ("Kohlenhydrate", "Extras"))
+
+    @property
+    def naehrwerte(self) -> Naehrwerte:
+        """Echte Werte des Produkts, wenn bekannt und brauchbar (Händler/Open Food Facts), sonst Richtwert."""
+        return self.angebot.naehrwerte if self._echte_taugen else self.kategorie.naehrwerte
+
+    @property
+    def naehrwerte_quelle(self) -> str:
+        return self.angebot.naehrwerte_quelle if self._echte_taugen else "Richtwert"
+
+    def _pro_euro(self, wert_pro_100: float | None, preis: float | None = None) -> float | None:
         preis = preis if preis is not None else self.preis
-        if not self.gramm or not preis:
+        if not self.gramm or not preis or wert_pro_100 is None:
             return None
         return round(wert_pro_100 * self.gramm / 100 / preis, 1)
 
     @property
     def protein_pro_euro(self) -> float | None:
-        return self._pro_euro(self.kategorie.protein)
+        return self._pro_euro(self.naehrwerte.protein)
 
     @property
     def protein_pro_euro_zusatz(self) -> float | None:
         """Mit Zusatzpreis (z. B. Fr/Sa -25%), falls vorhanden."""
         z = self.angebot.zusatzpreis
-        return self._pro_euro(self.kategorie.protein, z) if z else None
+        return self._pro_euro(self.naehrwerte.protein, z) if z else None
 
     @property
     def kcal_pro_euro(self) -> float | None:
-        return self._pro_euro(self.kategorie.kcal)
+        return self._pro_euro(self.naehrwerte.kcal)
 
     @property
     def protein_pro_100kcal(self) -> float:
         """Eiweißdichte: hoch = gut für die Diät."""
-        return round(self.kategorie.protein / self.kategorie.kcal * 100, 1) if self.kategorie.kcal else 0.0
+        nw = self.naehrwerte
+        return round(nw.protein / nw.kcal * 100, 1) if nw.kcal else 0.0
 
 
 def _gramm(a: FlugblattAngebot, k: Kategorie) -> float | None:

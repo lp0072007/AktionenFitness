@@ -21,6 +21,7 @@ from datetime import date
 import httpx
 
 from ..flugblatt_pdf import FlugblattAngebot
+from ..naehrwerte import QUELLE_HAENDLER, ZUBEREITET, aus_mpreis
 from .base import parse_menge
 
 SUCHE = "https://data-hub.mpreis.at/typesense-proxy/multi_search"
@@ -37,7 +38,8 @@ _EIGENSCHAFTEN = {"VGN": "vegan", "BIO": "bio"}
 FELDER = ",".join([
     "id", "name", "image", "categories", "prices", "mixins.productCustomAttributes.packagingUnit",
     "mixins.productCustomAttributes.weightDependent", "mixins.markantAttributes.data.description.brandName",
-    "mixins.mpreisAttributes.properties", "$product_store_data(sitePrice,strategy:nest_array)",
+    "mixins.mpreisAttributes.properties", "mixins.markantAttributes.data.nutrient", "mixins.markantAttributes.data.gtin",
+    "$product_store_data(sitePrice,strategy:nest_array)",
 ])
 
 
@@ -116,6 +118,11 @@ def parse_produkt(d: dict) -> FlugblattAngebot | None:
                 if p in _EIGENSCHAFTEN}
     if "vegan" in merkmale:
         merkmale.add("vegetarisch")
+    markant = (mixins.get("markantAttributes") or {}).get("data") or {}
+    nw, zubereitet = aus_mpreis(markant.get("nutrient"))
+    gtin = str(markant.get("gtin") or "").lstrip("0") or None  # "05711953106309" -> EAN-13 ohne führende 0
+    if gtin and len(gtin) < 8:
+        gtin = None
     return FlugblattAngebot(
         seite=0,
         name=name,
@@ -133,6 +140,9 @@ def parse_produkt(d: dict) -> FlugblattAngebot | None:
         produkt_id=str(d.get("id") or ""),
         kategorie_pfad=kategorie_pfad(d.get("categories") or []),
         merkmale=sorted(merkmale),
+        naehrwerte=nw,
+        naehrwerte_quelle=(QUELLE_HAENDLER + (ZUBEREITET if zubereitet else "")) if nw else None,
+        ean=gtin.zfill(13) if gtin and len(gtin) <= 13 else gtin,
     )
 
 

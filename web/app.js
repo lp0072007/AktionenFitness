@@ -140,6 +140,7 @@ function karteBauen(a, rang) {
     knopfBild.hidden = false;
     knopfBild.addEventListener("click", () => bildZeigen(a, bild));
   }
+  naehrwerteZeigen(k.querySelector(".naehrwerte"), a);
   const z = k.querySelector(".zuordnung");
   if (a.zuordnung === "geprueft") {
     z.textContent = "✓ Preis passt zum Grundpreis im Flugblatt";
@@ -230,6 +231,24 @@ function karteBauen(a, rang) {
     document.querySelectorAll(".karte").forEach((x) => sternAktualisieren(x.querySelector(".karte__merken"), x.querySelector(".karte__name").textContent));
   });
   return k;
+}
+
+// Fitness-Karten: Eiweiß pro € und Nährwerte je 100 g mit Quelle (Etikett / Open Food Facts / Richtwert)
+const QUELLE_TEXT = { "Etikett": "laut Etikett", "Etikett (zubereitet)": "laut Etikett (zubereitet)",
+  "Open Food Facts": "Open Food Facts", "Richtwert": "Richtwert" };
+function naehrwerteZeigen(el, a) {
+  const nw = a.naehrwerte;
+  if (!nw || nw.protein == null) return el.remove(); // "Alle Aktionen": keine Nährwerte
+  const proEuro = el.querySelector(".naehrwerte__pro-euro");
+  if (a.protein_pro_euro) proEuro.textContent = `💪 ${zahl(a.protein_pro_euro, a.protein_pro_euro < 10 ? 1 : 0)} g Eiweiß pro €`;
+  else proEuro.remove();
+  const basis = a.einheit === "ml" ? "100 ml" : "100 g";
+  const quelle = a.naehrwerte_quelle || "Richtwert";
+  const je100 = el.querySelector(".naehrwerte__je100");
+  je100.textContent = `je ${basis}: ${zahl(nw.protein, 1)} g Eiweiß · ${zahl(nw.kcal)} kcal · ${QUELLE_TEXT[quelle] ?? quelle}`;
+  je100.title = quelle === "Richtwert" ? "Typischer Wert für diese Produktart – das Etikett kann abweichen"
+    : quelle === "Open Food Facts" ? "Aus der freien Lebensmitteldatenbank Open Food Facts (ODbL)" : "Angabe des Händlers";
+  el.classList.toggle("naehrwerte--richtwert", quelle === "Richtwert");
 }
 
 // ---------- Merkliste: Produkte, die man regelmäßig kauft ----------

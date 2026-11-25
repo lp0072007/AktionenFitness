@@ -38,7 +38,7 @@ def umgebung(tmp_path, monkeypatch):
         aufrufe["region"] += 1
         return region(fb.flipbook.name)
 
-    def kette_exportieren(k, bilder):
+    def kette_exportieren(k, bilder, abrufer=None):
         aufrufe["ketten"].append(k)
         if k in zustand["fehler"]:
             raise RuntimeError("429 Too Many Requests")
@@ -50,7 +50,7 @@ def umgebung(tmp_path, monkeypatch):
 
     def lauf(*extra):
         aufrufe["region"], aufrufe["ketten"] = 0, []
-        export.main(["--region", "wien", "--ziel", str(ziel), "--ohne-bilder", "--ohne-verlauf", *extra])
+        export.main(["--region", "wien", "--ziel", str(ziel), "--ohne-bilder", "--ohne-verlauf", "--ohne-naehrwerte", *extra])
         return json.loads(ziel.read_text(encoding="utf-8"))
 
     return SimpleNamespace(lauf=lauf, aufrufe=aufrufe, zustand=zustand, ordner=tmp_path, ziel=ziel)

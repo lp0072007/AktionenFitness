@@ -1,0 +1,56 @@
+{
+ "_quelle": "MPreis Typesense-Suche 'skyr', 25.11.2026",
+ "id": "243264",
+ "mixins": {
+  "markantAttributes": {
+   "data": {
+    "gtin": "05711953106309",
+    "nutrient": {
+     "nutrientHeader": {
+      "1": {
+       "energyKcal": 127,
+       "energyKj": 578,
+       "normed": true,
+       "nutrientBasisQuantity": 100,
+       "nutrientBasisQuantityUom": "g",
+       "nutrientContent": {
+        "0": {
+         "nutrientType": "Fett",
+         "quantityContained": 9,
+         "quantityContainedUom": "g"
+        },
+        "1": {
+         "nutrientType": "&nbsp;&nbsp;- davon gesättigte Fettsäuren",
+         "quantityContained": 5.7,
+         "quantityContainedUom": "g"
+        },
+        "2": {
+         "nutrientType": "Kohlenhydrate",
+         "quantityContained": 3.6,
+         "quantityContainedUom": "g"
+        },
+        "3": {
+         "nutrientType": "&nbsp;&nbsp;- davon Zucker",
+         "quantityContained": 3.6,
+         "quantityContainedUom": "g"
+        },
+        "4": {
+         "nutrientType": "Eiweiß",
+         "quantityContained": 10,
+         "quantityContainedUom": "g"
+        },
+        "5": {
+         "nutrientType": "Salz",
+         "quantityContained": 0.7,
+         "quantityContainedUom": "g"
+        }
+       },
+       "preparationState": "UnpreparedNormed"
+      }
+     }
+    }
+   }
+  }
+ },
+ "name": "Buko mit Skyr"
+}

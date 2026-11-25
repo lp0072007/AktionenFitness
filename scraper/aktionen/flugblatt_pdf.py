@@ -21,6 +21,7 @@ import re
 from dataclasses import dataclass, field
 from datetime import date
 
+from .models import Naehrwerte
 from .stores.base import parse_menge
 
 
@@ -101,6 +102,10 @@ class FlugblattAngebot:
     produkt_id: str | None = None
     kategorie_pfad: str | None = None  # Kategorie beim Händler, z. B. "Tiefkühl > Tiefkühlgerichte > Reis & Pasta"
     merkmale: list[str] = field(default_factory=list)  # Kennzeichnung des Händlers: "vegan", "vegetarisch", "bio"
+    # Echte Nährwerte pro 100 g/ml (naehrwerte.py); None = nur Richtwert der Fitness-Kategorie
+    naehrwerte: Naehrwerte | None = None
+    naehrwerte_quelle: str | None = None   # "Etikett" (Händler) oder "Open Food Facts"
+    ean: str | None = None
 
     def _erweitern(self, b: "Box") -> None:
         if self.bbox is None:

@@ -21,7 +21,7 @@ from pathlib import Path
 import httpx
 from PIL import Image
 
-from . import verlauf
+from . import naehrwerte, verlauf
 from .ausschnitte import ausschnitte_speichern
 from .fortschritt import Fortschritt, Gesamt
 from .stores import billa, dm, hofer, lidl, mpreis, penny
@@ -110,7 +110,9 @@ def treffer_als_dict(t: FitnessTreffer, kette: str, region: str, i: int, bild: s
         "kategorie": k.name,
         "merkmale": a.merkmale or None,
         "gruppe": k.gruppe,
-        "naehrwerte": {"kcal": k.kcal, "protein": k.protein, "kohlenhydrate": k.kohlenhydrate, "fett": k.fett},
+        "naehrwerte": {"kcal": t.naehrwerte.kcal, "protein": t.naehrwerte.protein,
+                       "kohlenhydrate": t.naehrwerte.kohlenhydrate, "fett": t.naehrwerte.fett},
+        "naehrwerte_quelle": t.naehrwerte_quelle,   # "Etikett", "Open Food Facts" oder "Richtwert"
         "protein_pro_euro": t.protein_pro_euro,
         "protein_pro_euro_zusatz": t.protein_pro_euro_zusatz,
         "kcal_pro_euro": t.kcal_pro_euro,
@@ -130,12 +132,13 @@ def _bild_speichern(client: httpx.Client, url: str, ziel: Path) -> None:
     weiss.save(ziel, "JPEG", quality=82, optimize=True)
 
 
-def kette_exportieren(kette: str, bilder_ordner: Path | None = None) -> dict:
+def kette_exportieren(kette: str, bilder_ordner: Path | None = None, abrufer=None) -> dict:
     """Österreichweite Kette (Lidl, Hofer, Penny, Billa, MPreis). Produktbilder werden parallel geladen und verkleinert."""
     modul = WEITERE_KETTEN[kette]
     f = Fortschritt("Angebote")
     angebote = modul.aktuelle_angebote(fortschritt=f)
     treffer = fitness_angebote(angebote)
+    naehrwerte.anreichern(kette, [t.angebot for t in treffer], abrufer)  # echte Werte statt Richtwerte
     art = "Produkte (Dauerpreise)" if kette == "dm" else "Aktionen"
     f.fertig(f"{len(angebote)} {art}, {len(treffer)} fitnessrelevant")
     bilder: dict[int, str] = {}
@@ -271,6 +274,7 @@ def main(argv: list[str] | None = None) -> int:
     # dm sperrt seine Produktsuche per robots.txt ("Disallow: /") und bremst mit 429 -> nur noch auf ausdrücklichen Wunsch
     p.add_argument("--mit-dm", action="store_true", help="dm-Dauerpreise laden (robots.txt verbietet es, nur lokal/zum Testen)")
     p.add_argument("--ohne-verlauf", action="store_true", help="Preise nicht im Preisverlauf speichern")
+    p.add_argument("--ohne-naehrwerte", action="store_true", help="keine echten Nährwerte holen (nur Richtwerte)")
     p.add_argument("--alt", type=Path, help="Ordner mit dem letzten Stand (angebote.json, aktionen.js). Sparsamer Lauf: "
                    "unverändertes Spar-Flugblatt und frisches dm werden übernommen, ausgefallene Ketten ebenfalls")
     p.add_argument("--sparsam", action="store_true", help="wie --alt mit dem Zielordner (eigener letzter Export)")
@@ -289,6 +293,7 @@ def main(argv: list[str] | None = None) -> int:
     erstellt = jetzt.isoformat(timespec="minutes")
     daten = {"erstellt": erstellt, "regionen": [], "lidl": None, "hofer": None, "penny": None, "billa": None, "mpreis": None, "dm": None}
     bilder = None if args.ohne_bilder else args.ziel.parent / BILDER_UNTERORDNER
+    abrufer = None if args.ohne_naehrwerte else naehrwerte.Abrufer(naehrwerte.Speicher())
     ketten = [k for k in WEITERE_KETTEN if not getattr(args, f"ohne_{k}", False) and (k != "dm" or args.mit_dm)]
     # Aufwand grob: Spar-Region (PDF + Auswertung) ≈ 2,5 × Kette, Billa ≈ 1,5 × (viele Angebote), dm ≈ 4 ×
     spar = 2.5 if args.nur_fitness_bilder or args.ohne_bilder else 3.0  # alle Ausschnitte: ca. +10 s je Region
@@ -327,7 +332,7 @@ def main(argv: list[str] | None = None) -> int:
             daten[kette] = {**alt_kette, "alle": alt_alle, "uebernommen": True}
             continue
         try:
-            neu = kette_exportieren(kette, bilder)
+            neu = kette_exportieren(kette, bilder, abrufer=abrufer)
             if not neu["anzahl_angebote"]:
                 raise RuntimeError("0 Angebote – hat sich die Website geändert?")
             daten[kette] = {**neu, "stand": erstellt}
@@ -338,6 +343,9 @@ def main(argv: list[str] | None = None) -> int:
                       file=sys.stderr)
                 daten[kette] = {**alt_kette, "alle": alt_alle, "uebernommen": True}
     gesamt.ende()
+    if abrufer is not None:
+        abrufer.speicher.speichern()
+        print(f"    Nährwerte: {abrufer.speicher.neu} Produkte neu nachgeschlagen", file=sys.stderr)
 
     args.ziel.parent.mkdir(parents=True, exist_ok=True)
     # Alle Aktionen (für den Einkaufslisten-Abgleich) in eine eigene Datei, damit die Startseite schlank bleibt

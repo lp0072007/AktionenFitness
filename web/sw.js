@@ -1,7 +1,7 @@
 // Service-Worker: Seite und Daten offline verfügbar machen (z. B. im Supermarkt ohne Netz).
 // Seiten und Daten: zuerst Netz (damit neue Aktionen sofort da sind), sonst aus dem Speicher.
 // Skripte, Stile, Bilder: sofort aus dem Speicher, im Hintergrund aktualisieren.
-const VERSION = "af-v5";
+const VERSION = "af-v6";
 const KERN = [
   "./", "index.html", "einkauf.html", "impressum.html", "datenschutz.html",
   "style.css", "einkauf.css", "app.js", "einkauf.js", "abgleich.js", "liste.js", "thema.js", "vorlieben.js", "zaehler.js",

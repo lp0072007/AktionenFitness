@@ -290,7 +290,24 @@ Drogerie, kaum Lebensmittel, deshalb für Fitness-Angebote nicht relevant.
 Alternative Rohdaten: heisse-preise.io stellt `data/latest-canonical.json` bereit (alle Ketten, aber keine
 Aktionszeiträume und kein offizielles API).
 
-## Nährwerte
+## Nährwerte (eingebaut 25.11.2026, `aktionen/naehrwerte.py`)
+
+Nur für fitnessrelevante Angebote, jedes Produkt einmal (Zwischenspeicher `data/naehrwerte.json`, im Branch `daten`).
+Nur Werte **wie verkauft** (unzubereitet) – gekochter Reis (155 statt 355 kcal) würde Protein/€ verfälschen.
+Plausibilitätsprüfung: Werte im möglichen Bereich, kcal ≈ 4·Eiweiß + 4·KH + 9·Fett (±40 %).
+
+| Kette | Quelle | Abdeckung Fitness-Angebote (25.11.2026) |
+|---|---|---|
+| Billa | `GET shop.billa.at/api/product-discovery/products/<sku>` → `additionalInformation[].foodInformation.nutritionInfos` | 56/57 |
+| MPreis | in der Suche: `mixins.markantAttributes.data.nutrient` (+ `gtin` → Open Food Facts) | 128/145 |
+| Lidl | keine Werte; EAN im JSON-LD der Produktseite (`gtin13`) → Open Food Facts | 14/29 |
+| Penny | weder Werte noch EAN (Schnittstelle und Produktseite geprüft) | Richtwerte |
+| Hofer | Seite zeigt Nährwerte nur aus eingebetteten Daten (`multiInformations`), bei 0/24 Stichproben befüllt; keine EAN | Richtwerte |
+
+Open Food Facts: `GET world.openfoodfacts.org/api/v2/product/<ean>.json?fields=nutriments`, eigene Kennung im
+User-Agent, Lizenz ODbL → Hinweis auf der Website.
+
+## Nährwerte (frühere Notizen)
 
 - [Open Food Facts](https://world.openfoodfacts.org/data): kostenlos, Abfrage per EAN:
   `https://world.openfoodfacts.org/api/v2/product/{ean}.json`

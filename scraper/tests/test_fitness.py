@@ -173,3 +173,12 @@ def test_haendlerkategorie_pro_fitnesskategorie():
     assert treffer["Tirol Milch Frische Vollmilch 3,5%"] == "Milch"
     assert treffer["Bananen"] == "Bananen"
     assert treffer["Exquisa Zero Quark-Joghurt Gebr.Mandeln"] == "Joghurt"  # nicht Nüsse, nicht Zero-Getränk
+
+
+def test_einordnung_mit_echten_namen_2026_11_25():
+    from aktionen.fitness import kategorie_fuer
+    assert kategorie_fuer("Delamaris Makrelenfilets in Olivenöl") is None or kategorie_fuer("Delamaris Makrelenfilets in Olivenöl").name != "Olivenöl"
+    assert kategorie_fuer("Bertolli Olivenöl Extra Vergine").name == "Olivenöl"
+    assert kategorie_fuer("Manner Kuvertüre Milch") is None
+    assert kategorie_fuer("Iglo Mehlspeisentraum Nussnudeln") is None
+    assert kategorie_fuer("Barilla Spaghetti").name == "Nudeln"

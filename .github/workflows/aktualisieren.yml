@@ -56,6 +56,8 @@ jobs:
           mkdir -p data/letzter_stand
           if git fetch --depth=1 origin daten; then
             git show FETCH_HEAD:preisverlauf.db > data/preisverlauf.db || rm -f data/preisverlauf.db
+            # Nährwerte-Zwischenspeicher: jedes Produkt nur einmal bei Billa/Lidl/Open Food Facts nachschlagen
+            git show FETCH_HEAD:naehrwerte.json > data/naehrwerte.json || rm -f data/naehrwerte.json
             for f in angebote.json aktionen.js; do
               git show "FETCH_HEAD:stand/$f" > "data/letzter_stand/$f" || rm -f "data/letzter_stand/$f"
             done
@@ -85,6 +87,7 @@ jobs:
           # In einem eigenen Ordner, damit der Website-Ordner unberührt bleibt
           mkdir -p /tmp/daten/stand
           cp data/preisverlauf.db /tmp/daten/
+          if [ -f data/naehrwerte.json ]; then cp data/naehrwerte.json /tmp/daten/; fi
           cp web/data/angebote.json web/data/aktionen.js /tmp/daten/stand/
           cd /tmp/daten
           git init -q && git checkout -q -b daten
