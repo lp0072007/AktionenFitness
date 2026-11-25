@@ -3,7 +3,9 @@
   "use strict";
   const SCHLUESSEL = "aktionenfitness.thema";
   const STUFEN = ["auto", "hell", "dunkel"];
-  const ANZEIGE = { auto: ["🖥️", "Automatisch (wie das System)"], hell: ["☀️", "Hell"], dunkel: ["🌙", "Dunkel"] };
+  const ANZEIGE = { auto: ["auto", "Automatisch (wie das System)"], hell: ["hell", "Hell"], dunkel: ["dunkel", "Dunkel"] };
+  // Icon aus ikonen.js (wird vor thema.js geladen); ohne ikonen.js: Text
+  const symbol = (t) => (window.Ikonen ? window.Ikonen.svg(ANZEIGE[t][0]) : ANZEIGE[t][1]);
   const root = document.documentElement;
 
   function lesen() {
@@ -14,7 +16,7 @@
     else if (thema === "dunkel") root.dataset.theme = "dark";
     else delete root.dataset.theme;
     const dunkel = thema === "dunkel" || (thema === "auto" && matchMedia("(prefers-color-scheme: dark)").matches);
-    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", dunkel ? "#0f1411" : "#1f8a4c");
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", dunkel ? "#111318" : "#ffffff");
   }
   let thema = lesen();
   anwenden(thema);
@@ -27,8 +29,8 @@
     knopf.type = "button";
     knopf.className = "thema-knopf";
     const zeigen = () => {
-      const [symbol, text] = ANZEIGE[thema];
-      knopf.textContent = symbol;
+      const text = ANZEIGE[thema][1];
+      knopf.replaceChildren(symbol(thema));
       knopf.title = `Darstellung: ${text} – tippen zum Wechseln`;
       knopf.setAttribute("aria-label", knopf.title);
     };
@@ -48,6 +50,6 @@
     thema = lesen();
     anwenden(thema);
     const k = document.querySelector(".thema-knopf");
-    if (k) k.textContent = ANZEIGE[thema][0];
+    if (k) k.replaceChildren(symbol(thema));
   });
 })();

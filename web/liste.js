@@ -197,7 +197,7 @@
         rechts.append(badge(t.angebot.kette), " ", euro(t.kosten.preis));
         rechts.title = t.angebot.name;
         // Darunter: wie viele Packungen, Mengenaktion, Kartenpreis
-        const detail = [A.packungText(t), t.kosten.hinweis, t.angebot.karte ? `💳 ${t.angebot.karte}` : null].filter(Boolean);
+        const detail = [A.packungText(t), t.kosten.hinweis, t.angebot.karte ? `mit ${t.angebot.karte}` : null].filter(Boolean);
         if (detail.length) {
           const d = document.createElement("small");
           d.className = "ek-vorschau__detail" + (t.kosten.aktionGilt ? "" : " ek-vorschau__detail--warn");
@@ -236,7 +236,7 @@
       const weg = document.createElement("button");
       weg.type = "button";
       weg.className = "icon-knopf ek-vorschau__weg";
-      weg.textContent = "✕";
+      weg.append(global.Ikonen ? global.Ikonen.svg("x", 16) : "×");
       weg.setAttribute("aria-label", `${e.name} löschen`);
       weg.addEventListener("click", () => entfernen(zeile));
       li.append(weg);

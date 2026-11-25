@@ -1,88 +1,72 @@
-/* Einkaufsliste abgleichen – ergänzt style.css */
-.zurueck {
-  text-decoration: none; font-weight: 600; padding: 8px 12px; border-radius: 999px;
-  background: var(--flaeche-2); color: var(--text); white-space: nowrap;
-}
+/* Einkaufsliste abgleichen – ergänzt style.css (gleicher ruhiger Stil: Linien statt Schatten, Zahlen in Mono) */
 .ek-layout {
-  max-width: 1280px; margin: 0 auto; padding: 16px;
-  display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 20px; align-items: start;
+  max-width: 1360px; margin: 0 auto; padding: 32px;
+  display: grid; grid-template-columns: 360px minmax(0, 1fr); gap: 40px; align-items: start;
 }
 .ek-eingabe {
-  position: sticky; top: 76px; background: var(--flaeche); border: 1px solid var(--rand);
-  border-radius: var(--radius); box-shadow: var(--schatten); padding: 14px; display: flex; flex-direction: column; gap: 12px;
+  position: sticky; top: 96px; border: 1px solid var(--rand); border-radius: var(--radius);
+  padding: 16px; display: flex; flex-direction: column; gap: 12px;
 }
-.ek-eingabe textarea {
-  width: 100%; min-height: 220px; resize: vertical; border: 1px solid var(--rand); border-radius: 10px; padding: 10px;
-  background: var(--flaeche); font: 15px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: var(--text);
-}
-.ek-eingabe textarea:focus { outline: 2px solid var(--akzent); outline-offset: 1px; }
-.ek-optionen { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.ek-optionen { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 18px; }
 .ek-optionen .feld input, .ek-optionen .feld select { width: 100%; }
-.ek-hinweis { color: var(--text-leise); font-size: 12px; margin: 0; }
-.ek-leer { color: var(--text-leise); padding: 40px 0; text-align: center; }
-.ek-titel { font-size: 16px; margin: 22px 0 10px; }
+.ek-leer { color: var(--text-leise); padding: 48px 0; text-align: center; border: 1px dashed var(--rand); }
+.ek-titel { font-size: 15px; font-weight: 600; margin: 32px 0 12px; }
+.ek-vorschau .ek-titel { margin: 0; }
 
-.ek-empfehlung {
-  background: var(--akzent-weich); border: 1px solid var(--akzent); border-radius: var(--radius); padding: 14px 16px;
-}
-.ek-empfehlung h2 { margin: 0 0 6px; font-size: 18px; }
-.ek-empfehlung p { margin: 4px 0; }
+.ek-empfehlung { border: 1px solid var(--rand-stark); border-radius: var(--radius); padding: 16px 20px; }
+.ek-empfehlung h2 { margin: 0 0 6px; font-size: 20px; font-weight: 600; letter-spacing: -.015em; }
+.ek-empfehlung p { margin: 4px 0; color: var(--text-leise); }
+.ek-empfehlung--fehler { border-color: var(--warn); }
 
-.ek-rangliste { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
-.ek-kette {
-  background: var(--flaeche); border: 1px solid var(--rand); border-radius: 12px; padding: 10px 12px;
-  display: flex; flex-direction: column; gap: 4px;
-}
-.ek-kette strong { font-size: 20px; }
+.ek-rangliste { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+.ek-kette { border: 1px solid var(--rand); border-radius: var(--radius); padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; }
+.ek-kette strong { font-family: var(--mono); font-size: 22px; font-weight: 500; }
 .ek-kette span:not(.badge) { color: var(--text-leise); font-size: 13px; }
 .ek-kette .badge { align-self: flex-start; }
-.ek-kette--erste { border-color: var(--akzent); box-shadow: 0 0 0 1px var(--akzent); }
+.ek-kette--erste { border-color: var(--akzent); box-shadow: inset 0 2px 0 var(--akzent); }
 
-.ek-gruppe { background: var(--flaeche); border: 1px solid var(--rand); border-radius: 12px; padding: 10px 12px; margin-bottom: 10px; }
-.ek-gruppe__kopf { display: flex; justify-content: space-between; align-items: center; font-weight: 700; margin-bottom: 6px; }
+.ek-gruppe { border: 1px solid var(--rand); border-radius: var(--radius); padding: 12px 16px; margin-bottom: 12px; }
+.ek-gruppe__kopf { display: flex; justify-content: space-between; align-items: baseline; font-weight: 600; margin-bottom: 6px; }
+.ek-gruppe__kopf span { font-family: var(--mono); font-weight: 500; }
 .ek-gruppe ul { list-style: none; margin: 0; padding: 0; }
-.ek-gruppe li { display: flex; justify-content: space-between; gap: 10px; padding: 4px 0; border-top: 1px solid var(--rand); font-size: 14px; }
-.ek-gruppe li:first-child { border-top: 0; }
+.ek-gruppe li { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-top: 1px solid var(--rand); font-size: 14px; }
+.ek-gruppe li > span:last-child { font-family: var(--mono); }
 .ek-gruppe small { color: var(--text-leise); }
 .ek-fehlt { color: var(--text-leise); font-size: 14px; }
 
-.ek-eintrag { background: var(--flaeche); border: 1px solid var(--rand); border-radius: 12px; padding: 10px 12px; margin-bottom: 10px; }
-.ek-eintrag h3 { font-size: 15px; margin: 0 0 6px; display: flex; justify-content: space-between; gap: 8px; }
+.ek-eintrag { border: 1px solid var(--rand); border-radius: var(--radius); padding: 12px 16px; margin-bottom: 12px; }
+.ek-eintrag h3 { font-size: 15px; font-weight: 600; margin: 0 0 6px; display: flex; justify-content: space-between; gap: 8px; }
 .ek-eintrag h3 span { color: var(--text-leise); font-weight: 400; font-size: 13px; }
 .ek-eintrag ul { list-style: none; margin: 0; padding: 0; }
 .ek-treffer {
-  display: grid; grid-template-columns: auto 48px minmax(0, 1fr) auto; gap: 10px; align-items: center;
-  padding: 6px 0; border-top: 1px solid var(--rand);
+  display: grid; grid-template-columns: auto 52px minmax(0, 1fr) auto; gap: 12px; align-items: center;
+  padding: 8px 0; border-top: 1px solid var(--rand);
 }
-.ek-treffer:first-child { border-top: 0; }
 .ek-treffer--aus { opacity: .45; }
 .ek-treffer__wahl input { width: 18px; height: 18px; accent-color: var(--akzent); }
-.ek-treffer__bild { width: 48px; height: 48px; object-fit: contain; background: #fff; border-radius: 8px; }
-.ek-treffer__bild[src=""] , .ek-treffer__bild:not([src]) { visibility: hidden; }
+.ek-treffer__bild { width: 52px; height: 52px; object-fit: contain; background: var(--bildgrund); padding: 4px; mix-blend-mode: multiply; }
+.ek-treffer__bild[src=""], .ek-treffer__bild:not([src]) { visibility: hidden; }
 .ek-treffer__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .ek-treffer__text .badge { align-self: flex-start; }
-.ek-treffer__name { color: var(--text); text-decoration: none; font-weight: 600; font-size: 14px; overflow-wrap: anywhere; }
-.ek-treffer__name[href]:hover { text-decoration: underline; }
+.ek-treffer__name { color: var(--text); text-decoration: none; font-weight: 500; font-size: 14px; overflow-wrap: anywhere; }
+.ek-treffer__name[href]:hover { color: var(--akzent); }
 .ek-treffer__info { font-size: 12px; color: var(--text-leise); }
 .ek-treffer__info.warn { color: var(--warn); }
-.ek-treffer__preis { text-align: right; font-weight: 700; white-space: nowrap; }
+.ek-treffer__preis { text-align: right; font-family: var(--mono); font-weight: 500; white-space: nowrap; }
 .ek-treffer__preis small { display: block; font-weight: 400; color: var(--text-leise); font-size: 12px; }
 .ek-keine { color: var(--text-leise); font-size: 14px; margin: 0; }
 
-@media (max-width: 900px) {
-  .ek-layout { grid-template-columns: minmax(0, 1fr); }
-  .ek-eingabe { position: static; }
-}
-@media (max-width: 480px) {
-  .ek-treffer { grid-template-columns: auto 40px minmax(0, 1fr); }
-  .ek-treffer__preis { grid-column: 3; text-align: left; }
-  .ek-treffer__bild { width: 40px; height: 40px; }
-  .zurueck { font-size: 13px; padding: 6px 10px; }
-}
-
-.ek-empfehlung--fehler { border-color: var(--warn); background: color-mix(in srgb, var(--warn) 10%, var(--flaeche)); }
 .ek-neu { display: flex; align-items: flex-end; gap: 8px; }
 .ek-neu .feld { flex: 1; }
 .ek-neu input { width: 100%; font-size: 16px; }
-.ek-neu .knopf { font-size: 20px; line-height: 1; padding: 10px 16px; }
-.ek-optionen { margin-top: 18px; }
+.ek-neu .knopf { min-height: 44px; width: 44px; padding: 0; }
+
+@media (max-width: 900px) {
+  .ek-layout { grid-template-columns: minmax(0, 1fr); padding: 16px; gap: 24px; }
+  .ek-eingabe { position: static; }
+}
+@media (max-width: 480px) {
+  .ek-treffer { grid-template-columns: auto 44px minmax(0, 1fr); }
+  .ek-treffer__preis { grid-column: 3; text-align: left; }
+  .ek-treffer__bild { width: 44px; height: 44px; }
+}

@@ -3,14 +3,15 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' file: https://gc.zgo.at; style-src 'self' file:; img-src 'self' file: https: data:; connect-src 'self' https://fabianfrouz.goatcounter.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; object-src 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' file: https://gc.zgo.at; style-src 'self' file:; font-src 'self' file:; img-src 'self' file: https: data:; connect-src 'self' https://fabianfrouz.goatcounter.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; object-src 'none'">
   <meta name="referrer" content="no-referrer">
   <title>Einkaufsliste abgleichen</title>
   <meta name="description" content="Einkaufsliste eingeben und mit den aktuellen Aktionen von Spar, Lidl, Hofer, Penny und Billa abgleichen.">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧾</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' fill='%23ffffff'/%3E%3Cpath d='M3 3h18v18H3z M7.5 16.5l4.5-8 4.5 8' fill='none' stroke='%231d4ed8' stroke-width='2' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E">
   <link rel="manifest" href="manifest.webmanifest">
-  <meta name="theme-color" content="#1f8a4c">
+  <meta name="theme-color" content="#ffffff">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <script src="ikonen.js"></script>
   <script src="thema.js"></script>
   <script src="zaehler.js" defer></script>
   <link rel="stylesheet" href="style.css">
@@ -20,13 +21,13 @@
   <header class="kopf">
     <div class="kopf__inhalt">
       <div class="marke">
-        <span class="marke__logo" aria-hidden="true">🧾</span>
+        <span class="marke__logo"><span data-ikon="logo" data-groesse="26"></span></span>
         <div>
           <h1>Einkaufsliste abgleichen</h1>
           <p class="marke__sub" id="stand">Wo ist was in Aktion?</p>
         </div>
       </div>
-      <a class="zurueck" href="index.html">💪 Fitness-Angebote</a>
+      <a class="zurueck" href="index.html"><span class="nur-gross">Zu den </span>Angeboten</a>
     </div>
   </header>
 
@@ -35,11 +36,11 @@
       <form class="ek-neu" id="neuForm" autocomplete="off">
         <label class="feld">
           <span>Produkt hinzufügen</span>
-          <input id="neu" type="text" enterkeyhint="enter" placeholder="z. B. 2x Milch, 500g Hendlfilet …">
+          <input id="neu" type="text" enterkeyhint="enter" placeholder="z. B. 2x Milch, 500g Hendlfilet">
         </label>
-        <button class="knopf" type="submit" aria-label="Hinzufügen">＋</button>
+        <button class="knopf" type="submit" aria-label="Hinzufügen"><span data-ikon="plus"></span></button>
       </form>
-      <p class="ek-hinweis">Eintippen und <b>Enter</b> – jedes Produkt erscheint als eigener Punkt. Mengen wie „2x“, „500g“,
+      <p class="ek-hinweis">Eintippen und Enter drücken – jedes Produkt erscheint als eigener Punkt. Mengen wie „2x“, „500g“,
         „1,5 kg“ oder „10er“ werden erkannt. Mehrere Zeilen einfügen geht auch.</p>
 
       <div class="ek-vorschau">

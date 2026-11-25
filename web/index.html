@@ -3,14 +3,15 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' file: https://gc.zgo.at; style-src 'self' file:; img-src 'self' file: https: data:; connect-src 'self' https://fabianfrouz.goatcounter.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; object-src 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' file: https://gc.zgo.at; style-src 'self' file:; font-src 'self' file:; img-src 'self' file: https: data:; connect-src 'self' https://fabianfrouz.goatcounter.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; object-src 'none'">
   <meta name="referrer" content="no-referrer">
   <title>AktionenFitness</title>
-  <meta name="description" content="Aktionen aus Spar, Lidl, Hofer, Penny, Billa und MPreis durchstöbern, Fitness-Angebote nach Kilopreis, Einkaufsliste mit automatischem Abgleich.">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
+  <meta name="description" content="Aktionen aus Lidl, Hofer, Penny, Billa und MPreis: Fitness-Angebote nach Eiweiß pro Euro, Einkaufsliste mit automatischem Abgleich.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' fill='%23ffffff'/%3E%3Cpath d='M3 3h18v18H3z M7.5 16.5l4.5-8 4.5 8' fill='none' stroke='%231d4ed8' stroke-width='2' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E">
   <link rel="manifest" href="manifest.webmanifest">
-  <meta name="theme-color" content="#1f8a4c">
+  <meta name="theme-color" content="#ffffff">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <script src="ikonen.js"></script>
   <script src="thema.js"></script>
   <script src="zaehler.js" defer></script>
   <link rel="stylesheet" href="style.css">
@@ -18,30 +19,33 @@
 <body>
   <header class="kopf">
     <div class="kopf__inhalt">
-      <div class="marke">
-        <span class="marke__logo" aria-hidden="true">💪</span>
+      <a class="marke" href="index.html">
+        <span class="marke__logo"><span data-ikon="logo" data-groesse="26"></span></span>
         <div>
           <h1>AktionenFitness</h1>
           <p class="marke__sub" id="gueltigkeit">Aktionen der Woche</p>
         </div>
-      </div>
+      </a>
       <button class="liste-knopf" id="listeOeffnen" aria-controls="schublade" aria-expanded="false">
-        🛒<span class="liste-knopf__text"> Einkaufsliste</span> <span class="zaehler" id="listeZaehler">0</span>
+        <span data-ikon="wagen"></span><span class="liste-knopf__text">Einkaufsliste</span> <span class="zaehler" id="listeZaehler">0</span>
       </button>
     </div>
   </header>
 
   <main class="seite">
+    <section class="einleitung">
+      <div>
+        <h2>Fitness-Angebote dieser Woche</h2>
+        <p>Eiweißreiche Produkte aus allen Flugblättern, sortiert nach Preis. Nährwerte laut Etikett, wo der Markt sie angibt.</p>
+      </div>
+    </section>
+
     <section class="steuerung" aria-label="Filter">
       <div class="steuerung__zeile">
         <div class="segment" role="tablist" aria-label="Ansicht">
-          <button role="tab" data-ansicht="fitness" aria-selected="true">💪 Fitness</button>
-          <button role="tab" data-ansicht="alle" aria-selected="false">🏷️ Alle Aktionen</button>
+          <button role="tab" data-ansicht="fitness" aria-selected="true">Fitness</button>
+          <button role="tab" data-ansicht="alle" aria-selected="false">Alle Aktionen</button>
         </div>
-        <label class="feld feld--suche">
-          <span class="sr">Suche</span>
-          <input id="suche" type="search" placeholder="🔍 Suchen, z. B. Topfen, Reis, Hendl …" autocomplete="off">
-        </label>
         <label class="feld">
           <span class="sr">Region</span>
           <select id="region" title="Region (für Spar)"></select>
@@ -49,14 +53,20 @@
         <label class="feld">
           <span class="sr">Sortierung</span>
           <select id="sortierung" title="Sortierung">
-            <option value="kilopreis">Kilopreis ↑</option>
-            <option value="rabatt">Rabatt ↓</option>
-            <option value="preis">Preis ↑</option>
+            <option value="kilopreis">Kilopreis aufsteigend</option>
+            <option value="eiweiss">Eiweiß pro € absteigend</option>
+            <option value="rabatt">Rabatt absteigend</option>
+            <option value="preis">Preis aufsteigend</option>
           </select>
+        </label>
+        <label class="feld feld--suche">
+          <span class="sr">Suche</span>
+          <span data-ikon="suche"></span>
+          <input id="suche" type="search" placeholder="Produkt suchen, z. B. Topfen, Reis, Hendl" autocomplete="off">
         </label>
       </div>
       <div class="chips" id="ketten" aria-label="Geschäft">
-        <button class="chip" data-kette="" aria-pressed="true">Alle Geschäfte</button>
+        <button class="chip" data-kette="" aria-pressed="true">Alle Märkte</button>
         <button class="chip" data-kette="spar" aria-pressed="false">Spar</button>
         <button class="chip" data-kette="lidl" aria-pressed="false">Lidl</button>
         <button class="chip" data-kette="hofer" aria-pressed="false">Hofer</button>
@@ -67,21 +77,22 @@
       </div>
     </section>
 
+    <p class="ziel-info" id="zielInfo"></p>
+
     <section class="merk" id="merk" aria-labelledby="merkTitel">
       <div class="merk__kopf">
-        <h2 id="merkTitel">⭐ Merkliste</h2>
+        <h2 id="merkTitel"><span data-ikon="merken" data-groesse="16"></span>Merkliste</h2>
         <span class="merk__info" id="merkInfo"></span>
         <button class="knopf knopf--leise merk__bearbeiten" id="merkBearbeiten">Bearbeiten</button>
       </div>
       <div class="merk__chips" id="merkChips"></div>
     </section>
 
-    <p class="ziel-info" id="zielInfo"></p>
     <div class="karten" id="karten" aria-live="polite"></div>
     <p class="leer" id="leer" hidden>Keine passenden Angebote gefunden.</p>
     <div class="mehr" id="mehrMarke">
       <div class="mehr__zug" id="mehrZug" hidden aria-hidden="true"><span></span></div>
-      <button class="knopf" id="mehr" hidden>Mehr anzeigen</button>
+      <button class="knopf knopf--leise" id="mehr" hidden>Mehr anzeigen</button>
       <span class="mehr__info" id="mehrInfo"></span>
     </div>
 
@@ -99,34 +110,34 @@
   <div class="schleier" id="schleier"></div>
   <aside class="schublade" id="schublade" role="dialog" aria-modal="true" aria-labelledby="schubladeTitel" inert>
     <div class="schublade__kopf">
-      <h2 id="schubladeTitel">🛒 Einkaufsliste</h2>
+      <h2 id="schubladeTitel">Einkaufsliste</h2>
       <span class="schublade__zaehler" id="erledigtZaehler"></span>
-      <button class="x-knopf" id="listeSchliessen" aria-label="Einkaufsliste schließen">✕</button>
+      <button class="x-knopf" id="listeSchliessen" aria-label="Einkaufsliste schließen"><span data-ikon="x"></span></button>
     </div>
     <div class="schublade__inhalt">
       <form class="sb-neu" id="neuForm" autocomplete="off">
         <input id="neu" type="text" enterkeyhint="enter" aria-label="Produkt hinzufügen"
-          placeholder="Produkt eintippen, z. B. 2x Milch …">
-        <button class="knopf" type="submit" aria-label="Hinzufügen">＋</button>
+          placeholder="Produkt eintippen, z. B. 2x Milch">
+        <button class="knopf" type="submit" aria-label="Hinzufügen"><span data-ikon="plus"></span></button>
       </form>
-      <p class="ek-hinweis">Eintippen und <b>Enter</b> – oder bei einem Angebot auf <b>+ Liste</b>. Jedes Produkt wird
-        automatisch mit allen Aktionen abgeglichen.</p>
+      <p class="ek-hinweis">Eintippen und Enter drücken, oder bei einem Angebot „Auf die Liste“. Jedes Produkt wird mit allen
+        Aktionen abgeglichen.</p>
 
       <div class="ek-vorschau">
         <ul id="vorschau"></ul>
-        <p class="liste__leer" id="listeLeer">Noch leer. Tippe oben ein Produkt ein.</p>
+        <p class="liste__leer" id="listeLeer">Noch leer.</p>
       </div>
 
       <div class="sb-ergebnis" id="sbErgebnis" hidden></div>
 
       <section class="sb-kopieren" id="sbKopieren" hidden aria-labelledby="kopierTitel">
-        <h3 id="kopierTitel">📋 Liste für die Notizen-App</h3>
-        <p class="ek-hinweis">Wo gehst du einkaufen? Dann kommt nur das auf die Liste.</p>
+        <h3 id="kopierTitel">Als Text für die Notizen-App</h3>
+        <p class="ek-hinweis">Nur die Geschäfte, in die du gehst:</p>
         <div class="chips" id="kopierKetten" aria-label="Geschäfte für die Liste"></div>
         <label class="sb-option"><input type="checkbox" id="kopierOhne" checked> Produkte ohne Aktion dazu</label>
         <label class="sb-option"><input type="checkbox" id="kopierErledigt"> Abgehakte auch</label>
         <pre class="sb-vorschau" id="kopierVorschau" aria-label="Vorschau"></pre>
-        <button type="button" class="knopf" id="listeKopieren">📋 Kopieren</button>
+        <button type="button" class="knopf" id="listeKopieren"><span data-ikon="kopieren"></span><span>Kopieren</span></button>
       </section>
 
       <div class="ek-vorschau__aktionen" id="listeAktionen" hidden>
@@ -136,28 +147,28 @@
       </div>
     </div>
     <div class="schublade__fuss">
-      <a class="knopf schublade__vergleich" href="einkauf.html">📊 Genauer Vergleich aller Geschäfte</a>
+      <a class="knopf schublade__vergleich" href="einkauf.html">Alle Geschäfte genau vergleichen</a>
     </div>
   </aside>
 
   <dialog class="merk-dialog" id="merkDialog" aria-labelledby="merkDialogTitel">
     <div class="schublade__kopf">
-      <h2 id="merkDialogTitel">⭐ Merkliste</h2>
-      <form method="dialog"><button class="x-knopf" aria-label="Schließen">✕</button></form>
+      <h2 id="merkDialogTitel">Merkliste</h2>
+      <form method="dialog"><button class="x-knopf" aria-label="Schließen"><span data-ikon="x"></span></button></form>
     </div>
     <div class="merk-dialog__inhalt">
-      <p class="ek-hinweis">Produkte, die du regelmäßig kaufst. Oben auf der Startseite siehst du dann sofort, was davon
-        gerade in Aktion ist. Tipp: auf einer Karte ☆ antippen merkt sich genau dieses Produkt.</p>
+      <p class="ek-hinweis">Produkte, die du regelmäßig kaufst. Oben auf der Startseite steht dann, was davon gerade in
+        Aktion ist. Das Merken-Zeichen auf einer Karte merkt sich genau dieses Produkt.</p>
       <form class="sb-neu" id="merkForm" autocomplete="off">
-        <input id="merkNeu" type="text" aria-label="Produkt merken" placeholder="z. B. Skyr, Hendlfilet, Haferflocken …">
-        <button class="knopf" type="submit" aria-label="Hinzufügen">＋</button>
+        <input id="merkNeu" type="text" aria-label="Produkt merken" placeholder="z. B. Skyr, Hendlfilet, Haferflocken">
+        <button class="knopf" type="submit" aria-label="Hinzufügen"><span data-ikon="plus"></span></button>
       </form>
       <ul class="merk-dialog__liste" id="merkListe"></ul>
     </div>
   </dialog>
 
-  <dialog class="gross" id="grossBild" aria-label="Flugblatt-Ausschnitt">
-    <form method="dialog"><button class="x-knopf" aria-label="Schließen">✕</button></form>
+  <dialog class="gross" id="grossBild" aria-label="Produktbild">
+    <form method="dialog"><button class="x-knopf" aria-label="Schließen"><span data-ikon="x"></span></button></form>
     <img alt="">
     <p class="gross__text"></p>
   </dialog>
@@ -167,30 +178,36 @@
       <button class="karte__bild" hidden aria-label="Bild vergrößern">
         <img alt="" loading="lazy">
       </button>
-      <div class="karte__oben">
-        <span class="karte__badges"><span class="badge badge--kette"></span><span class="badge badge--kat"></span></span>
-        <span class="karte__seite"></span>
-      </div>
-      <h3 class="karte__name"></h3>
-      <p class="karte__menge"></p>
-      <div class="karte__preis">
-        <strong class="preis"></strong>
-        <span class="normalpreis"></span>
-      </div>
-      <p class="karte__gueltig"></p>
-      <p class="verlauf"></p>
-      <p class="karte__bedingung"></p>
-      <div class="karte__aktionen"></div>
-      <div class="kilopreis">
-        <span class="kilopreis__label"></span>
-        <strong class="kilopreis__wert"></strong>
-        <span class="kilopreis__extra"></span>
-      </div>
-      <p class="naehrwerte"><span class="naehrwerte__pro-euro"></span><span class="naehrwerte__je100"></span></p>
-      <p class="zuordnung"></p>
-      <div class="karte__fuss">
-        <button class="knopf karte__knopf">+ Liste</button>
-        <button class="knopf knopf--leise karte__merken" aria-pressed="false" aria-label="Merken">☆</button>
+      <div class="karte__koerper">
+        <div class="karte__oben">
+          <span class="karte__badges"><span class="badge badge--kette"></span><span class="badge badge--kat"></span></span>
+          <span class="karte__seite"></span>
+        </div>
+        <h3 class="karte__name"></h3>
+        <p class="karte__menge"></p>
+        <p class="karte__gueltig"></p>
+        <p class="verlauf"></p>
+        <p class="karte__bedingung"></p>
+        <div class="karte__aktionen"></div>
+        <div class="karte__zahlen">
+          <div class="karte__zahlen-links">
+            <p class="naehrwerte"><span class="naehrwerte__je100"></span></p>
+            <div class="kilopreis">
+              <span class="kilopreis__label"></span>
+              <strong class="kilopreis__wert"></strong>
+              <span class="kilopreis__extra"></span>
+            </div>
+          </div>
+          <div class="karte__preis">
+            <strong class="preis"></strong>
+            <span class="normalpreis"></span>
+          </div>
+        </div>
+        <p class="zuordnung"></p>
+        <div class="karte__fuss">
+          <button class="knopf karte__knopf">Auf die Liste</button>
+          <button class="knopf knopf--leise karte__merken" aria-pressed="false" aria-label="Merken"><svg class="ikon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 3.5h12v17l-6-4.5-6 4.5z"></path></svg></button>
+        </div>
       </div>
     </article>
   </template>

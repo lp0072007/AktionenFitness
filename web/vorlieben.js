@@ -1,4 +1,4 @@
-// Einstellungen (⚙️ in der Kopfzeile): Kundenkarten und Vorlieben. Gilt auf allen Seiten, im Browser gespeichert.
+// Einstellungen (Knopf in der Kopfzeile): Kundenkarten und Vorlieben. Gilt auf allen Seiten, im Browser gespeichert.
 //
 //   Vorlieben.lesen()                 -> { karten: ["lidlplus", …], ernaehrung: "alles"|"vegetarisch"|"vegan",
 //                                          nurBio: false, ohneEigenmarken: false }
@@ -107,10 +107,10 @@
     return null;
   }
 
-  // Beschriftung eines Zusatzpreises: "💳 mit jö", "💳 mit Lidl Plus", "Aktionstag"
+  // Beschriftung eines Zusatzpreises: "mit jö", "mit Lidl Plus", "Aktionstag"
   function zusatzName(a) {
     const k = karteFuer(a);
-    if (k) return `💳 mit ${k === "joe" ? "jö" : KARTEN[k].name}`;
+    if (k) return `mit ${k === "joe" ? "jö" : KARTEN[k].name}`;
     return a.zusatz_text || "Aktionstag";
   }
 
@@ -163,14 +163,14 @@
     for (const f of hoerer) f(sauber);
   }
 
-  // Kurzbeschreibung der aktiven Einstellungen, z. B. "🌱 vegan · 💳 Lidl Plus"
+  // Kurzbeschreibung der aktiven Einstellungen, z. B. "vegan · mit Lidl Plus"
   function zusammenfassung(v = lesen()) {
     const teile = [];
-    if (v.ernaehrung === "vegan") teile.push("🌱 vegan");
-    if (v.ernaehrung === "vegetarisch") teile.push("🥕 vegetarisch");
-    if (v.nurBio) teile.push("🍃 nur Bio");
+    if (v.ernaehrung === "vegan") teile.push("vegan");
+    if (v.ernaehrung === "vegetarisch") teile.push("vegetarisch");
+    if (v.nurBio) teile.push("nur Bio");
     if (v.ohneEigenmarken) teile.push("ohne Eigenmarken");
-    for (const k of v.karten) teile.push(`💳 ${KARTEN[k].name}`);
+    for (const k of v.karten) teile.push(`mit ${KARTEN[k].name}`);
     return teile.join(" · ");
   }
   const filtertAktiv = (v = lesen()) => v.ernaehrung !== "alles" || v.nurBio || v.ohneEigenmarken;
@@ -197,19 +197,19 @@
     };
     const form = el("form", { class: "merk-dialog__inhalt einst", method: "dialog" },
       el("fieldset", {},
-        el("legend", {}, "💳 Kundenkarten"),
+        el("legend", {}, "Kundenkarten"),
         el("p", { class: "ek-hinweis" }, "Welche Karten hast du? Dann zählt der Kartenpreis – bei den Angeboten, " +
           "beim Sortieren und in der Einkaufsliste. Ohne Karte steht er nur als Hinweis dabei."),
         ...Object.entries(KARTEN).map(([k, karte]) => option("checkbox", "karte", k, v.karten.includes(k), karte.name, karte.wo))),
       el("fieldset", {},
-        el("legend", {}, "🥗 Ernährung"),
+        el("legend", {}, "Ernährung"),
         option("radio", "ernaehrung", "alles", v.ernaehrung === "alles", "Alles"),
         option("radio", "ernaehrung", "vegetarisch", v.ernaehrung === "vegetarisch", "Vegetarisch", "ohne Fleisch und Fisch"),
         option("radio", "ernaehrung", "vegan", v.ernaehrung === "vegan", "Vegan", "auch ohne Milch, Ei und Honig"),
         el("p", { class: "ek-hinweis" }, "Erkannt über die Kennzeichnung des Händlers (Billa) und den Produktnamen. " +
           "Ohne Gewähr – im Zweifel aufs Etikett schauen.")),
       el("fieldset", {},
-        el("legend", {}, "🛍️ Vorlieben"),
+        el("legend", {}, "Vorlieben"),
         option("checkbox", "nurBio", "ja", v.nurBio, "Nur Bio"),
         option("checkbox", "ohneEigenmarken", "ja", v.ohneEigenmarken, "Keine Eigenmarken", "z. B. S-BUDGET, Clever, Milsani, Milbona"),
         el("p", { class: "ek-hinweis" }, "Eine bestimmte Marke? Einfach mit auf die Liste schreiben, z. B. „NÖM Skyr“.")),
@@ -227,8 +227,8 @@
 
     const dialog = el("dialog", { class: "merk-dialog einst-dialog", "aria-labelledby": "einstTitel" },
       el("div", { class: "schublade__kopf" },
-        el("h2", { id: "einstTitel" }, "⚙️ Einstellungen"),
-        el("form", { method: "dialog" }, el("button", { class: "x-knopf", "aria-label": "Schließen" }, "✕"))),
+        el("h2", { id: "einstTitel" }, "Einstellungen"),
+        el("form", { method: "dialog" }, el("button", { class: "x-knopf", "aria-label": "Schließen" }, global.Ikonen.svg("x")))),
       form);
     dialog.addEventListener("click", (e) => { if (e.target === dialog) dialog.close(); }); // Klick daneben schließt
     return dialog;
@@ -244,7 +244,7 @@
   function oberflaecheEinrichten() {
     const kopf = document.querySelector(".kopf__inhalt");
     if (!kopf) return;
-    const knopf = el("button", { type: "button", class: "thema-knopf einst-knopf" }, "⚙️");
+    const knopf = el("button", { type: "button", class: "thema-knopf einst-knopf" }, global.Ikonen.svg("regler"));
     knopfAktualisieren(knopf);
     let dialog = null;
     knopf.addEventListener("click", () => {

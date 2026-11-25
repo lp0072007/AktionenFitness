@@ -23,7 +23,7 @@ function speichern() {
   } catch { /* privater Modus */ }
 }
 
-// Mit den Einstellungen (⚙️): Filter vegan/vegetarisch/Bio, Kartenpreise
+// Mit den Einstellungen (Kopfzeile): Filter vegan/vegetarisch/Bio, Kartenpreise
 const V = window.Vorlieben;
 function angebote() {
   const region = DATEN.regionen[$("#region").value];
@@ -104,11 +104,11 @@ function trefferZeile(t, eintrag) {
   if (a.gueltig_von) info.push(`${datum(a.gueltig_von)}–${a.gueltig_bis ? datum(a.gueltig_bis) : "?"}`);
   else if (a.kette === "billa" || a.kette === "mpreis") info.push("aktuell im Shop");
   if (a.ab_menge) info.push(`ab ${a.ab_menge} Stk.`);
-  if (a.karte) info.push(`💳 mit ${a.karte} (ohne Karte ${euro(a.ohne_karte)})`);
+  if (a.karte) info.push(`mit ${a.karte}, ohne Karte ${euro(a.ohne_karte)}`);
   if (a.zusatzpreis) info.push(`${V.zusatzName(a)}: ${euro(a.zusatzpreis)}`);
   if (a.aktion?.length) info.push(a.aktion.join(" · "));
   const infoEl = li.querySelector(".ek-treffer__info");
-  const hinweis = t.kosten.hinweis ? `${t.kosten.aktionGilt ? "💡" : "⚠"} ${t.kosten.hinweis} · ` : "";
+  const hinweis = t.kosten.hinweis ? `${t.kosten.hinweis} · ` : "";
   infoEl.textContent = hinweis + info.filter(Boolean).join(" · ");
   infoEl.classList.toggle("warn", !t.kosten.aktionGilt);
 
@@ -133,7 +133,7 @@ function zeichnen(liste, r) {
   const beste = r.rangliste[0];
   if (!DATEN.erstellt) {
     emp.classList.add("ek-empfehlung--fehler");
-    h.textContent = "⚠ Keine Aktionsdaten geladen";
+    h.textContent = "Keine Aktionsdaten geladen";
     const p = document.createElement("p");
     p.textContent = "Die Datei web/data/aktionen.js fehlt. Im Ordner scraper (mit aktivierter venv) einmal " +
       "„python -m aktionen.export“ ausführen und die Seite neu laden.";
@@ -142,7 +142,7 @@ function zeichnen(liste, r) {
     h.textContent = "Diese Woche ist nichts von deiner Liste in Aktion.";
     emp.append(h);
   } else {
-    h.textContent = `🏆 ${KETTEN[beste.kette]}: ${beste.anzahl} von ${liste.length} Produkten in Aktion`;
+    h.textContent = `${KETTEN[beste.kette]}: ${beste.anzahl} von ${liste.length} Produkten in Aktion`;
     const p1 = document.createElement("p");
     p1.textContent = beste.ersparnis > 0
       ? `Du sparst dort mindestens ${euro(beste.ersparnis)} gegenüber dem Normalpreis.`

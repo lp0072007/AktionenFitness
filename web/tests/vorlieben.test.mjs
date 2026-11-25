@@ -103,13 +103,13 @@ test("Kundenkarten: Kartenpreis wird zum Preis, nur mit der passenden Karte", ()
 });
 
 test("Beschriftung des Zusatzpreises", () => {
-  assert.equal(V.zusatzName({ kette: "penny", zusatzpreis: 1, zusatz_text: "jö" }), "💳 mit jö");
-  assert.equal(V.zusatzName({ kette: "lidl", zusatzpreis: 1, zusatz_text: "Lidl Plus" }), "💳 mit Lidl Plus");
+  assert.equal(V.zusatzName({ kette: "penny", zusatzpreis: 1, zusatz_text: "jö" }), "mit jö");
+  assert.equal(V.zusatzName({ kette: "lidl", zusatzpreis: 1, zusatz_text: "Lidl Plus" }), "mit Lidl Plus");
   assert.equal(V.zusatzName({ kette: "spar", zusatzpreis: 1 }), "Aktionstag");
 });
 
 test("Gespeicherte Einstellungen werden bereinigt", () => {
   assert.deepEqual(V.lesen(), ALLES); // in Node ohne localStorage: Standard
-  assert.equal(V.zusammenfassung({ ...ALLES, ernaehrung: "vegan", karten: ["lidlplus"] }), "🌱 vegan · 💳 Lidl Plus");
+  assert.equal(V.zusammenfassung({ ...ALLES, ernaehrung: "vegan", karten: ["lidlplus"] }), "vegan · mit Lidl Plus");
   assert.equal(V.filtertAktiv({ ...ALLES, karten: ["joe"] }), false); // Karten filtern nichts weg
 });

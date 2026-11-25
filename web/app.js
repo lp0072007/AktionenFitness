@@ -6,7 +6,7 @@ const DATEN = window.ANGEBOTE || { regionen: [] };
 const ALLE = window.AKTIONEN || { regionen: {}, ketten: {} };
 const L = window.Einkaufsliste;
 const VERLAUF = window.VERLAUF || { preise: {} };
-const V = window.Vorlieben; // Kundenkarten, vegan/vegetarisch, Bio (⚙️ in der Kopfzeile, vorlieben.js)
+const V = window.Vorlieben; // Kundenkarten, vegan/vegetarisch, Bio (Einstellungen in der Kopfzeile, vorlieben.js)
 const SPEICHER_EINST = "aktionenfitness.einstellungen.v1";
 const SEITE = 60; // Karten pro "Mehr anzeigen"
 
@@ -42,6 +42,8 @@ const SORTIERUNG = {
   },
   rabatt: (a, b) => rabatt(b) - rabatt(a),
   preis: (a, b) => a.preis - b.preis,
+  // Meistes Eiweiß pro Euro zuerst; ohne Wert (z. B. "Alle Aktionen") ans Ende
+  eiweiss: (a, b) => (b.protein_pro_euro ?? -1) - (a.protein_pro_euro ?? -1),
 };
 
 // ---------- Zustand ----------
@@ -123,7 +125,7 @@ function gefilterteAngebote() {
 function karteBauen(a, rang) {
   const k = $("#kartenVorlage").content.firstElementChild.cloneNode(true);
   k.dataset.id = a.id;
-  if (rang <= 3 && zustand.sortierung === "kilopreis" && zustand.ansicht === "fitness") {
+  if (rang <= 3 && ["kilopreis", "eiweiss"].includes(zustand.sortierung) && zustand.ansicht === "fitness") {
     const r = document.createElement("span");
     r.className = "rang";
     r.textContent = rang;
@@ -143,10 +145,10 @@ function karteBauen(a, rang) {
   naehrwerteZeigen(k.querySelector(".naehrwerte"), a);
   const z = k.querySelector(".zuordnung");
   if (a.zuordnung === "geprueft") {
-    z.textContent = "✓ Preis passt zum Grundpreis im Flugblatt";
+    z.textContent = "Preis passt zum Grundpreis im Flugblatt";
     z.className = "zuordnung zuordnung--ok";
   } else if (a.zuordnung === "unsicher") {
-    z.textContent = "⚠ Zuordnung unsicher – bitte im Flugblatt prüfen";
+    z.textContent = "Zuordnung unsicher – bitte im Flugblatt prüfen";
     z.className = "zuordnung zuordnung--warn";
   } else z.remove();
 
@@ -165,7 +167,8 @@ function karteBauen(a, rang) {
     link.href = url;
     link.target = "_blank";
     link.rel = "noopener noreferrer";
-    link.textContent = `${new URL(url).hostname.replace(/^www\./, "")} ↗`;
+    link.append(new URL(url).hostname.replace(/^www\./, ""), window.Ikonen.svg("pfeil", 12));
+    link.setAttribute("aria-label", `${a.name} beim Händler ansehen`);
     quelle.replaceChildren(link);
   } else if (a.seite) quelle.textContent = `Flugblatt S. ${a.seite}`;
 
@@ -179,13 +182,13 @@ function karteBauen(a, rang) {
   const stand = standIso ? new Date(standIso).toLocaleDateString("de-AT") : "–";
   if (von) {
     const zukunft = von > heuteIso();
-    gueltig.textContent = `${zukunft ? "⏳ erst ab" : "📅 gültig"} ${WOCHENTAG(von)} ${datum(von)}` +
+    gueltig.textContent = `${zukunft ? "Erst ab" : "Gültig"} ${WOCHENTAG(von)} ${datum(von)}` +
       (bis ? ` – ${WOCHENTAG(bis)} ${datum(bis)}` : "");
     gueltig.classList.toggle("karte__gueltig--zukunft", zukunft);
-  } else if (a.kette === "dm") gueltig.textContent = `💶 dm-Dauerpreis (Stand ${stand})`;
-  else if (a.kette === "billa") gueltig.textContent = `📅 aktuell im BILLA-Shop (Stand ${stand})`;
-  else if (a.kette === "mpreis") gueltig.textContent = `📅 aktuell bei MPreis (Stand ${stand})`;
-  else gueltig.textContent = "📅 Gültigkeit siehe Flugblatt";
+  } else if (a.kette === "dm") gueltig.textContent = `Dauerpreis, Stand ${stand}`;
+  else if (a.kette === "billa") gueltig.textContent = `Aktuell im Billa-Shop, Stand ${stand}`;
+  else if (a.kette === "mpreis") gueltig.textContent = `Aktuell bei MPreis, Stand ${stand}`;
+  else gueltig.textContent = "Gültigkeit siehe Flugblatt";
 
   verlaufZeigen(k.querySelector(".verlauf"), a);
   k.querySelector(".karte__name").textContent = a.name;
@@ -194,7 +197,7 @@ function karteBauen(a, rang) {
   if (a.normalpreis && a.normalpreis > a.preis) k.querySelector(".normalpreis").textContent = euro(a.normalpreis);
 
   const bed = [];
-  if (a.karte) bed.push(`💳 Preis mit ${a.karte} (ohne Karte ${euro(a.ohne_karte)})`);
+  if (a.karte) bed.push(`Preis mit ${a.karte}, ohne Karte ${euro(a.ohne_karte)}`);
   if (a.ab_menge) bed.push(`gilt ab ${a.ab_menge} Stück${a.normalpreis ? ` (1 Stk. ${euro(a.normalpreis)})` : ""}`);
   if (a.zusatzpreis) bed.push(`${V.zusatzName(a)}: ${euro(a.zusatzpreis)}`);
   k.querySelector(".karte__bedingung").textContent = bed.join(" · ");
@@ -233,21 +236,19 @@ function karteBauen(a, rang) {
   return k;
 }
 
-// Fitness-Karten: Eiweiß pro € und Nährwerte je 100 g mit Quelle (Etikett / Open Food Facts / Richtwert)
+// Fitness-Karten: Nährwerte je 100 g mit Quelle (Etikett / Open Food Facts / Richtwert)
 const QUELLE_TEXT = { "Etikett": "laut Etikett", "Etikett (zubereitet)": "laut Etikett (zubereitet)",
   "Open Food Facts": "Open Food Facts", "Richtwert": "Richtwert" };
 function naehrwerteZeigen(el, a) {
   const nw = a.naehrwerte;
   if (!nw || nw.protein == null) return el.remove(); // "Alle Aktionen": keine Nährwerte
-  const proEuro = el.querySelector(".naehrwerte__pro-euro");
-  if (a.protein_pro_euro) proEuro.textContent = `💪 ${zahl(a.protein_pro_euro, a.protein_pro_euro < 10 ? 1 : 0)} g Eiweiß pro €`;
-  else proEuro.remove();
   const basis = a.einheit === "ml" ? "100 ml" : "100 g";
   const quelle = a.naehrwerte_quelle || "Richtwert";
   const je100 = el.querySelector(".naehrwerte__je100");
-  je100.textContent = `je ${basis}: ${zahl(nw.protein, 1)} g Eiweiß · ${zahl(nw.kcal)} kcal · ${QUELLE_TEXT[quelle] ?? quelle}`;
-  je100.title = quelle === "Richtwert" ? "Typischer Wert für diese Produktart – das Etikett kann abweichen"
-    : quelle === "Open Food Facts" ? "Aus der freien Lebensmitteldatenbank Open Food Facts (ODbL)" : "Angabe des Händlers";
+  je100.textContent = `${zahl(nw.protein, 1)} g Eiweiß / ${basis} · ${QUELLE_TEXT[quelle] ?? quelle}`;
+  je100.title = `${zahl(nw.kcal)} kcal je ${basis}`;
+  je100.title += quelle === "Richtwert" ? " – typischer Wert für diese Produktart, das Etikett kann abweichen"
+    : quelle === "Open Food Facts" ? " – aus der freien Lebensmitteldatenbank Open Food Facts (ODbL)" : " – Angabe des Händlers";
   el.classList.toggle("naehrwerte--richtwert", quelle === "Richtwert");
 }
 
@@ -264,7 +265,6 @@ function merkUmschalten(name) {
 }
 function sternAktualisieren(knopf, name) {
   const an = gemerkt(name);
-  knopf.textContent = an ? "★" : "☆";
   knopf.setAttribute("aria-pressed", String(an));
   knopf.setAttribute("aria-label", an ? `${name} nicht mehr merken` : `${name} merken`);
   knopf.classList.toggle("ist-gemerkt", an);
@@ -314,7 +314,7 @@ function merkDialogZeichnen() {
     const weg = document.createElement("button");
     weg.type = "button";
     weg.className = "icon-knopf ek-vorschau__weg";
-    weg.textContent = "✕";
+    weg.append(window.Ikonen.svg("x", 16));
     weg.setAttribute("aria-label", `${m} entfernen`);
     weg.addEventListener("click", () => merkUmschalten(m));
     li.append(t, weg);
@@ -356,12 +356,12 @@ function verlaufZeigen(el, a) {
   const seit = datum(eintraege[0][0]);
   const preis = a.ohne_karte ?? a.preis; // Verlauf speichert Preise ohne Karte
   if (preis < tief[1] - 0.005) {
-    el.textContent = `🔥 Tiefster Preis seit ${seit}`;
+    el.textContent = `Tiefster Preis seit ${seit}`;
     el.classList.add("verlauf--tief");
   } else if (preis <= tief[1] + 0.005) {
-    el.textContent = `👍 So günstig wie am ${datum(tief[0])}`;
+    el.textContent = `So günstig wie am ${datum(tief[0])}`;
   } else {
-    el.textContent = `📉 Am ${datum(tief[0])} schon ${euro(tief[1])}`;
+    el.textContent = `Am ${datum(tief[0])} schon ${euro(tief[1])}`;
     el.classList.add("verlauf--teurer");
   }
   el.title = eintraege.map(([d, p]) => `${datum(d)}: ${euro(p)}`).join("\n");
@@ -370,7 +370,7 @@ function verlaufZeigen(el, a) {
 
 function knopfAktualisieren(knopf, id) {
   const n = L.anzahlVon(id);
-  knopf.textContent = n ? `✓ ${n} auf der Liste` : "+ Liste";
+  knopf.textContent = n ? `Auf der Liste (${n})` : "Auf die Liste";
   knopf.classList.toggle("ist-drauf", !!n);
 }
 
@@ -384,7 +384,8 @@ function angeboteZeichnen() {
   $("#leer").hidden = aktuelleListe.length > 0;
   mehrAktualisieren();
   const art = zustand.ansicht === "alle" ? "Aktionen" : "Fitness-Angebote";
-  const sortText = { kilopreis: "nach Kilopreis – günstigstes zuerst", rabatt: "nach Rabatt – höchster zuerst", preis: "nach Preis" };
+  const sortText = { kilopreis: "nach Kilopreis – günstigstes zuerst", rabatt: "nach Rabatt – höchster zuerst", preis: "nach Preis",
+    eiweiss: "nach Eiweiß pro Euro – meistes zuerst" };
   const einst = V.zusammenfassung();
   $("#zielInfo").textContent = `${zahl(aktuelleListe.length)} ${art} · sortiert ${sortText[zustand.sortierung]}` +
     (einst ? ` · ${einst}` : "");
@@ -546,7 +547,7 @@ function ergebnisZeichnen({ paare, r }) {
   box.replaceChildren();
   const h = document.createElement("h3");
   if (!ALLE.erstellt) {
-    h.textContent = "⚠ Keine Aktionsdaten – zuerst python -m aktionen.export ausführen";
+    h.textContent = "Keine Aktionsdaten – zuerst python -m aktionen.export ausführen";
     box.append(h);
     return;
   }
@@ -682,11 +683,11 @@ function start() {
     if (!text) return;
     try {
       await navigator.clipboard.writeText(text);
-      knopf.textContent = "✓ Kopiert";
+      knopf.lastElementChild.textContent = "Kopiert";
     } catch {
       prompt("Zum Kopieren markieren:", text);
     }
-    setTimeout(() => (knopf.textContent = "📋 Kopieren"), 1500);
+    setTimeout(() => (knopf.lastElementChild.textContent = "Kopieren"), 1500);
   });
   for (const id of ["#kopierOhne", "#kopierErledigt"]) $(id).addEventListener("change", () => letztesErgebnis && kopierenZeichnen(letztesErgebnis));
   L.beiAenderung(listeZeichnen);
