@@ -1,10 +1,10 @@
 // Service-Worker: Seite und Daten offline verfügbar machen (z. B. im Supermarkt ohne Netz).
 // Seiten und Daten: zuerst Netz (damit neue Aktionen sofort da sind), sonst aus dem Speicher.
 // Skripte, Stile, Bilder: sofort aus dem Speicher, im Hintergrund aktualisieren.
-const VERSION = "af-v7";
+const VERSION = "af-v8";
 const KERN = [
   "./", "index.html", "einkauf.html", "impressum.html", "datenschutz.html",
-  "style.css", "einkauf.css", "app.js", "einkauf.js", "abgleich.js", "liste.js", "thema.js", "vorlieben.js", "zaehler.js", "ikonen.js",
+  "style.css", "einkauf.css", "app.js", "einkauf.js", "abgleich.js", "liste.js", "thema.js", "vorlieben.js", "zaehler.js", "ikonen.js", "kategorien.js",
   "fonts/inter-variable.woff2", "fonts/plexmono-400.woff2", "fonts/plexmono-500.woff2", "fonts/plexmono-600.woff2",
   "manifest.webmanifest", "icons/icon-192.png",
 ];

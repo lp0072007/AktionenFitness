@@ -65,15 +65,27 @@
           <input id="suche" type="search" placeholder="Produkt suchen, z. B. Topfen, Reis, Hendl" autocomplete="off">
         </label>
       </div>
-      <div class="chips" id="ketten" aria-label="Geschäft">
-        <button class="chip" data-kette="" aria-pressed="true">Alle Märkte</button>
-        <button class="chip" data-kette="spar" aria-pressed="false">Spar</button>
-        <button class="chip" data-kette="lidl" aria-pressed="false">Lidl</button>
-        <button class="chip" data-kette="hofer" aria-pressed="false">Hofer</button>
-        <button class="chip" data-kette="penny" aria-pressed="false">Penny</button>
-        <button class="chip" data-kette="billa" aria-pressed="false">Billa</button>
-        <button class="chip" data-kette="mpreis" aria-pressed="false">MPreis</button>
-        <button class="chip" data-kette="dm" aria-pressed="false">dm</button>
+      <div class="filterzeile">
+        <label class="feld">
+          <span class="sr">Markt</span>
+          <select id="kette" title="Markt">
+            <option value="">Alle Märkte</option>
+            <option value="spar">Spar</option>
+            <option value="lidl">Lidl</option>
+            <option value="hofer">Hofer</option>
+            <option value="penny">Penny</option>
+            <option value="billa">Billa</option>
+            <option value="mpreis">MPreis</option>
+            <option value="dm">dm</option>
+          </select>
+        </label>
+        <label class="feld">
+          <span class="sr">Kategorie</span>
+          <select id="kategorie" title="Produkt-Kategorie">
+            <option value="">Alle Kategorien</option>
+          </select>
+        </label>
+        <button class="filter-weg" id="filterWeg" type="button" hidden>Filter zurücksetzen</button>
       </div>
     </section>
 
@@ -218,6 +230,7 @@
   <script src="abgleich.js"></script>
   <script src="liste.js"></script>
   <script src="vorlieben.js"></script>
+  <script src="kategorien.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

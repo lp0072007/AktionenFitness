@@ -51,6 +51,7 @@ const zustand = {
   ansicht: "fitness", // "fitness" | "alle"
   region: null,
   kette: "",
+  kategorie: "", // Kategorien.von(): "milch", "fleisch", … ("" = alle)
   suche: "",
   sortierung: "kilopreis",
   sichtbar: SEITE,
@@ -118,8 +119,36 @@ function gefilterteAngebote() {
   const q = zustand.suche.trim().toLowerCase();
   return angeboteDerAnsicht()
     .filter((a) => !zustand.kette || a.kette === zustand.kette)
+    .filter((a) => !zustand.kategorie || kategorieVon(a) === zustand.kategorie)
     .filter((a) => !q || `${a.name} ${a.kategorie ?? ""} ${a.beschreibung ?? ""}`.toLowerCase().includes(q))
     .sort(SORTIERUNG[zustand.sortierung] ?? SORTIERUNG.kilopreis);
+}
+
+// Kategorie je Angebot nur einmal ausrechnen (Regeln mit vielen Mustern)
+const _kategorie = new WeakMap();
+function kategorieVon(a) {
+  let k = _kategorie.get(a);
+  if (!k) _kategorie.set(a, (k = window.Kategorien.von(a)));
+  return k;
+}
+
+// Kategorie-Auswahl: nur Kategorien mit Angeboten (in Ansicht + Markt), mit Anzahl
+function kategorienAktualisieren() {
+  const sel = $("#kategorie");
+  const anzahl = {};
+  for (const a of angeboteDerAnsicht()) {
+    if (zustand.kette && a.kette !== zustand.kette) continue;
+    const k = kategorieVon(a);
+    anzahl[k] = (anzahl[k] ?? 0) + 1;
+  }
+  if (zustand.kategorie && !anzahl[zustand.kategorie]) zustand.kategorie = ""; // gibt es hier nicht (mehr)
+  const gesamt = Object.values(anzahl).reduce((s, n) => s + n, 0);
+  sel.replaceChildren(new Option(`Alle Kategorien (${zahl(gesamt)})`, ""),
+    ...window.Kategorien.LISTE.filter((k) => anzahl[k.id]).map((k) => new Option(`${k.name} (${zahl(anzahl[k.id])})`, k.id)));
+  sel.value = zustand.kategorie;
+  sel.classList.toggle("ist-aktiv", !!zustand.kategorie);
+  $("#kette").classList.toggle("ist-aktiv", !!zustand.kette);
+  $("#filterWeg").hidden = !zustand.kette && !zustand.kategorie;
 }
 
 function karteBauen(a, rang) {
@@ -298,7 +327,7 @@ function merkZeichnen() {
       ansichtSetzen("alle");
       $("#suche").value = e.name;
       zustand.suche = e.name;
-      zustand.kette = ""; auswahlSetzen("kette", "");
+      marktSetzen("");
       neuZeichnen();
       $("#zielInfo").scrollIntoView({ behavior: "smooth", block: "start" });
     });
@@ -387,7 +416,8 @@ function angeboteZeichnen() {
   const sortText = { kilopreis: "nach Kilopreis – günstigstes zuerst", rabatt: "nach Rabatt – höchster zuerst", preis: "nach Preis",
     eiweiss: "nach Eiweiß pro Euro – meistes zuerst" };
   const einst = V.zusammenfassung();
-  $("#zielInfo").textContent = `${zahl(aktuelleListe.length)} ${art} · sortiert ${sortText[zustand.sortierung]}` +
+  const wo = [zustand.kette && KETTEN[zustand.kette], zustand.kategorie && window.Kategorien.NAME[zustand.kategorie]].filter(Boolean);
+  $("#zielInfo").textContent = `${zahl(aktuelleListe.length)} ${art}${wo.length ? ` (${wo.join(", ")})` : ""} · sortiert ${sortText[zustand.sortierung]}` +
     (einst ? ` · ${einst}` : "");
 }
 
@@ -529,7 +559,7 @@ function kopierenZeichnen(ergebnis) {
 function angebotZeigen(a) {
   listeOeffnen(false);
   ansichtSetzen("alle");
-  zustand.kette = a.kette; auswahlSetzen("kette", a.kette);
+  marktSetzen(a.kette);
   zustand.suche = a.name; $("#suche").value = a.name;
   neuZeichnen();
   const karte = document.querySelector(`.karte[data-id="${CSS.escape(a.id)}"]`) ?? document.querySelector(".karte");
@@ -607,8 +637,11 @@ function einstellungenSpeichern() {
   speichern(SPEICHER_EINST, { ansicht, region, kette, sortierung });
 }
 
-function auswahlSetzen(attr, wert) {
-  document.querySelectorAll(`[data-${attr}]`).forEach((b) => b.setAttribute("aria-pressed", String(b.dataset[attr] === wert)));
+// Markt wählen (Kategorie zurücksetzen, damit das gesuchte Angebot sicher sichtbar ist)
+function marktSetzen(kette, kategorieBehalten = false) {
+  zustand.kette = kette;
+  $("#kette").value = kette;
+  if (!kategorieBehalten) zustand.kategorie = "";
 }
 function ansichtSetzen(ansicht) {
   zustand.ansicht = ansicht;
@@ -617,6 +650,7 @@ function ansichtSetzen(ansicht) {
 
 function neuZeichnen() {
   zustand.sichtbar = SEITE;
+  kategorienAktualisieren();
   einstellungenSpeichern();
   angeboteZeichnen();
 }
@@ -631,11 +665,11 @@ function start() {
   sel.hidden = DATEN.regionen.length < 2;
   // Geschäfte ohne Daten (z. B. dm, das nicht mehr automatisch geladen wird) nicht als Auswahl anbieten
   const hatDaten = (k) => k === "spar" ? DATEN.regionen.length > 0 : !!(DATEN[k] || ALLE.ketten[k]?.length);
-  document.querySelectorAll("[data-kette]").forEach((b) => { if (b.dataset.kette) b.hidden = !hatDaten(b.dataset.kette); });
+  for (const o of [...$("#kette").options]) if (o.value && !hatDaten(o.value)) o.remove();
   zustand.kette = KETTEN[einst.kette] && hatDaten(einst.kette) ? einst.kette : "";
   zustand.sortierung = SORTIERUNG[einst.sortierung] ? einst.sortierung : "kilopreis";
   $("#sortierung").value = zustand.sortierung;
-  auswahlSetzen("kette", zustand.kette);
+  marktSetzen(zustand.kette, true);
   ansichtSetzen(einst.ansicht === "alle" && ALLE.erstellt ? "alle" : "fitness");
 
   sel.addEventListener("change", () => { zustand.region = sel.value; kopfAktualisieren(); neuZeichnen(); listeZeichnen(); merkZeichnen(); });
@@ -646,9 +680,9 @@ function start() {
     timer = setTimeout(() => { zustand.suche = e.target.value; zustand.sichtbar = SEITE; angeboteZeichnen(); }, 150);
   });
   document.querySelectorAll("[data-ansicht]").forEach((b) => b.addEventListener("click", () => { ansichtSetzen(b.dataset.ansicht); neuZeichnen(); }));
-  document.querySelectorAll("[data-kette]").forEach((b) => b.addEventListener("click", () => {
-    zustand.kette = b.dataset.kette; auswahlSetzen("kette", zustand.kette); neuZeichnen();
-  }));
+  $("#kette").addEventListener("change", (e) => { marktSetzen(e.target.value, true); neuZeichnen(); });
+  $("#kategorie").addEventListener("change", (e) => { zustand.kategorie = e.target.value; neuZeichnen(); });
+  $("#filterWeg").addEventListener("click", () => { marktSetzen(""); neuZeichnen(); });
   $("#mehr").addEventListener("click", nachladen);
   weiterZiehenEinrichten();
   $("#grossBild").addEventListener("click", (e) => {
@@ -691,7 +725,7 @@ function start() {
   });
   for (const id of ["#kopierOhne", "#kopierErledigt"]) $(id).addEventListener("change", () => letztesErgebnis && kopierenZeichnen(letztesErgebnis));
   L.beiAenderung(listeZeichnen);
-  V.beiAenderung(() => { angeboteZeichnen(); listeZeichnen(); merkZeichnen(); });
+  V.beiAenderung(() => { kategorienAktualisieren(); angeboteZeichnen(); listeZeichnen(); merkZeichnen(); });
 
   $("#merkBearbeiten").addEventListener("click", () => { merkDialogZeichnen(); $("#merkDialog").showModal(); });
   $("#merkDialog").addEventListener("click", (e) => { if (e.target === e.currentTarget) e.currentTarget.close(); });
@@ -704,6 +738,7 @@ function start() {
 
   kopfAktualisieren();
   merkZeichnen();
+  kategorienAktualisieren();
   angeboteZeichnen();
   listeZeichnen();
   const perLink = () => { if (location.hash === "#liste") listeOeffnen(true); };
