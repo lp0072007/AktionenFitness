@@ -18,6 +18,8 @@
     [/\bweisse ?bohnen\b/g, "weissebohnen"],
     [/\bstangen ?sellerie\b/g, "staudensellerie"],
     [/\bfrische ?milch\b/g, "frischmilch"],
+    [/\benergy ?drinks?\b/g, "energydrink"], // "Energy Drink" = "Energydrink"
+    [/\beggs?\b/g, "eier"], // als ganzes Wort, kein Synonym: sonst fände "Eier" wieder "Pflügelmeier"
   ];
 
   function norm(text) {
@@ -302,7 +304,9 @@
   const EIGENSCHAFTEN = new Set(["light", "mager", "natur", "griechisch", "griechischer", "griechisches", "fettarm", "halbfett",
     "vollfett", "laktosefrei", "ungesusst", "ungezuckert", "zuckerfrei", "tk", "tiefgekuhlt", "gefroren", "gross", "klein",
     "billig", "gunstig", "regional", "osterreichisch", "pur", "plain", "high", "protein", "pro", "frei", "freiland",
-    "bodenhaltung", "mittel", "zart", "fein", "grob", "gemischt", "weiss", "braun", "vollkorn"]);
+    "bodenhaltung", "mittel", "zart", "fein", "grob", "gemischt", "weiss", "braun", "vollkorn",
+    // "Monster Energy" findet Penny "Monster" (der Händler lässt "Energy" oft weg)
+    "energy", "energydrink"]);
   // Bestimmungswörter, die man vom gesuchten Kompositum abtrennen darf: "Magertopfen" -> auch "Speisetopfen"
   const MODIFIKATOREN = ["mager", "light", "griechisch", "natur", "bio", "fettarm", "halbfett",
     "laktosefrei", "protein", "high", "tiefkuhl", "tk"];
@@ -391,7 +395,9 @@
     // "Zuckerl" sucht Bonbons, "Hafermilch" sucht Haferdrinks, "Feldsalat" sucht Vogerlsalat
     const sucheVarianten = eintrag._varianten ??= [...new Set(woerter.flatMap(varianten))];
     const sucheText = sucheVarianten.join(" ");
-    if (namensWoerter.some((w) => istVerarbeitet(w) && !sucheVarianten.some((s) => w.includes(s) && istVerarbeitet(s))
+    // "Energydrink" ist bei der Suche nach einer Marke ("Red Bull") das Produkt selbst, bei "Proteindrink" aber nicht
+    const energyMarke = (w) => w === "energydrink" && !sucheText.includes("drink");
+    if (namensWoerter.some((w) => istVerarbeitet(w) && !energyMarke(w) && !sucheVarianten.some((s) => w.includes(s) && istVerarbeitet(s))
         && !sucheText.includes(w))) punkte *= 0.5;
     const kat = angebot._kat ??= angebot.kategorie ? norm(angebot.kategorie) : "";
     // Sucht man selbst ein verarbeitetes Produkt und steht es so im Namen ("Topfenstrudel"), ist die Kategorie
@@ -443,7 +449,7 @@
   const KATEGORIE_VERARBEITET = /\beis\b|eiscreme|pizza|tiefkuhlgerichte|fertiggerichte|susses|knabber|dessert|pudding|snack|torten|mehlspeisen/; // \b: nicht "Fleisch"
   // Händler-Kategorie passt nur, wenn die Suche dazu passt: "Himbeeren" -> kein Himbeer-Sirup (Getränke)
   const KATEGORIE_REGELN = [
-    [/\bgetranke\b/, /wasser|cola|saft|sirup|tee\b|kaffee|bier|wein|limo|drink|smoothie|energy|milch|sekt|schnaps|likor|gin\b|rum\b|vodka|whisk|spritzer|soda|tonic|getrank|zero/],
+    [/\bgetranke\b/, /wasser|cola|saft|sirup|tee\b|kaffee|bier|wein|limo|drink|smoothie|energy|milch|sekt|schnaps|likor|gin\b|rum\b|vodka|whisk|spritzer|soda|tonic|getrank|zero|monster|bull\b/],
     [/milchalternativ/, /milch|drink/],
     [/susse aufstrich/, /aufstrich|marmelade|konfit|jam\b|honig|nutella|creme/],
     [/\bkase\b|hartkase|frischkase/, /kase|gouda|emmentaler|edamer|mozzarella|cottage|feta|parmesan|cheddar|camembert|brie|raclette|aufstrich|halloumi|ricotta|mascarpone|scheiben/],

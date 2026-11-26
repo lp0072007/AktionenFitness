@@ -20,7 +20,7 @@
     { id: "brot", name: "Brot & Gebäck" },
     { id: "vorrat", name: "Nudeln, Reis & Vorrat" },
     { id: "fertig", name: "Fertiggerichte" },
-    { id: "tk", name: "Tiefkühl" },
+    { id: "tk", name: "Tiefgefroren" },
     { id: "suess", name: "Süßes & Snacks" },
     { id: "getraenke", name: "Getränke" },
     { id: "kaffee", name: "Kaffee & Tee" },
@@ -50,6 +50,9 @@
   // Teile der Markt-Kategorie, die nichts über die Gruppe sagen (dann zählt der nächst allgemeinere Teil oder der Name)
   const ALLGEMEIN = /^(lebensmittel|kühlwaren|rein pflanzlich.*|neu im online shop|aktion.*|angebote?)$/;
 
+  // Iglo und Frosta sind nur Tiefkühlware; Lidl schreibt "In der Tiefkühltruhe" in die Beschreibung
+  const TIEFGEFROREN = /\biglo\b|\bfrosta\b|tiefkühl|tiefgekühlt|tiefgefroren/i;
+
   function regelFuer(text) {
     const t = text.toLowerCase();
     for (const [id, muster] of REGELN) if (muster.test(t)) return id;
@@ -60,6 +63,8 @@
     const pfad = (a.kategorie ?? "").split(">").map((s) => s.trim()).filter(Boolean);
     // Tiefkühl-Abteilung schlägt alles (Eis, Gemüse, Pizza aus der Tiefkühltruhe)
     if (pfad.some((s) => /tiefkühl|tiefgekühlt/i.test(s))) return "tk";
+    // Ohne Tiefkühl-Abteilung (Fitness-Gruppen, Lidl, Hofer, Spar): Marke oder Hinweis im Text
+    if (TIEFGEFROREN.test(`${a.name ?? ""} ${a.beschreibung ?? ""}`)) return "tk";
     for (const teil of pfad.reverse()) {
       if (ALLGEMEIN.test(teil.toLowerCase())) continue;
       const id = regelFuer(teil);

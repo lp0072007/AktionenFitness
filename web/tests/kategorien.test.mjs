@@ -9,7 +9,7 @@ const von = (name, kategorie) => K.von({ name, kategorie });
 test("Produktname entscheidet, wenn der Markt keine Kategorie liefert (Spar, Lidl, Hofer)", () => {
   const faelle = {
     "Schärdinger Bergbauern Joghurt": "milch", "NÖM PRO Cottage Cheese": "milch", "Große Bio-Eier": "milch", "1 kg Topfen": "milch",
-    "S-BUDGET Hendlfilet aus Österreich": "fleisch", "Thunfisch in Öl": "fleisch", "Iglo Fischstäbchen mit Käse": "fleisch",
+    "S-BUDGET Hendlfilet aus Österreich": "fleisch", "Thunfisch in Öl": "fleisch", "Iglo Fischstäbchen mit Käse": "tk",
     "Bananen": "obst", "Mild-nussiger Bio-Butternuss Kürbis": "obst", "Honigmelone": "obst",
     "Rummo Pasta": "vorrat", "Bio-Basmati-Reis": "vorrat", "Mani natives Olivenöl extra": "vorrat", "Erdnussbutter": "vorrat",
     "Römerquelle Mineralwasser": "getraenke", "SPAR Eistee": "getraenke", "Pepsi Zero": "getraenke",
@@ -52,4 +52,15 @@ test("Fitness-Gruppen landen in der passenden Kategorie", () => {
 
 test("Jede Kategorie hat einen Namen", () => {
   for (const k of K.LISTE) assert.equal(K.NAME[k.id], k.name);
+});
+
+test("Tiefgefroren: Iglo/Frosta und Lidl-Hinweis 'In der Tiefkühltruhe' auch ohne Tiefkühl-Abteilung", () => {
+  assert.equal(K.NAME.tk, "Tiefgefroren");
+  assert.equal(von("Iglo Broccoli", "Gemüse"), "tk"); // Fitness-Gruppe statt Markt-Abteilung
+  assert.equal(von("Iglo Königsgarnelen ASC", "Garnelen"), "tk");
+  assert.equal(von("FRoSTA Paella"), "tk");
+  assert.equal(K.von({ name: "Deluxe Zanderfilet Portionen", kategorie: "Magerer Fisch",
+    beschreibung: "Je 450 g · 1 kg = 17.76 · In der Tiefkühltruhe" }), "tk");
+  assert.equal(von("Igloo Kühlbox"), "sonstiges"); // nur die Marke, kein Wortteil
+  assert.equal(von("Broccoli", "Gemüse"), "obst");
 });

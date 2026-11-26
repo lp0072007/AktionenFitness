@@ -340,3 +340,29 @@ test("Falsche Wortenden: Topf, Knoblauch, Gehackte Tomaten", () => {
   assert.deepEqual(schreibweise("Faschiertes", "Clever Gehackte Tomaten", "Frisches Faschiertes gemischt"), [false, true]);
   assert.deepEqual(schreibweise("Eier", "Pflügelmeier Russenkraut", "Matreier Henkele", "Clever Eier M"), [false, false, true]);
 });
+
+test("Energydrinks: Monster Energy findet Penny „Monster“, Marke findet Energy Drink", () => {
+  const kat = "Getränke > Alkoholfreie Getränke";
+  const passt = (suche, ...namen) => {
+    const e = A.parseListe(suche)[0];
+    return namen.map((name) => A.bewerte(e, { name, kategorie: kat }) >= A.SCHWELLE);
+  };
+  const e = A.parseListe("24x Monster Energy")[0];
+  assert.equal(e.anzahl, 24);
+  assert.deepEqual(passt("24x Monster Energy", "Monster", "Monster Energy Ultra White", "Hell Classic Energydrink"), [true, true, false]);
+  assert.deepEqual(passt("Monster", "Monster", "Keli Limonade"), [true, false]);
+  assert.deepEqual(passt("Monster Energy Drink", "Monster"), [true]);
+  assert.deepEqual(passt("Red Bull", "Red Bull", "Red Bull* Energy Drink"), [true, true]);
+  assert.deepEqual(passt("Energy Drink", "Hell Classic Energydrink", "Red Bull* Energy Drink", "LiveFresh Skyr Drink"), [true, true, false]);
+  assert.deepEqual(passt("Proteindrink", "Hell Classic Energydrink", "Red Bull* Energy Drink"), [false, false]);
+});
+
+test("Synonyme: Kartoffeln = Erdäpfel, Melanzani = Aubergine, Egg = Eier", () => {
+  assert.deepEqual(schreibweise("Kartoffeln", "ECHT BIO! Erdäpfel", "Clever Erdäpfel festkochend"), [true, true]);
+  assert.deepEqual(schreibweise("Erdäpfel", "Bio Kartoffeln"), [true]);
+  assert.deepEqual(schreibweise("Aubergine", "Melanzani"), [true]);
+  assert.deepEqual(schreibweise("Melanzani", "Bio Auberginen"), [true]);
+  assert.deepEqual(schreibweise("Eggs", "Clever Eier aus Bodenhaltung M", "Pflügelmeier Russenkraut"), [true, false]);
+  assert.deepEqual(schreibweise("Egg", "Freilandeier"), [true]);
+  assert.deepEqual(schreibweise("Eier", "Free Range Eggs", "Matreier Henkele"), [true, false]);
+});
